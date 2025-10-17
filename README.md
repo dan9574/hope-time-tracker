@@ -1,73 +1,80 @@
-# React + TypeScript + Vite
+# Hope – A Minimalist Time Tracker ⏳
+*A calm, glassmorphic desktop app for focus and self-discipline.*
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## 🌟 Overview
+**Hope** is a local-first time-tracking app built with **Electron + React + SQLite**, designed to make productivity elegant and lightweight.  
+It helps you visualize your work rhythm through beautiful daily and monthly arcs.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Overview](docs/daily.png)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Features
+- 🕒 **HUD Timer** — floating overlay for real-time focus tracking  
+- 📊 **Daily & Monthly Stats** — visualize progress with arc charts  
+- 💾 **Local Storage Only** — all data stays offline (SQLite-based)  
+- ⚙️ **Customizable Start Center** — create and manage activities easily  
+- 🎨 **Glassmorphism UI** — soft gradients, gentle blur, and modern minimalism  
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🧠 Tech Stack
+| Layer | Technology |
+|--------|-------------|
+| **Frontend** | React + TypeScript + Vite |
+| **Desktop Runtime** | Electron |
+| **Database** | better-sqlite3 |
+| **Styling** | TailwindCSS + Custom CSS (Glassmorphism) |
+| **Build** | Electron Builder |
+| **Dev Tools** | VS Code + GitHub Copilot + ESLint |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📸 Screenshots
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Daily | Monthly | RunHUD | RunHUD (Overlay) |
+|:------:|:--------:|:--------:|:----------------:|
+| ![Daily](docs/daily.png) | ![Monthly](docs/monthly.png) | ![HUD](docs/runhud.png) | ![HUD2](docs/runhud2.png) |
+
+| Settings | Settings (Advanced) | Start Center |
+|:----------:|:------------------:|:-------------:|
+| ![Settings](docs/setting.png) | ![Settings2](docs/settings2.png) | ![Start](docs/start.png) |
+
+---
+
+## 🚀 Getting Started
+
+### Clone & Run
+```bash
+git clone https://github.com/dan9574/hope-time-tracker.git
+cd hope-time-tracker
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Build Desktop App
+```bash
+npm run build
 ```
+
+---
+
+## 💡 Philosophy
+> “Time feels different when it’s seen beautifully.”  
+
+Hope aims to transform daily tracking into a quiet ritual of reflection.  
+Every session, every pause, and every return tells the story of how you build focus.
+
+---
+
+## 🧭 Notes
+> ⚠️ Currently, time display may behave unexpectedly under non-local timezones (e.g., BST).  
+> This will be addressed in a later release.  
+
+Localization for Chinese is planned for a future version.
+---
+
+## 📄 License
+MIT © 2025 dan9574
