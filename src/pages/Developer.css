@@ -1,0 +1,65 @@
+.developer-page { isolation: isolate; }
+
+/* Keep segmented control horizontal and compact on Developer page */
+.developer-page .segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;                 /* add gap -> two separate pills */
+  padding: 0;               /* remove inner padding */
+  border-radius: 999px;     /* harmless but unused now */
+  border: none;             /* remove outer frame */
+  background: transparent;  /* no container background */
+  backdrop-filter: none;
+}
+
+.developer-page .segmented-control-btn {
+  white-space: nowrap; /* prevent vertical wrapping */
+  padding: 4px 12px;
+  line-height: 24px; /* stable vertical alignment */
+  font-size: 13px;
+}
+
+/* Glider tuned to be subtle and aligned */
+.developer-page .segmented-control-glider { display: none; }
+
+/* Active label color */
+.developer-page .segmented-control-btn {
+  border: 1px solid transparent;          /* default text look */
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+}
+.developer-page .segmented-control-btn:hover:not(.active) {
+  background: rgba(15,23,42,.04);
+}
+.developer-page .segmented-control-btn.active {
+  color: var(--blue);
+  background: rgba(59,130,246,.10);       /* light blue fill like old style */
+  border-color: var(--blue);
+}
+
+/* Ensure the action area keeps items in a row */
+.developer-page .setting-item-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;           /* prefer wrapping to squeezing */
+  justify-content: flex-start;
+  padding-left: 0;           /* move action area left as requested */
+}
+
+/* Don't let buttons shrink; keep labels on one line */
+.developer-page .setting-item-action button,
+.developer-page .icon-btn {
+  flex: 0 0 auto;            /* no shrink */
+  white-space: nowrap;       /* keep Chinese text on one line */
+}
+
+/* A bit more width for red actions so text never stacks */
+.developer-page .icon-btn.danger { min-width: 84px; }
+
+/* Align the red buttons area under segmented control better on small width */
+@media (max-width: 520px) {
+  .developer-page .setting-item { flex-direction: column; align-items: stretch; gap: 8px; }
+  .developer-page .setting-item-action { padding-left: 0; }
+}

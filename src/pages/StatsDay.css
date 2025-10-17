@@ -1,0 +1,191 @@
+.chart-container {
+  height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 简洁模式 */
+.chart-container:not(.enlarged) {
+  margin-top: 160px;  /* 增加简洁模式的顶部间距 */
+}
+
+/* 详细模式 */
+.chart-container.enlarged {
+  width: 600px;
+  height: 340px;
+  margin: 80px auto 0 auto;  /* 从 200px 改为 80px */
+  transition: width 0.3s, height 0.3s;
+}
+.stats-day-page {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 顶部条：标题 + 模式切换 */
+.topbar {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-and-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.day-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghost-btn {
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+  transition: all 0.2s ease-out;
+}
+
+.ghost-btn:hover:not(.disabled) {
+  color: #333;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.ghost-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.weekday {
+  font-size: 16px;
+  color: #666;
+  font-weight: normal;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+.modes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mode {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+}
+.mode.active {
+  border-color: var(--blue, #3b82f6);
+  color: var(--blue, #3b82f6);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* 设置图表样式 */
+.chart-container .background-arc {
+  fill: #EBF5FF;  /* 浅蓝色背景 */
+}
+.chart-container .scheduled-arc {
+  fill: #a855f7;  /* 保持原有的紫色 */
+}
+.chart-container .logged-arc {
+  fill: #3b82f6;  /* 保持原有的蓝色 */
+}
+
+.details-container {
+  margin-top: 20px;  /* 从 12px 改为 20px，给详细列表一点更多空间 */
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rows {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.placeholder-text {
+  color: #999;
+  height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+/* ==================== UI 优化核心 ==================== */
+/* 这是新的 time-block 卡片样式 */
+.time-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-left-width: 6px; /* 左侧的彩色竖条 */
+  border-radius: 12px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease-out;
+  cursor: pointer;
+}
+
+.time-block:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.time-block.active {
+  border-color: rgba(59, 130, 246, 0.8);
+  background: rgba(239, 246, 255, 1);
+}
+
+.time-block.logged { 
+  border-left-color: #3b82f6; 
+}
+
+.time-block.scheduled { 
+  border-left-color: #a855f7; 
+}
+
+.time-block .time {
+  font-weight: 500;
+  color: #555;
+  font-size: 0.9em;
+}
+
+.time-block .title {
+  flex-grow: 1;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 这是新的 type-badge 胶囊样式 */
+.type-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.time-block.logged .type-badge { background-color: #3b82f6; }
+.time-block.scheduled .type-badge { background-color: #a855f7; }
+/* ================================================== */

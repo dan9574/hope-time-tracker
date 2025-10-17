@@ -1,0 +1,185 @@
+/* src/pages/StartCenter.css */
+
+/* --- 新增：可点击的编辑区头部 --- */
+.edit-header-clickable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none; /* 防止点击时选中文字 */
+  padding-bottom: 10px;
+  -webkit-app-region: no-drag;
+}
+
+.edit-header-clickable .edit-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* --- 新增：展开/收起的小箭头图标 --- */
+.edit-chevron {
+  color: var(--ink-subtle);
+  transition: transform 0.26s ease;
+  font-size: 12px; /* 可以根据喜好调整大小 */
+}
+
+.edit-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* --- 新增：折叠动画容器样式 --- */
+.collapse {
+  overflow: clip;
+  height: 0;
+  transition: height 0.26s ease;
+  will-change: height;
+}
+
+.collapse > .collapse-inner {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.collapse.open > .collapse-inner {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* ------------------------------------ */
+
+/* 新的分段切换控件容器 */
+.segmented-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 999px;
+  background-color: rgba(2, 6, 23, .06);
+  -webkit-app-region: no-drag; /* 防止在无边框窗口中被拖动 */
+}
+
+/* 滑块 (动态高亮的“药丸”) */
+.segmented-control-glider {
+  position: absolute;
+  top: 4px;
+  height: calc(100% - 8px);
+  border-radius: 999px;
+  background-color: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .08);
+  /* 核心动画效果 */
+  transition: transform 0.26s ease, width 0.26s ease;
+  will-change: transform, width;
+}
+
+/* 切换按钮 */
+.segmented-control-btn {
+  /* 重置按钮默认样式 */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  /* 布局与间距 */
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 图标与文字的间距 */
+  padding: 6px 16px;
+  white-space: nowrap; /* 防止文字换行 */
+  
+  /* 确保按钮在滑块上方 */
+  position: relative;
+  z-index: 1;
+
+  /* 文字颜色与过渡 */
+  color: var(--ink-weak);
+  transition: color 0.2s ease 0.05s;
+}
+
+/* 当前激活的按钮，文字颜色更深 */
+.segmented-control-btn.active {
+  color: var(--ink);
+}
+
+/* 优化 icon-btn 样式 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; /* 固定宽度 */
+  height: 32px; /* 固定高度 */
+  border-radius: 50%; /* 圆形 */
+  background-color: rgba(2, 6, 23, .06); /* 稍微深一点的背景色，与胶囊背景保持一致 */
+  color: var(--ink); /* 文字颜色 */
+  font-size: 18px; /* 图标大小 */
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0; /* 防止被压缩 */
+}
+
+.icon-btn:hover {
+  background-color: rgba(2, 6, 23, .09); /* 悬浮时更深的背景色 */
+}
+
+.icon-btn:active {
+  background-color: rgba(2, 6, 23, .12); /* 点击时更深的背景色 */
+}
+
+/* 主按钮变体，与 Settings 主色一致 */
+.icon-btn.primary {
+  background-color: var(--blue);
+  color: #fff;
+}
+.icon-btn.primary:hover { background-color: var(--blue-hover); }
+.icon-btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 让 start 行里的控件间距更贴近 Settings 的动作区 */
+.setting-item .setting-item-action .icon-btn { margin-left: 4px; }
+
+/* 危险操作按钮（删除） */
+.icon-btn.danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+.icon-btn.danger:hover { background-color: rgba(239, 68, 68, 0.2); }
+.icon-btn.danger:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 输入框与 select 的一致性（当它们放在 setting-item-action 内） */
+.setting-item .setting-item-action .input {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.1);
+  background: #fff;
+  color: var(--ink);
+}
+
+/* Journal bubbles */
+.bubble {
+  position: relative;
+  max-width: 520px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(15,23,42,.08);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 14px;
+}
+.bubble.self {
+  background: var(--blue);
+  color: #fff;
+}
+
+/* 右侧气泡的小角角（小九九） */
+.bubble.self::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  bottom: 6px;
+  width: 10px; height: 14px;
+  background: var(--blue);
+  transform: rotate(45deg);
+  border-bottom-left-radius: 3px;
+}

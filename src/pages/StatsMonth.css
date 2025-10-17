@@ -1,0 +1,102 @@
+/* src/pages/StatsMonth.css */
+.stats-month-container{
+  display:flex;
+  flex-direction:column;
+  min-height:0;            /* 关键：允许子项在 flex 中缩放 */
+  height:100%;
+}
+
+.stats-month-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--border-soft, rgba(0,0,0,.08));
+  flex-shrink:0;
+}
+
+.title-and-month{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.page-title{font-size:20px; font-weight:600; margin:0;}
+.month-switch{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.ghost-btn{
+  appearance:none; border:1px solid var(--border-soft, rgba(0,0,0,.12));
+  background:transparent; padding:6px 10px; border-radius:10px; cursor:pointer;
+}
+.month-text{font-weight:600;}
+
+.modes{display:flex; align-items:center; gap:8px;}
+.mode{padding:6px 10px; border-radius:999px; border:1px solid transparent; cursor:pointer;}
+.mode.active{border-color:var(--blue, #3b82f6); color:var(--blue, #3b82f6);}
+.modes .total{opacity:.8; font-weight:600; margin-right:6px;}
+
+.calendar-container{
+  margin:12px 0 4px;
+  flex-shrink:0;
+  position:relative; z-index:0;
+}
+
+/* react-calendar 轻量外观微调 */
+.react-calendar{ width:100%; background:transparent; border:none; }
+.react-calendar__tile.has-data { font-weight:600; }
+.react-calendar__tile.future-date { 
+  color: #c0c4cc !important; 
+  background: rgba(0,0,0,.03) !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+.react-calendar__tile.future-date:hover {
+  background: rgba(0,0,0,.03) !important;
+}
+
+.calendar-events-indicator {
+  font-size: 10px;
+  color: #3b82f6;
+  font-weight: 500;
+  margin-top: 2px;
+}
+/* 未来日期不显示日程条目提示 */
+
+/* 移除1号的默认蓝色背景 */
+.react-calendar__tile {
+  background: transparent !important;
+}
+.react-calendar__tile:hover {
+  background: rgba(0,0,0,.05) !important;
+}
+.react-calendar__tile--active {
+  background: transparent !important;
+}
+.react-calendar__tile--now {
+  background: rgba(59,130,246,.1) !important;
+}
+
+.stats-month-body{
+  flex:1;
+  min-height:0;            /* 关键：让这一层成为唯一滚动容器 */
+  overflow:auto;
+  padding:12px 0 16px;
+}
+
+.loading,.empty{opacity:.7; padding:32px 8px; text-align:center;}
+
+.rows{display:flex; flex-direction:column; gap:10px; list-style:none; padding:0; margin:0;}
+.row{
+  background:var(--card-bg, rgba(0,0,0,.03));
+  border:1px solid var(--border-soft, rgba(0,0,0,.08));
+  border-radius:14px; padding:10px 12px;
+}
+.row-main{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
+.label-dot{width:10px; height:10px; border-radius:50%; display:inline-block; box-shadow:0 0 0 2px rgba(255,255,255,.8);}
+.label{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+.bar-container{display:flex; align-items:center; justify-content:space-between;}
+.bar-wrap{height:12px; background:rgba(0,0,0,.06); border-radius:999px; overflow:hidden; width:82%;}
+.time{opacity:.9; flex-shrink:0; font-size:16px; font-weight:600; color:#555;}
+.bar{height:100%; background:var(--blue, #3b82f6); border-radius:999px;}
+
+/* 响应式：更宽时稍微放大排版 */
+@media (min-width: 900px){
+  .page-title{font-size:22px;}
+  .row{padding:12px 14px;}
+}

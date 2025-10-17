@@ -1,0 +1,21 @@
+# Node / Build
+node_modules/
+dist/
+build/
+release/
+
+# VSCode
+.vscode/
+
+# Local DB
+*.db
+
+# Logs
+*.log
+
+# Temp scripts (optional)
+test-*.js
+
+# OS cache
+.DS_Store
+Thumbs.db

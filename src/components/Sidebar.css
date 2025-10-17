@@ -1,0 +1,27 @@
+/* src/components/Sidebar.css */
+
+.sidebar-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+}
+
+.slot {
+  flex: 0 0 auto;             /* 不按比例拉伸 */
+  display: block;
+  padding: 22px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  user-select: none;
+  color: var(--ink-weak);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.sidebar-slab .slot.active {
+  background: #2663ff;
+  color: #fff;
+}
+
+.slot:hover { filter: brightness(0.98); }

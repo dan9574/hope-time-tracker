@@ -1,0 +1,247 @@
+:root {
+  --bg-glass: rgba(255,255,255,0.55);
+  --stroke: rgba(255,255,255,0.7);
+  --shadow-s: 0 6px 24px rgba(16,24,40,.08), inset 0 1px 0 rgba(255,255,255,.38);
+  --ink: #0f172a;
+  --ink-weak: rgba(15,23,42,.65);
+  --ink-subtle: rgba(15,23,42,.45);
+  --ring: rgba(59,130,246,.36);
+  --ring-strong: rgba(59,130,246,.55);
+  --blue: #3b82f6;
+  --radius-xl: 20px;
+  --radius-xxl: 24px;
+  --elev: blur(14px);
+
+  /* ⬇️ Added: titlebar height (change as needed, e.g., 40px/44px) */
+  --titlebar-h: 40px;
+}
+
+/* Global fonts and font-smoothing */
+body, button, input, select, textarea {
+  font-family: ui-sans-serif, -apple-system, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft Yahei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink);
+}
+
+/* ---------- Glass cards ---------- */
+.glass {
+  background: var(--bg-glass);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-s);
+  backdrop-filter: var(--elev);
+}
+
+.caption
+/* Capsule container */
+.capsule {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-xxl);
+}
+.glass.capsule {
+  background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.55));
+  border: 1px solid rgba(255,255,255,.75);
+  box-shadow: 0 10px 28px rgba(15,23,42,.06), inset 0 1px 0 rgba(255,255,255,.6);
+  backdrop-filter: blur(14px);
+}
+
+/* Inputs and selects */
+.input, .select {
+  -webkit-appearance: none; appearance: none;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.08);
+  background: rgba(255,255,255,.9);
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  transition: box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.input::placeholder { color: var(--ink-subtle); }
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--ring-strong);
+  box-shadow: 0 0 0 4px var(--ring);
+  background: #fff;
+}
+
+/* Round icon buttons */
+.icon-btn {
+  -webkit-app-region: no-drag;
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  border: none;
+  display:inline-grid; place-items:center;
+  background: radial-gradient(120% 120% at 50% 0%, #5aa0ff 0%, var(--blue) 100%);
+  color: #fff; font-weight: 700;
+  box-shadow: 0 12px 26px rgba(59,130,246,.35);
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;
+}
+.icon-btn:hover   { transform: translateY(-1px); filter: brightness(1.02); }
+.icon-btn:active  { transform: translateY(0); box-shadow: 0 8px 18px rgba(59,130,246,.30); }
+
+.edit-card{ padding: 12px; }
+/* Edit card */
+.edit-header{ display:flex; align-items:center; justify-content:space-between; padding: 4px 2px 10px; }
+.edit-title{ font-size:16px; font-weight:700; color: var(--ink); }
+
+/* Collapse toggle */
+.edit-toggle{
+  height: 32px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid rgba(59,130,246,.25);
+  background: rgba(59,130,246,.12);
+  color: #1f54c9; cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.edit-toggle:hover{ background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.35); }
+
+/* Segmented control */
+.seg{ display:inline-flex; gap:0; padding:4px; border-radius: 999px; background: rgba(2,6,23,.06); }
+.seg-btn{
+  border:none; background: transparent; cursor:pointer;
+  padding: 6px 14px; border-radius: 999px; color: var(--ink-weak);
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.seg-btn.active{
+  background: #fff; color: var(--ink);
+  box-shadow: 0 8px 20px rgba(15,23,42,.08);
+}
+
+/* Collapse animation container */
+.collapse { overflow: clip; height: 0; transition: height .26s ease; will-change: height; }
+.collapse > .collapse-inner { opacity: 0; transform: translateY(-4px); transition: opacity .2s ease, transform .2s ease; }
+.collapse.open > .collapse-inner { opacity: 1; transform: translateY(0); }
+
+.edit-body{ max-height: 42vh; overflow:auto; }
+.edit-grid{ display:grid; gap:12px; }
+.hint{ color: var(--ink-weak); font-size:12px; margin-top:10px; }
+
+/* Prevent frameless drag from covering interactions */
+.center-content, .center-body, .edit-card, .edit-card *{ -webkit-app-region: no-drag; }
+
+.window.glass.theme-wallpaper {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.window.glass.theme-wallpaper .ambient-in,
+.window.glass.theme-wallpaper .ambient-mask { display: none !important; }
+.window.glass.theme-wallpaper .title-bar-text { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+.window.glass.theme-wallpaper .win-btn svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)); }
+
+/* ===================== Key addition: layout decoupling ===================== */
+
+/* Two-column container fixed to viewport height (minus titlebar) to avoid right content pushing height */
+.shell-center{
+  display: flex;
+  height: calc(100vh - var(--titlebar-h));
+  overflow: hidden;              /* 整行不出现滚动条，由左右两栏各自滚动 */
+  align-items: stretch;
+}
+
+/* Left sidebar: fixed width + independent scroll */
+.sidebar-slab{
+  flex: 0 0 260px;               /* 可按需改为你的侧栏宽度 */
+  height: 100%;
+  overflow: auto;                /* 左侧独立滚动 */
+}
+
+/* Right main area: independent scroll */
+.center-content{
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;                /* 右侧滚动只发生在这里 */
+}
+
+/* Inner padding only; avoid 100vh/100% to stretch parent */
+.center-body{ padding: 24px 28px; min-height: 100%; }
+
+/* ===================== Sidebar appearance (stable highlight) ===================== */
+
+.sidebar-slots{ display:flex; flex-direction:column; gap:16px; padding:12px; }
+
+.slot{
+  flex: 0 0 auto;                /* 禁止按比例拉伸/等分 */
+  display:block;
+  padding: 22px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  user-select: none;
+  color: var(--ink-weak);
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.sidebar-slab .slot.active{
+  background: #2663ff;
+  color: #fff;
+}
+
+.slot:hover{ filter: brightness(0.98); }
+/* ===== Mac-style scrollbars (Chromium / Electron) ===== */
+.center-content,
+.sidebar-slab {
+  /* Firefox 近似：细滚动条 + 颜色；Chromium 会忽略 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.0) transparent; /* 默认隐形 */
+}
+
+/* 滚动条整体尺寸与边距（仍占很少空间，不突兀） */
+.center-content::-webkit-scrollbar,
+.sidebar-slab::-webkit-scrollbar {
+  width: 10px;           /* 竖向 */
+  height: 10px;          /* 横向 */
+}
+
+/* Track transparent to make it look 'floating' */
+.center-content::-webkit-scrollbar-track,
+.sidebar-slab::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px;           /* 顶底留点间距，更像 mac */
+}
+
+/* Thumb: default transparent, rounded capsule + slight inner stroke shadow */
+.center-content::-webkit-scrollbar-thumb,
+.sidebar-slab::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0);                 /* 默认看不见 */
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.6),          /* 白色内描边 */
+    0 1px 4px rgba(0,0,0,.12);                      /* 轻微投影 */
+  transition: background .15s ease, box-shadow .15s ease;
+}
+
+/* Show white oval thumb on hover/scroll interaction */
+.center-content:hover::-webkit-scrollbar-thumb,
+.sidebar-slab:hover::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.82);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.75),
+    0 2px 6px rgba(0,0,0,.18);
+}
+
+/* Slightly firmer on active */
+.center-content::-webkit-scrollbar-thumb:active,
+.sidebar-slab::-webkit-scrollbar-thumb:active {
+  background: rgba(255,255,255,.95);
+}
+
+/* Optional: theme tweaks (slightly translucent on dark backgrounds) */
+@media (prefers-color-scheme: dark) {
+  .center-content:hover::-webkit-scrollbar-thumb,
+  .sidebar-slab:hover::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.72);
+  }
+}
+
+/* ===== Firefox enhancement (color only on hover) ===== */
+.center-content:hover,
+.sidebar-slab:hover {
+  scrollbar-color: rgba(255,255,255,.75) transparent;
+}

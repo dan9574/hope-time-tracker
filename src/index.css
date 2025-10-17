@@ -1,0 +1,159 @@
+.ambient-mask.statsday {
+  background: rgba(0,0,0,0) !important;
+}
+/* index.css (fixed) */
+
+/* Prevent Electron draggable regions from swallowing clicks */
+.no-drag { -webkit-app-region: no-drag; }
+
+html, body, #root { height:100%; margin:0; background:transparent; overflow:hidden; }
+
+:root{
+  --radius-lg: 18px;
+  --border-soft: rgba(0,0,0,0.08);
+  --shadow-soft: 0 12px 40px rgba(0,0,0,0.12);
+  --blue:#2563eb;
+  --card-solid:linear-gradient(#fff,#f7f7f8);
+  --card-glass:rgba(255,255,255,.18);
+}
+
+/* Outer container fills the viewport; prevent browser scrollbars */
+.viewport{ height:100%; width:100%; display:grid; place-items:stretch; }
+
+/* Main window: large rectangle */
+.window{
+  position: relative;
+  height:100%; width:100%;
+  border-radius: var(--radius-lg);
+  background: var(--card-solid);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  display:flex; flex-direction:column;
+  overflow:hidden; /* clip inner layers to rounded corner */
+  mask-image: radial-gradient(circle at center, #000 99.9%, transparent 100%);
+  -webkit-mask-image: -webkit-radial-gradient(white, black); /* enforce masking on chrome/electron */
+}
+
+/* Compact HUD glass style */
+.window.glass{
+  width: 340px; height: auto; margin:auto;
+  background: var(--card-glass);
+  border: 1px solid rgba(255,255,255,.35);
+  backdrop-filter: blur(10px) saturate(1.05);
+}
+
+/* ===== Gradient background (inside .window, clipped by rounded corners) ===== */
+.ambient-in{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.ambient-in .blob{
+  position:absolute;
+  width:520px; height:520px;
+  border-radius:50%;
+  filter: blur(200px);
+  opacity: .45;
+  will-change: transform, background-color, filter;
+}
+
+.ambient-in .b1{ top:-320px; left:-120px;  background:rgb(47,102,255);  animation:b1 8s ease-in-out infinite alternate; }
+.ambient-in .b2{ bottom:-140px; left:80px; background:rgb(27,178,255);  animation:b2 9s ease-in-out infinite alternate; }
+.ambient-in .b3{ bottom:40px; right:100px; background:rgb(130,225,253); animation:b3 10s ease-in-out infinite alternate; }
+.ambient-in .b4{ top:-280px; right:-40px;  background:rgb(192,132,255); animation:b4 7s ease-in-out infinite alternate; }
+.ambient-in .b5{ top:40px; left:42%;       width:420px; height:320px; background:rgb(133,169,254); animation:b5 11s ease-in-out infinite alternate; }
+.ambient-in .b6{ bottom:20px; left:54%;    width:320px; height:320px; background:rgb(50,230,243);  animation:b6 12s ease-in-out infinite alternate; }
+
+.ambient-mask{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background: rgba(255,255,255,0.2);
+  pointer-events:none;
+}
+
+.window > *:not(.ambient-in):not(.ambient-mask){
+  position: relative;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .ambient-in .blob { animation: none; }
+}
+
+@keyframes b1{ 0%{background:rgb(47,102,255)} 25%{background:rgb(47,154,255)} 50%{background:rgb(47,179,255)} 75%{background:rgb(47,255,238)} 100%{background:rgb(47,255,203)} }
+@keyframes b2{ 0%{background:rgb(27,178,255)} 25%{background:rgb(47,137,255)} 50%{background:rgb(47,130,255)} 75%{background:rgb(47,144,255)} 100%{background:rgb(47,85,255)} }
+@keyframes b3{ 0%{background:rgb(130,225,253)} 25%{background:rgb(130,148,253)} 50%{background:rgb(50,47,255)} 75%{background:rgb(78,47,255)} 100%{background:rgb(137,47,255)} }
+@keyframes b4{ 0%{background:rgb(192,132,255)} 25%{background:rgb(251,132,255)} 50%{background:rgb(255,132,214)} 75%{background:rgb(255,132,183)} 100%{background:rgb(255,132,142)} }
+@keyframes b5{ 0%{background:rgb(133,169,254)} 25%{background:rgb(133,254,187)} 50%{background:rgb(171,254,133)} 75%{background:rgb(242,254,133)} 100%{background:rgb(254,206,133)} }
+@keyframes b6{ 0%{background:rgb(50,230,243)} 25%{background:rgb(50,243,98)} 50%{background:rgb(243,230,50)} 75%{background:rgb(243,153,50)} 100%{background:rgb(243,89,50)} }
+
+.titlebar{
+  -webkit-app-region: drag;
+  height: 36px; display:flex; align-items:center; justify-content:space-between;
+  padding: 0 8px; border-bottom:1px solid var(--border-soft);
+  background: linear-gradient(#ffffff,#f5f6f8);
+}
+.titlebar.glass{ background: transparent; border-bottom: 1px solid rgba(255,255,255,.35); }
+/* HUD-specific: small windows don't need titlebar bottom border; only override inside .window.glass */
+.window.glass > .titlebar.glass{
+  /* Remove all borders and inner shadows from HUD inner titlebar to avoid creating an inset rectangle */
+  border: 0 !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 0 !important;
+}
+.title { font-weight:700; }
+.win-controls { display:flex; gap:6px; }
+.win-btn{
+  -webkit-app-region: no-drag;
+  width: 28px; height: 22px; border:0; border-radius:6px; cursor:pointer;
+  background: rgba(0,0,0,.06);
+}
+.win-btn:hover{ background: rgba(0,0,0,.12); }
+.win-btn.close{ background: rgba(255,77,79,.15); }
+.win-btn.close:hover{ background: rgba(255,77,79,.35); }
+
+/* --- Edited: sidebar width fix --- */
+.shell-center { flex:1; display:flex; }
+.sidebar-slab{
+  width: 240px; /* <-- set fixed width */
+  flex-shrink: 0; /* <-- prevent sidebar from shrinking */
+  padding:12px;
+  border-right:1px solid var(--border-soft);
+}
+.center-content{ flex:1; display:flex; align-items:flex-start; justify-content:center; overflow:auto; }
+.center-body{ width:min(960px,92%); padding:20px; }
+
+.sidebar-slots{ display:grid; grid-template-rows:repeat(4,1fr); gap:10px; height:calc(100% - 40px); }
+/* Sidebar four-slot buttons */
+.slot{
+  border-radius:16px; border:1px solid var(--border-soft); background:#fff;
+  box-shadow:0 10px 30px rgba(0,0,0,.06);
+  display:grid; place-items:center; font-weight:600; cursor:pointer; text-decoration:none;
+  color: #0f172a; /* <-- 修改：明确指定文字颜色 */
+}
+.slot:hover{ background:#f3f7ff; }
+.slot.active{
+  background:var(--blue); color:#fff; border-color:transparent;
+  box-shadow:0 14px 36px rgba(37,99,235,.25);
+}
+
+.nodrag, button, a, select, input, textarea, .slot { -webkit-app-region: no-drag; }
+
+.capsule{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:999px;
+  background:linear-gradient(#fff,#f7f7f8); border:1px solid rgba(0,0,0,.08);
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+.capsule .select{ padding:8px 10px; border-radius:10px; border:1px solid rgba(0,0,0,.1); background:#fff;}
+.icon-btn{ width:36px; height:36px; border-radius:999px; border:0; color:#fff; background:var(--blue); display:grid; place-items:center; cursor:pointer;}
+.icon-btn.ghost{ background: rgba(255,255,255,.8); color:#111; border:1px solid rgba(0,0,0,.08); }
+.icon-arrow{ font-weight:700; opacity:.7 }
+.time-big{ font-size:36px; font-variant-numeric:tabular-nums; }
