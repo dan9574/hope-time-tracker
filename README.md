@@ -17,10 +17,6 @@
 
 > “See your time, feel your focus.”
 
-<p align="center">
-  <img src="docs/daily_new.png" alt="Daily view" width="85%" />
-</p>
-
 ---
 
 ## ✨ Highlights
