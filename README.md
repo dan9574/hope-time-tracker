@@ -1,5 +1,14 @@
+<div align="center">
+
 # Hope – A Minimalist Time Tracker ⏳  
 *A calm, glassmorphic desktop app designed to visualize your focus.*
+
+[![Stars](https://img.shields.io/github/stars/dan9574/hope-time-tracker?style=flat-square)](https://github.com/dan9574/hope-time-tracker/stargazers)
+[![Issues](https://img.shields.io/github/issues/dan9574/hope-time-tracker?style=flat-square)](https://github.com/dan9574/hope-time-tracker/issues)
+[![License](https://img.shields.io/github/license/dan9574/hope-time-tracker?style=flat-square)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/dan9574/hope-time-tracker/total?style=flat-square)](https://github.com/dan9574/hope-time-tracker/releases)
+
+</div>
 
 ---
 
@@ -8,46 +17,53 @@
 
 > “See your time, feel your focus.”
 
+<p align="center">
+  <img src="docs/daily_new.png" alt="Daily view" width="85%" />
+</p>
+
 ---
 
 ## ✨ Highlights
 
 ### 🕒 Visualize Your Time
-See exactly **what you did while awake** — with smooth semi-ring progress arcs that bring focus to life.  
-![Daily](docs/daily.png)
+See exactly **what you did while awake** — with smooth semi-ring progress arcs that bring focus to life.
+
+<p align="center">
+  <img src="docs/daily_new.png" alt="Daily" width="85%" />
+</p>
 
 ---
 
 ### 📊 Understand Your Month
-A clean, intuitive monthly breakdown shows **where your hours truly went** across all projects.  
-![Monthly](docs/monthly.png)
+A clean, intuitive monthly breakdown shows **where your hours truly went** across all projects.
+
+<p align="center">
+  <img src="docs/monthly_new.png" alt="Monthly" width="85%" />
+</p>
 
 ---
 
 ### 🎨 Two Timer Modes
-Choose between two immersive HUD styles:  
-- **Transparent background** – subtle overlay for pure focus  
-- **Gradient background** – vivid, modern visualization  
-![RunHUD](docs/runhud2.png)
+Choose between two immersive HUD styles:
+
+| Transparent (subtle overlay) | Gradient (vivid, modern) |
+|:----------------------------:|:-------------------------:|
+| <img src="docs/runhud.png"  alt="RunHUD Transparent" width="95%"/> | <img src="docs/runhud2.png" alt="RunHUD Gradient" width="95%"/> |
 
 ---
 
 ## ⚙️ Smart Settings
 - Add **recurring events** that auto-fill your schedule  
-- Customize **ring colors** and manually add missed sessions  
-*(Settings preview not shown for clarity)*
-
----
-
-## 💡 Philosophy
-> “Time feels different when it’s seen beautifully.”  
-
-Hope helps you **see productivity as an art form** — balancing calm design with meaningful awareness.
+- Customize **ring colors** and **manually add missed sessions**  
+*(Settings preview intentionally omitted for clarity.)*
 
 ---
 
 ## 🧠 Tech Stack
-Electron · React · TypeScript · Vite · SQLite · TailwindCSS  
+**Electron · React · TypeScript · Vite · SQLite · TailwindCSS**
+
+---
+
 ## 🚀 Getting Started
 
 ### Clone & Run
@@ -67,16 +83,17 @@ npm run build
 
 ## 💡 Philosophy
 > “Time feels different when it’s seen beautifully.”  
-
-Hope aims to transform daily tracking into a quiet ritual of reflection.  
-Every session, every pause, and every return tells the story of how you build focus.
+Hope helps you **see productivity as an art form** — balancing calm design with meaningful awareness.
 
 ---
 
 ## 🧭 Notes
-> ⚠️ Currently, time display may behave unexpectedly under non-local timezones (e.g., BST).  
-> This will be addressed in a later release.  
+> ⚠️ Time display may behave unexpectedly under non-local timezones (e.g., BST).  
+> This will be addressed in a later release.
+
 ---
 
 ## 📄 License
 MIT © 2025 dan9574
+
+<p align="right"><a href="#hope--a-minimalist-time-tracker-">↑ Back to top</a></p>
