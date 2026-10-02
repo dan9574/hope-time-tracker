@@ -21,10 +21,14 @@
 样式   原生 CSS + CSS 变量（设计 token），不用 Tailwind，不用 CSS-in-JS
 状态   Zustand（只存 UI 状态；数据以 Rust 侧为准，前端通过 query 拉取）
 路由   不用路由库；单窗口 + 一个 `view` 状态切换
+图标   lucide-react（唯一图标来源）
 图表   自写 SVG（环、柱），不引入 d3
 动画   CSS transition 为主；framer-motion 不引入
 i18n   i18next + react-i18next，文案在 src/locales/{zh-CN,en}.json
-后端   Rust：rusqlite（bundled）+ serde；通过 tauri command 暴露，前端用 tauri-specta 生成类型化绑定
+后端   Rust：rusqlite（bundled）+ serde + uuid（v4）；通过 tauri command 暴露，前端用 tauri-specta 生成类型化绑定
+       ID 只在 Rust 侧生成，前端永远不造 ID
+标识   App identifier `io.github.dan9574.hope`；iOS 用 `.ios` 后缀，Watch 由 Xcode 自动派生
+macOS  开启 macOSPrivateApi（透明材质与 Overlay 需要），放弃 Mac App Store，dmg 分发
 存储   SQLite，单文件，位于 app data 目录
 日期   date-fns（tz 用系统时区，去掉 PST/Beijing 枚举）
 ```
@@ -50,6 +54,8 @@ setting   (key, value)                                                     -- �
 
 说明：
 - **所有 `id` 用 UUID v4 字符串**，不用自增整数，多设备离线写入不会冲突。
+- `activity.color` 存色名（`'blue'` 等 8 个之一，CHECK 约束），不存 hex；hex 在 `tokens.css` 的 `--activity-*`。Supabase 表用同样的 CHECK。
+- **表之间不加外键**：同步可能乱序到达。UI 和统计必须容忍孤儿记录——找不到 activity 的 session 显示为灰色"未知活动"，照常计入总时长。
 - `session.continues_id`：暂停后恢复，新 session 指向被暂停的那条；UI 把链上的几段显示成一条。
 - "进行中"全局唯一：任何设备开始新 session 时，先结束所有 `end_ms IS NULL` 的记录（本地和服务端都执行这条规则）。
 - 旧库的 `weekly_schedule_events` / `manual_study_plans` / `daily_instantiated_plans` 三张表合并为 `plan`。
