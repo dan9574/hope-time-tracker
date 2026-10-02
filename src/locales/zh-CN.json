@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "today": "今天",
+    "week": "本周",
+    "month": "本月",
+    "activities": "活动",
+    "settings": "设置"
+  },
+  "views": {
+    "week": { "subtitle": "七天的时间分布" },
+    "month": { "subtitle": "这个月的时间去向" },
+    "activities": { "subtitle": "管理你记录的活动" },
+    "settings": { "subtitle": "偏好与数据" }
+  },
+  "placeholder": "这里将在后续阶段完成。",
+  "settings": {
+    "about": "关于",
+    "version": "版本",
+    "database": "数据库",
+    "schema": "数据结构版本",
+    "loadFailed": "无法读取应用信息：{{message}}"
+  }
+}

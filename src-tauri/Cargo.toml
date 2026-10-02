@@ -1,0 +1,21 @@
+[package]
+name = "hope"
+version = "0.1.0"
+description = "Hope — time tracking"
+edition = "2021"
+publish = false
+
+[lib]
+name = "hope_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+specta = { version = "=2.0.0-rc.25" }
+specta-typescript = "=0.0.12"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["typescript"] }

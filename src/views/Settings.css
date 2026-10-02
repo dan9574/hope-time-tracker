@@ -1,0 +1,41 @@
+.settings-group-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--fg-2);
+  margin-bottom: var(--s-2);
+}
+
+.settings-rows {
+  margin: 0;
+  background: var(--mat-card);
+  border-radius: var(--r-md);
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--text-sm);
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--line);
+}
+
+.settings-row dt {
+  color: var(--fg);
+}
+
+.settings-row dd {
+  margin: 0;
+  color: var(--fg-2);
+  text-align: right;
+  min-width: 0;
+}
+
+.settings-path {
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}

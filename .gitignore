@@ -4,6 +4,10 @@ dist/
 build/
 release/
 
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
 # VSCode
 .vscode/
 
@@ -13,9 +17,9 @@ release/
 # Logs
 *.log
 
-# Temp scripts (optional)
-test-*.js
-
 # OS cache
 .DS_Store
 Thumbs.db
+
+# TypeScript
+*.tsbuildinfo

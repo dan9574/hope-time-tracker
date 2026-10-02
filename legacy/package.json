@@ -1,0 +1,79 @@
+{
+  "name": "timeglass",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Timeglass — time tracking and stats app (Electron + React + Vite)",
+  "author": "Timeglass Project",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n VITE,ELEC \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite --port 5173 --strictPort",
+    "dev:electron": "wait-on tcp:5173 && electron .",
+    "build": "vite build && electron-builder",
+    "dist": "vite build && electron-builder -w",
+    "install-app-deps": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "me.timeglass.app",
+    "productName": "Timeglass",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Timeglass-Setup-${version}-${arch}.${ext}",
+      "signingHashAlgorithms": []
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Timeglass",
+      "uninstallDisplayName": "Timeglass",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "classnames": "^2.5.1",
+    "d3": "^7.9.0",
+    "dayjs": "^1.11.18",
+    "electron-store": "^11.0.0",
+    "framer-motion": "^12.23.22",
+    "react": "^18.3.1",
+    "react-calendar": "^6.0.0",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.3"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "@electron/rebuild": "^3.7.2",
+    "@types/d3": "^7.4.3",
+    "@types/node": "^22.8.6",
+    "@types/react": "^18.3.9",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.0.1",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "wait-on": "^8.0.2"
+  }
+}

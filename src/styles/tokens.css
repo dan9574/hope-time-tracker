@@ -1,0 +1,52 @@
+/* Design tokens — the only place raw values may appear. See rebuild-plan 4.2 / 4.3. */
+:root {
+  color-scheme: light dark;
+
+  /* Type */
+  --font-ui: -apple-system, "SF Pro Text", "Segoe UI Variable", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-display: -apple-system, "SF Pro Display", "Segoe UI Variable Display", "PingFang SC", sans-serif;
+  --text-xs: 11px; --text-sm: 13px; --text-md: 15px; --text-lg: 17px;
+  --text-xl: 22px; --text-2xl: 28px; --text-3xl: 40px;
+
+  /* Radius */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-xl: 28px;
+
+  /* Spacing (8pt grid) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-6: 24px; --s-8: 32px; --s-12: 48px;
+
+  /* Materials (light) */
+  --mat-window: rgba(246, 246, 248, 0.72);
+  --mat-card:   rgba(255, 255, 255, 0.55);
+  --mat-hover:  rgba(0, 0, 0, 0.04);
+  --line:       rgba(0, 0, 0, 0.08);
+  --blur:       saturate(180%) blur(28px);
+
+  /* Text */
+  --fg:   rgba(0, 0, 0, 0.88);
+  --fg-2: rgba(0, 0, 0, 0.55);
+  --fg-3: rgba(0, 0, 0, 0.32);
+
+  --accent: #0A84FF;
+
+  /* Activity palette — the only colors content may use (rebuild-plan 4.3) */
+  --activity-blue:   #6AA9FF;
+  --activity-green:  #5FD39A;
+  --activity-orange: #FFAB6B;
+  --activity-pink:   #FF8FB8;
+  --activity-purple: #B08CFF;
+  --activity-teal:   #5CD0D0;
+  --activity-yellow: #F5D56A;
+  --activity-gray:   #A5A5AC;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mat-window: rgba(28, 28, 30, 0.72);
+    --mat-card:   rgba(255, 255, 255, 0.06);
+    --mat-hover:  rgba(255, 255, 255, 0.06);
+    --line:       rgba(255, 255, 255, 0.10);
+    --fg:   rgba(255, 255, 255, 0.92);
+    --fg-2: rgba(255, 255, 255, 0.58);
+    --fg-3: rgba(255, 255, 255, 0.34);
+  }
+}
