@@ -22,8 +22,12 @@ pub fn data_changed(app: &AppHandle) {
 }
 
 /// A pull changed local data: refresh every window and the tray, but there is nothing to push.
+/// Called from the sync thread; the tray menu is rebuilt on the main thread like a command would.
 pub fn data_changed_by_sync(app: &AppHandle) {
-    refresh_views(app);
+    let handle = app.clone();
+    if let Err(e) = app.run_on_main_thread(move || refresh_views(&handle)) {
+        eprintln!("failed to schedule refresh after sync: {e}");
+    }
 }
 
 fn refresh_views(app: &AppHandle) {

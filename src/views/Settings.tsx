@@ -5,6 +5,7 @@ import { commands, type AppInfo } from "../lib/bindings";
 import { DataSettings } from "./settings/DataSettings";
 import { AppearanceSettings, GeneralSettings, ScheduleSettings } from "./settings/GeneralSettings";
 import { OverlaySettings } from "./settings/OverlaySettings";
+import { SyncSettings } from "./settings/SyncSettings";
 import "./Settings.css";
 
 export function Settings() {
@@ -15,6 +16,7 @@ export function Settings() {
       <ScheduleSettings />
       <AppearanceSettings />
       <OverlaySettings />
+      <SyncSettings />
       <DataSettings />
       <About />
     </Page>

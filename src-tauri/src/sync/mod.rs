@@ -158,13 +158,12 @@ mod keychain {
 pub fn init(app: &AppHandle) -> crate::error::Result<()> {
     let config = Config::from_build();
     let db = app.state::<Db>();
-    let (user_id, email, last_ok, last_error) = {
+    let (user_id, email, last_ok) = {
         let conn = db.conn();
         (
             setting::get(&conn, USER_ID)?,
             setting::get(&conn, EMAIL)?,
             setting::get(&conn, LAST_OK)?.and_then(|v| v.parse().ok()),
-            setting::get(&conn, LAST_ERROR)?,
         )
     };
     // Only touch the keychain when this device has signed in before.
@@ -178,12 +177,8 @@ pub fn init(app: &AppHandle) -> crate::error::Result<()> {
         }),
         _ => None,
     };
-    let runtime = Runtime {
-        last_ok_ms: last_ok,
-        last_ok_saved_ms: last_ok.unwrap_or(0),
-        error: last_error.map(|m| SyncError::new(SyncErrorCode::Server, m)),
-        ..Runtime::default()
-    };
+    // `sync.last_error` is kept for diagnosis only; a fresh start retries before showing any error.
+    let runtime = Runtime { last_ok_ms: last_ok, last_ok_saved_ms: last_ok.unwrap_or(0), ..Runtime::default() };
     let configured = config.is_some();
     let sync = SyncService(Arc::new(Inner {
         app: app.clone(),

@@ -199,5 +199,45 @@
   "units": {
     "h": "h",
     "min": "min"
+  },
+  "sync": {
+    "title": "Sync",
+    "status": "Status",
+    "notConfigured": "Not configured",
+    "notConfiguredHint": "This build has no sync server, so everything stays on this computer. See supabase/README.md to turn sync on.",
+    "signedOut": "Not signed in",
+    "syncing": "Syncing…",
+    "synced": "Last synced {{time}}",
+    "failed": "Can't sync right now",
+    "account": "Account",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signUp": "Create Account",
+    "signOut": "Sign Out",
+    "syncNow": "Sync Now",
+    "signedOutHint": "Records on this device are merged into the account.",
+    "signedInHint": "Signing out keeps everything on this device.",
+    "signedOutNote": "Signed out. Your records stay on this device.",
+    "checkEmail": "Check {{email}} for a confirmation link, then sign in here.",
+    "switchTitle": "Use a Different Account?",
+    "switchBody": "This device last synced with {{previous}}. Its records will be merged into {{next}}. Nothing is deleted.",
+    "switchConfirm": "Merge",
+    "anotherAccount": "another account",
+    "error": {
+      "not_configured": "This build has no sync server.",
+      "signed_out": "Not signed in.",
+      "network": "Can't reach the sync server. Hope will keep trying.",
+      "invalid_credentials": "Wrong email or password.",
+      "email_not_confirmed": "Confirm your email first: check your inbox for the link.",
+      "user_already_exists": "An account with this email already exists. Sign in instead.",
+      "weak_password": "Choose a longer password.",
+      "rate_limited": "Too many attempts. Try again in a few minutes.",
+      "session_expired": "Your sign-in has expired. Sign in again.",
+      "server": "The sync server reported an error: {{message}}",
+      "keychain": "Couldn't use the system keychain: {{message}}",
+      "database": "Local database error: {{message}}",
+      "decode": "Unexpected answer from the sync server: {{message}}"
+    }
   }
 }
