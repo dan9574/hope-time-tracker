@@ -63,7 +63,7 @@ setting   (key, value)                                                     -- �
 - "进行中"全局唯一：任何设备开始新 session 时，先结束所有 `end_ms IS NULL` 的记录（本地和服务端都执行这条规则）。
 - 旧库的 `weekly_schedule_events` / `manual_study_plans` / `daily_instantiated_plans` 三张表合并为 `plan`。
 - 旧库的 `activity_colors` 合并进 `activity`；`text_color` / `background_color` 删除，文字颜色由 token 决定。
-- `sub_activities` 删除。子活动在实践中只是备注，用 `session.note` 承载。
+- 子活动保留，但不单独建表：`activity.parent_id` 自引用，只允许一层。详见第 10 节（6.5 阶段）。
 - `symbol` 存 SF Symbol 风格的图标名（前端用 Lucide 图标集映射）。
 
 ### 3.2 Rust command 清单（最小集）
@@ -247,6 +247,7 @@ hope/
    - 暂不签名（ad-hoc），macOS 首次打开需右键 → 打开；CI 里已预留 Developer ID 签名 + 公证的环境变量，补 Secrets 后取消注释即可。
    - macOS 最低 13.0。Windows 安装为当前用户（无需管理员）。
    - 欠账：Windows 上 Overlay 的逐卡模糊（需拆成每卡一窗），等有 Windows 真机再做；目前是 CSS 半透明底。
+6.5 **修复与补全**（第 10 节）：滚动 bug、子活动、起床/睡觉、记录编辑与删除、周期安排自动计入、主题加强。**必须在同步层之前做完**，因为它改表结构。
 7. **同步层**：Supabase 建表 + 桌面端 push/pull + 实时订阅（手表开始计时后 Overlay 卡片实时变化）。
 8. **iPhone**：原生 Swift 工程，SwiftData 本地库 + 同步，Live Activity 显示进行中计时。
 9. **Apple Watch**：watchOS target，表盘复杂功能 + 开始/暂停/结束。
@@ -298,3 +299,99 @@ watchOS app 只能用 Swift/SwiftUI 写，没有 WebView 路线；Windows 又不
 - 与桌面同样的五个视图，但导航改为底部 Tab。
 - Live Activity：进行中计时显示在灵动岛与锁屏，数据来源与 Watch 相同。
 - Overlay 壁纸卡片在手机上对应为 WidgetKit 桌面小组件（Today / This Week 两种尺寸）。
+
+## 10. 阶段 6.5：修复与补全
+
+来自第一轮真实使用的反馈。按 A → F 顺序做，每一项做完 app 能跑再做下一项。表结构改动全部放进一个迁移 `0002_*.sql`，并同步更新 3.3 的 JSON 格式（仍叫 `hope/1`，新字段都是可选的，旧文件照常能导入）。
+
+### 10.0 表结构改动汇总（迁移 0002）
+
+```sql
+ALTER TABLE activity ADD COLUMN parent_id TEXT;            -- NULL = 顶层；非 NULL = 子活动，只允许一层
+ALTER TABLE session  ADD COLUMN plan_id   TEXT;            -- 非 NULL = 由计划自动计入
+ALTER TABLE plan     ADD COLUMN auto_log  INTEGER NOT NULL DEFAULT 1;   -- 到点自动计入
+ALTER TABLE plan     ADD COLUMN until     TEXT;            -- 周期计划的最后一天（含），NULL = 一直重复
+
+CREATE TABLE day (                                         -- 每天实际的起床 / 睡觉
+  date        TEXT PRIMARY KEY NOT NULL,                   -- 起床那天的本地日期 'YYYY-MM-DD'
+  wake_ms     INTEGER,                                     -- NULL = 用设置里的默认值
+  sleep_ms    INTEGER,                                     -- NULL = 还没睡 / 用默认值
+  utc_offset_min INTEGER NOT NULL,                         -- 当天所在时区，用于回看历史时显示当地时间
+  updated_ms  INTEGER NOT NULL,
+  deleted_ms  INTEGER,
+  device_id   TEXT NOT NULL
+);
+```
+
+### A. 窗口缩小后无法滚动（bug）
+
+原因：`.shell` 是 grid，没写行高，隐式行按内容撑开；`.content` 是 flex 列但没有 `min-height: 0`，所以 `.content-scroll` 永远不会溢出，而 `body` 是 `overflow: hidden`，下面的内容被直接裁掉。
+
+修复（`src/app/App.css`）：
+- `.shell` 加 `grid-template-rows: minmax(0, 1fr)`。
+- `.content` 和 `.sidebar` 加 `min-height: 0`；`.sidebar-list` 加 `overflow-y: auto`。
+- 验收：窗口缩到最小尺寸（720×480），每个页面都能滚到底，弹出的编辑器也能完整操作。
+
+### B. 主题加强
+
+主题三项已经实现，但色温只有 4%，肉眼看不出来；这是规格定得太保守。
+- 色温强度从 4% 提到 12%，并让它同时作用在侧栏和内容区。
+- 新增「外观」选项：跟随系统 / 浅色 / 深色（`data-theme`，覆盖 `prefers-color-scheme`）。
+- 强调色除按钮和选中态外，再作用于：Today 环上的当前时刻圆点、侧栏选中项的图标、PeriodNav 的"今天"标记。
+- 仍然禁止渐变背景。
+
+### C. 子活动
+
+模型：`activity.parent_id`。只有一层；子活动没有自己的颜色，永远显示父活动的颜色（`color` 列写入时复制父值，读取时以父为准）。父活动归档时子活动一并隐藏。
+
+行为：
+- session 和 plan 的 `activity_id` 可以指向父（"学习"）也可以指向子（"学习 / 线性代数"）。
+- 统计默认按父活动汇总；本周 / 本月的活动汇总行可以展开看子活动明细。
+- 环和柱只用父颜色，不为子活动分色。
+- 时间线、托盘、Overlay 的 Now 卡显示为 `父 · 子`。
+
+界面：
+- 活动页：父活动行下缩进显示子活动，行尾"＋"添加子活动；子活动可改名、归档、拖动排序，可移到另一个父活动下。
+- 所有选择活动的地方（开始计时按钮、托盘菜单、计划编辑器、记录编辑器）改为两级：点父活动直接选父；有子活动的父活动行右侧有展开箭头，展开后选子。托盘用原生子菜单。
+
+### D. 记录的编辑、补录、删除（都要确认）
+
+现在时间线上的记录点不动，Rust 侧的 `session.upsert / delete` 没有界面入口。
+
+- 时间线上的记录行可点击，打开记录编辑器：改活动（两级选择）、开始时间、结束时间、备注。保存前校验结束 ≥ 开始、不与其他记录重叠（重叠时提示并拒绝，不自动裁剪）。
+- Today / 任意一天的工具栏加「补录」：手动添加一条过去的记录，用同一个编辑器。
+- 「移到另一天」不单独做按钮：编辑器里的日期可以改。
+- 删除：编辑器底部的删除按钮 → 原生确认对话框（`tauri-plugin-dialog` 的 `ask`），文案写明活动名和时间段。确认后软删除。
+- 活动、计划、日记的删除同样走确认对话框。删除活动时提示它下面有多少条记录；有记录的活动只能归档，不能删除。
+- 设置 → 数据 新增「清空全部数据」：必须输入 `DELETE` 才能点确认；清空前自动导出一份 JSON 到下载目录。
+- 约定：**任何会丢数据的操作都必须有确认**；新增、修改不需要确认。
+
+### E. 起床与睡觉
+
+设置里的起床 / 睡觉时间只是默认值；每天的实际值存进 `day` 表。
+
+- Today 页环的下方加一个按钮，按状态切换：
+  - 当天还没有 `wake_ms` 且现在晚于默认起床时间之前的 3 小时：显示「起床」，点击写入 `wake_ms = now`。
+  - 已起床未睡：显示「睡觉」，点击写入 `sleep_ms = now`，并结束正在进行的计时。
+  - 已睡：显示「撤销睡觉」，点击清空 `sleep_ms`。
+- 托盘菜单同样有「起床 / 睡觉」一项。
+- 点击环两端的时间标签可以直接改当天的起床 / 睡觉时间（起晚了事后补、忘按睡觉第二天补）。
+- 跨午夜：`sleep_ms` 允许落在第二天；一"天"的范围是 `wake_ms → sleep_ms`，凌晨的记录归属于还没睡的那一天。若到了第二天默认起床时间仍没有 `sleep_ms`，按默认睡觉时间收尾。
+- 环的范围 = `min(默认起床, 实际起床) → max(默认睡觉, 实际睡觉)`。范围内属于睡眠的部分（晚起的那段、早睡的那段）用 `--activity-purple` 40% 透明度画；按下「睡觉」后，环底部的缺口也变成同样的紫色，中心数字下方的小字改为"已休息"。Overlay 的 Today 卡同步这个状态。
+- 睡眠不是一个 activity，不进入活动统计；但 Today 副标题显示昨晚睡了多久（今天 `wake_ms` − 昨天 `sleep_ms`）。
+- 时区：所有时间存绝对毫秒，天然不受时区影响。`day.utc_offset_min` 记录当天所在时区，回看历史某天时用那天的时区显示钟点，而不是现在的；跨时区旅行当天以起床时所在时区为准。不做手动选时区。
+
+### F. 周期安排与自动计入
+
+周期计划（`rule = 'weekly:…'`）已能创建，但入口只在 Today 的"添加计划"，而且计划不会计入统计。
+
+- 新增导航项「日程」（放在"本月"和"活动"之间）：一周七列的课表视图，每个周期计划是一个色块；点空白处新建，点色块编辑。一次可以勾选多天，所以"每周 10 节课"是几次操作的事。
+- 周期计划编辑器增加「结束日期」（`plan.until`，可空）和「到点自动计入」开关（`plan.auto_log`，默认开）。
+- 自动计入：计划的结束时间过去后，如果 `auto_log = 1` 且该时间段内没有任何手动记录，就生成一条真实的 `session`（`plan_id` 指向计划）。
+  - **id 用确定性的 UUID v5**（由 `plan.id` + 日期算出），多台设备各自生成也只会得到同一条，不会重复。
+  - 时间段内有部分手动记录时，只计入没被覆盖的部分。
+  - 生成时机：app 启动时、每分钟一次、以及补算过去 30 天（应对 app 没开的日子）。
+  - 用户删除一条自动计入的记录 = 那次课没上。因为是软删除、id 确定，它不会被重新生成。
+  - 修改计划的时间只影响未来；已经生成的记录不改。
+- 时间线上自动计入的记录带一个小的循环图标，其余与普通记录相同，同样可以编辑和删除。
+- 还没到点的计划仍按现状显示为虚线段。

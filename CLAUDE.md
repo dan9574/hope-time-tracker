@@ -24,7 +24,10 @@
 - 桌面 = Tauri 2；手机 + 手表 = 原生 Swift；云端 = Supabase。
 - 数据模型（rebuild-plan 3.1）含 UUID 主键和同步三列，从第 1 阶段建表时就要有。
 - 暂停 = 结束 session，恢复 = 新 session + `continues_id`，不另加暂停表。
-- 子活动、时区枚举、activity_colors 表已删除，导入时按 3.3 映射。
+- 子活动用 `activity.parent_id` 实现，只有一层，颜色随父（rebuild-plan 第 10 节 C）。时区枚举、activity_colors 表已删除。
+- 睡眠不是 activity；每天实际起床 / 睡觉存 `day` 表。
+- 周期计划到点生成真实 session，id 用确定性 UUID v5。
+- 任何会丢数据的操作都必须有确认对话框。
 
 ## 遇到以下情况停下来问用户，不要自行决定
 
@@ -40,4 +43,5 @@
   - Windows 版只在 CI 上编译通过，没在真机上运行过；Overlay 在 Windows 上没有逐卡模糊（CSS 半透明底）。
   - 安装包未签名、未公证（需要 Apple Developer ID）。
   - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
-- 下一步：阶段 7（同步层，Supabase）。开工前需要用户提供 Supabase 项目。
+- 下一步：**阶段 6.5（rebuild-plan 第 10 节，A → F 顺序）**。它改表结构，必须在同步层之前做完。
+- 之后：阶段 7（同步层，Supabase）。开工前需要用户提供 Supabase 项目。
