@@ -23,3 +23,8 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Supabase config for sync (build-time; see supabase/README.md). Never commit it.
+.env
+.env.*
+!.env.example

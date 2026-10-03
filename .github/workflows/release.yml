@@ -61,6 +61,10 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Sync (supabase/README.md). Optional: when these secrets are missing the values are empty
+          # and the app is built local-only.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           # macOS signing + notarization is off until a Developer ID certificate exists.
           # To enable: add these repository secrets and uncomment the lines below.
           # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}                     # base64 .p12
