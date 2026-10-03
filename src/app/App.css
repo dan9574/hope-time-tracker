@@ -14,7 +14,7 @@
   height: calc(var(--s-12) + var(--s-1));
 }
 
-/* Sidebar sits directly on the window material, so it reads lighter than the content. */
+/* Sidebar has no fill: on macOS the native sidebar material shows through. */
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -30,6 +30,9 @@
 }
 
 .sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   width: 100%;
   text-align: left;
   padding: var(--s-1) var(--s-3);
@@ -40,9 +43,18 @@
   transition: background-color 120ms ease;
 }
 
+.sidebar-icon {
+  flex-shrink: 0;
+  color: var(--fg-2);
+}
+
 .sidebar-item[aria-current="page"] {
   background: var(--mat-hover);
   font-weight: 500;
+}
+
+.sidebar-item[aria-current="page"] .sidebar-icon {
+  color: var(--fg);
 }
 
 .content {
@@ -50,6 +62,18 @@
   flex-direction: column;
   min-width: 0;
   background: var(--mat-window);
+}
+
+/* macOS draws native materials behind the webview (src-tauri/src/vibrancy.rs). */
+:root[data-platform="mac"] .content {
+  background: transparent;
+}
+
+.content-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--s-4);
 }
 
 .content-scroll {

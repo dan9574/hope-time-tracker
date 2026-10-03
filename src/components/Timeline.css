@@ -1,0 +1,53 @@
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Logged time: solid left bar in the activity color. Plans (stage 6) will use a dashed bar. */
+.timeline-row {
+  display: grid;
+  grid-template-columns: 168px 1fr auto;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-left: 3px solid;
+  font-size: var(--text-sm);
+}
+
+.timeline-row + .timeline-row {
+  margin-top: var(--s-1);
+}
+
+.timeline-time {
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
+.timeline-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.timeline-name {
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-name.is-unknown {
+  color: var(--fg-2);
+}
+
+.timeline-note {
+  margin-top: var(--s-1);
+  color: var(--fg-2);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.timeline-duration {
+  color: var(--fg);
+}

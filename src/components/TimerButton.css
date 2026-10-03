@@ -1,0 +1,26 @@
+.timer-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  max-width: 280px;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--mat-hover);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+.timer-button:active {
+  background: var(--line);
+}
+
+.timer-button-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timer-button-muted {
+  color: var(--fg-2);
+}

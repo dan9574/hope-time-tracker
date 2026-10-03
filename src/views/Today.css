@@ -1,0 +1,25 @@
+.today-ring {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--s-8);
+}
+
+.today-total {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.today-total-label {
+  margin-top: var(--s-1);
+  font-size: var(--text-sm);
+  color: var(--fg-2);
+}
+
+.today-empty {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--fg-3);
+}

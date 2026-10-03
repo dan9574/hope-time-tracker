@@ -1,0 +1,47 @@
+.ring {
+  position: relative;
+}
+
+.ring svg {
+  display: block;
+  overflow: visible;
+}
+
+.ring path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.ring-track-future {
+  stroke: var(--line);
+}
+
+.ring-track-past {
+  stroke: var(--fg-3);
+  stroke-opacity: 0.4;
+}
+
+.ring-plan {
+  stroke-opacity: 0.4;
+}
+
+.ring-now {
+  fill: var(--fg);
+}
+
+.ring-end-label {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  fill: var(--fg-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.ring-center {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}

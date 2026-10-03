@@ -7,10 +7,18 @@
     "settings": "设置"
   },
   "views": {
-    "week": { "subtitle": "七天的时间分布" },
-    "month": { "subtitle": "这个月的时间去向" },
-    "activities": { "subtitle": "管理你记录的活动" },
-    "settings": { "subtitle": "偏好与数据" }
+    "week": {
+      "subtitle": "七天的时间分布"
+    },
+    "month": {
+      "subtitle": "这个月的时间去向"
+    },
+    "activities": {
+      "subtitle": "管理你记录的活动"
+    },
+    "settings": {
+      "subtitle": "偏好与数据"
+    }
   },
   "placeholder": "这里将在后续阶段完成。",
   "settings": {
@@ -19,5 +27,25 @@
     "database": "数据库",
     "schema": "数据结构版本",
     "loadFailed": "无法读取应用信息：{{message}}"
+  },
+  "today": {
+    "total": "已记录",
+    "empty": "今天还没有记录",
+    "now": "现在"
+  },
+  "timer": {
+    "start": "开始计时",
+    "paused": "已暂停"
+  },
+  "activity": {
+    "unknown": "未知活动"
+  },
+  "tray": {
+    "pause": "暂停",
+    "resume": "继续「{{name}}」",
+    "stop": "结束",
+    "noActivities": "还没有活动",
+    "open": "打开 Hope",
+    "quit": "退出 Hope"
   }
 }

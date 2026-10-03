@@ -1,0 +1,7 @@
+.activity-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--s-2);
+  height: var(--s-2);
+  border-radius: 50%;
+}

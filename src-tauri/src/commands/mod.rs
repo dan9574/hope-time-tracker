@@ -1,5 +1,8 @@
+pub mod activity;
 pub mod app;
+pub mod session;
 pub mod setting;
+pub mod tray;
 
 use serde::Serialize;
 
@@ -8,8 +11,20 @@ use serde::Serialize;
 #[serde(transparent)]
 pub struct CommandError(String);
 
+impl From<crate::error::Error> for CommandError {
+    fn from(e: crate::error::Error) -> Self {
+        Self(e.to_string())
+    }
+}
+
 impl From<rusqlite::Error> for CommandError {
     fn from(e: rusqlite::Error) -> Self {
+        Self(e.to_string())
+    }
+}
+
+impl From<tauri::Error> for CommandError {
+    fn from(e: tauri::Error) -> Self {
         Self(e.to_string())
     }
 }

@@ -7,10 +7,18 @@
     "settings": "Settings"
   },
   "views": {
-    "week": { "subtitle": "How your seven days were spent" },
-    "month": { "subtitle": "Where this month went" },
-    "activities": { "subtitle": "Manage what you track" },
-    "settings": { "subtitle": "Preferences and data" }
+    "week": {
+      "subtitle": "How your seven days were spent"
+    },
+    "month": {
+      "subtitle": "Where this month went"
+    },
+    "activities": {
+      "subtitle": "Manage what you track"
+    },
+    "settings": {
+      "subtitle": "Preferences and data"
+    }
   },
   "placeholder": "This will be built in a later stage.",
   "settings": {
@@ -19,5 +27,25 @@
     "database": "Database",
     "schema": "Schema version",
     "loadFailed": "Couldn't load app info: {{message}}"
+  },
+  "today": {
+    "total": "Tracked",
+    "empty": "Nothing tracked yet",
+    "now": "now"
+  },
+  "timer": {
+    "start": "Start Timer",
+    "paused": "Paused"
+  },
+  "activity": {
+    "unknown": "Unknown activity"
+  },
+  "tray": {
+    "pause": "Pause",
+    "resume": "Resume {{name}}",
+    "stop": "Stop",
+    "noActivities": "No activities yet",
+    "open": "Open Hope",
+    "quit": "Quit Hope"
   }
 }
