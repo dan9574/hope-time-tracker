@@ -22,6 +22,10 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 specta = { version = "=2.0.0-rc.25" }
 specta-typescript = "=0.0.12"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
+# Stage 7 sync (rebuild-plan 12.5): HTTPS to Supabase on Tauri's tokio runtime, and the OS keychain
+# for the refresh token. No other TLS stack; no OpenSSL.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
 
 # Native materials for the main window (rebuild-plan 4.4). Already in the tree via Tauri; no new crates.
 [target.'cfg(target_os = "macos")'.dependencies]

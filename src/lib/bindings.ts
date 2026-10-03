@@ -107,6 +107,18 @@ export const commands = {
 	dialogConfirm: (title: string, message: string, confirmLabel: string, cancelLabel: string) => __TAURI_INVOKE<boolean>("dialog_confirm", { title, message, confirmLabel, cancelLabel }),
 	/**  Shows an informational sheet with a single button. */
 	dialogAlert: (title: string, message: string, okLabel: string) => __TAURI_INVOKE<void>("dialog_alert", { title, message, okLabel }),
+	syncStatus: () => __TAURI_INVOKE<SyncStatus>("sync_status"),
+	/**
+	 *  Email + password sign-in. If this device last synced another account the answer is
+	 *  `confirm_switch`; ask the user, then call again with `confirm_switch: true`.
+	 */
+	syncSignIn: (email: string, password: string, confirmSwitch: boolean) => typedError<SignInOutcome, SyncError>(__TAURI_INVOKE("sync_sign_in", { email, password, confirmSwitch })),
+	/**  Creates an account. Answers `check_email` when the project requires email confirmation. */
+	syncSignUp: (email: string, password: string, confirmSwitch: boolean) => typedError<SignInOutcome, SyncError>(__TAURI_INVOKE("sync_sign_up", { email, password, confirmSwitch })),
+	/**  Signs out on this device. Local data is kept. */
+	syncSignOut: () => typedError<null, SyncError>(__TAURI_INVOKE("sync_sign_out")),
+	/**  Push and pull now instead of waiting for the next round. */
+	syncNow: () => __TAURI_INVOKE<void>("sync_now"),
 };
 
 /** Events */
@@ -114,6 +126,7 @@ export const events = {
 	dataChanged: makeEvent<DataChanged>("data-changed"),
 	overlayEditing: makeEvent<OverlayEditing>("overlay-editing"),
 	settingChanged: makeEvent<SettingChanged>("setting-changed"),
+	syncStatusChanged: makeEvent<SyncStatusChanged>("sync-status-changed"),
 };
 
 /* Types */
@@ -284,6 +297,54 @@ export type SessionInput = {
 export type SettingChanged = {
 	key: string,
 };
+
+export type SignInOutcome = { kind: "signed_in" } | 
+/**
+ *  This device last synced a different account. Nothing was stored; call again with
+ *  `confirm_switch` after asking the user. Local data is then merged into the new account.
+ */
+{ kind: "confirm_switch"; previous_email: string | null } | 
+/**  Sign-up needs the emailed link clicked before signing in. */
+{ kind: "check_email" };
+
+/**  Error from the sync layer; also what the sync commands return to the page. */
+export type SyncError = {
+	code: SyncErrorCode,
+	/**  Developer-facing detail. */
+	message: string,
+};
+
+/**  Stable reason the Settings page turns into a localized message (`sync.error.<code>`). */
+export type SyncErrorCode = "not_configured" | "signed_out" | 
+/**  No connection, DNS failure, timeout, TLS failure. */
+"network" | "invalid_credentials" | "email_not_confirmed" | "user_already_exists" | "weak_password" | "rate_limited" | 
+/**  The refresh token was rejected; the user has to sign in again. */
+"session_expired" | 
+/**  The server answered with an unexpected error. */
+"server" | "keychain" | "database" | 
+/**  The server sent something we could not read. */
+"decode";
+
+export type SyncPhase = 
+/**  This build has no Supabase project. */
+"not_configured" | "signed_out" | 
+/**  Signed in, first round since start / sign-in not finished yet. */
+"syncing" | 
+/**  Up to date as of `last_ok_ms`. */
+"synced" | 
+/**  The last round failed; retrying with backoff. */
+"error";
+
+export type SyncStatus = {
+	phase: SyncPhase,
+	/**  Signed-in account, or the last one used on this device when signed out. */
+	email: string | null,
+	last_ok_ms: number | null,
+	error: SyncError | null,
+};
+
+/**  Sync status changed; the Settings page re-renders from the payload. */
+export type SyncStatusChanged = SyncStatus;
 
 /**  Per-table counts shown to the user after an import. */
 export type TableCounts = {

@@ -3,6 +3,7 @@ mod db;
 mod error;
 mod events;
 mod overlay;
+mod sync;
 mod tray;
 mod vibrancy;
 
@@ -58,8 +59,18 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::tray::tray_set_day_action,
             commands::dialog::dialog_confirm,
             commands::dialog::dialog_alert,
+            commands::sync::sync_status,
+            commands::sync::sync_sign_in,
+            commands::sync::sync_sign_up,
+            commands::sync::sync_sign_out,
+            commands::sync::sync_now,
         ])
-        .events(collect_events![events::DataChanged, events::SettingChanged, overlay::OverlayEditing])
+        .events(collect_events![
+            events::DataChanged,
+            events::SettingChanged,
+            overlay::OverlayEditing,
+            sync::SyncStatusChanged
+        ])
 }
 
 #[cfg(any(debug_assertions, test))]
@@ -98,6 +109,7 @@ pub fn run() {
             #[cfg(debug_assertions)]
             db::activity::seed_samples_if_empty(&database.conn(), database.device_id(), db::now_ms())?;
             app.manage(database);
+            sync::init(app.handle())?;
 
             if let Some(main) = app.get_webview_window("main") {
                 // Apply a forced light/dark choice before the page loads, so there is no flash.

@@ -8,6 +8,7 @@ pub mod overlay;
 pub mod plan;
 pub mod session;
 pub mod setting;
+pub mod sync;
 pub mod tray;
 
 use serde::Serialize;
