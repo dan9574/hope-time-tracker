@@ -28,3 +28,13 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Apple (apple/README.md): SwiftPM build output, Xcode user state, and the two generated / per-machine
+# xcconfigs. The Team ID lives only in apple/Config/Local.xcconfig.
+apple/HopeCore/.build/
+apple/HopeCore/.swiftpm/
+apple/build/
+*.xcuserstate
+xcuserdata/
+apple/Config/Local.xcconfig
+apple/Config/Supabase.generated.xcconfig
