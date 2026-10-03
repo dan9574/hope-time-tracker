@@ -34,7 +34,10 @@
 
 ## 当前状态
 
-- 阶段 1–3 已完成（Tauri 骨架、activity/session command、托盘、Today 视图、Overlay 窗口 macOS 版）。
+- 阶段 1–6 已完成：桌面端功能齐全（Today / 本周 / 本月 / 活动 / 计划 / 日记 / 设置 / Overlay / JSON 导入导出），macOS dmg 与 Windows nsis 由 `.github/workflows/release.yml` 出包。
 - 不做旧库直接导入；数据进出口只有 rebuild-plan 3.3 的 JSON 格式。
-- 欠账：Overlay 的 Windows 模糊底板，第 6 阶段打包时在 Windows 上补。
-- 下一步：阶段 4（本周 / 本月）。
+- 欠账：
+  - Windows 版只在 CI 上编译通过，没在真机上运行过；Overlay 在 Windows 上没有逐卡模糊（CSS 半透明底）。
+  - 安装包未签名、未公证（需要 Apple Developer ID）。
+  - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
+- 下一步：阶段 7（同步层，Supabase）。开工前需要用户提供 Supabase 项目。
