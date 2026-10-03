@@ -32,10 +32,8 @@ interface RingProps {
   plans: RingSegment[];
   now: number;
   diameter?: number;
-  /** Thickness of records, plans and sleep stretches (the "ring width" setting). */
+  /** Thickness of the ring (the "ring width" setting). Records are coloured stretches of the ring itself, so they share it. */
   stroke?: number;
-  /** Thickness of the thin grey track the records sit on. */
-  trackWidth?: number;
   /** End labels under the two tips; omitted on small rings. */
   wakeLabel?: string;
   sleepLabel?: string;
@@ -71,7 +69,6 @@ export function Ring({
   now,
   diameter = 248,
   stroke = 10,
-  trackWidth = 4,
   wakeLabel,
   sleepLabel,
   onWakeClick,
@@ -183,10 +180,10 @@ export function Ring({
     <div className="ring" style={{ width: size }}>
       <svg viewBox={`0 0 ${size} ${height}`} width={size} height={height} aria-hidden={!interactive}>
         {/* Thin track: elapsed part darker than the future part. */}
-        <path className="ring-track-future" d={arcPath(0, ARC)} strokeWidth={trackWidth} />
-        {nowDeg > 0 && <path className="ring-track-past" d={arcPath(0, nowDeg)} strokeWidth={trackWidth} />}
+        <path className="ring-track-future" d={arcPath(0, ARC)} strokeWidth={stroke} />
+        {nowDeg > 0 && <path className="ring-track-past" d={arcPath(0, nowDeg)} strokeWidth={stroke} />}
         {/* After sleep the bottom gap closes the track in purple, at track width. */}
-        {slept && <path className="ring-sleep-gap" d={arcPath(ARC, 360)} strokeWidth={trackWidth} />}
+        {slept && <path className="ring-sleep-gap" d={arcPath(ARC, 360)} strokeWidth={stroke} />}
         {sleepSegments.map((s, i) => {
           const startPx = toPx(s.startMs);
           const endPx = toPx(s.endMs);

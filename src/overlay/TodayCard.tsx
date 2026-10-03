@@ -26,7 +26,6 @@ export function TodayCard({ today, now }: Props) {
         now={now}
         diameter={72}
         stroke={6}
-        trackWidth={3}
         sleepSegments={today.sleepSegments}
         slept={today.slept}
       />
