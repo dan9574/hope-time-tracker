@@ -73,21 +73,30 @@ plan.list(range) / upsert / delete
 journal.list(range) / upsert / delete
 stats.day(date) / stats.week(date) / stats.month(date)
 setting.get / set
-data.export / import / import_legacy(path)
+data.export / import   （格式见 3.3）
 overlay.show / hide / set_position
 ```
 
-### 3.3 旧数据导入
+### 3.3 导入 / 导出（唯一的数据进出口）
 
-`import_legacy` 读取旧 Electron 的 `timeglass.db`（路径见旧 `electron/db.js`），映射：
-- `activities` + `activity_colors` → `activity`
-- `sessions`（含 sub_activity 名称拼进 note）→ `session`
-- `weekly_schedule_events` → `plan` with rule
-- `manual_study_plans` → `plan` 单次
-- `journal` → `journal`
-- `daily_schedule_settings` 最新一条 → `setting.wake_hm / sleep_hm`
+不做旧 Electron 库的直接导入。所有外部数据都先转成下面的 JSON，再走 `data.import`。
 
-首次启动检测到旧库则提示导入。
+```json
+{
+  "format": "hope/1",
+  "exported_at": 1760000000000,
+  "activity": [{ "id": "…", "name": "Study", "color": "blue", "symbol": "book", "sort": 0, "archived_at": null, "updated_ms": 0 }],
+  "session":  [{ "id": "…", "activity_id": "…", "start_ms": 0, "end_ms": 0, "note": "", "continues_id": null, "updated_ms": 0 }],
+  "plan":     [{ "id": "…", "activity_id": "…", "date": "2026-10-02", "start_hm": "09:00", "end_hm": "11:00", "rule": null, "updated_ms": 0 }],
+  "journal":  [{ "id": "…", "date": "2026-10-02", "text": "", "updated_ms": 0 }]
+}
+```
+
+规则：
+- `format` 版本号必须校验；`id` 缺失时导入端生成 UUID；`updated_ms` 缺失时取导入时刻。
+- 导入是 upsert（按 `id`，后写的赢），重复导入同一份文件不会产生重复记录。
+- `data.export` 输出完全相同的结构，保证导出 → 导入是无损往返。
+- 以后要迁旧 Electron 数据，写一个独立脚本把 `timeglass.db` 转成这份 JSON 即可，不进主程序。
 
 ## 4. 设计系统
 
@@ -219,22 +228,21 @@ hope/
 
 1. **骨架**：Tauri 2 项目初始化、tokens.css、主窗口壳 + 导航、Rust 建表、specta 绑定、i18n 接入。旧代码移入 `legacy/`。
 2. **核心闭环**：activity / session 的 command；托盘开始/停止；Today 视图（数字 + 环 + 时间线）。
-3. **旧数据导入**：`import_legacy` + 首次启动提示。
-4. **Overlay 窗口**：三张卡 + 位置/透明度设置。先在 macOS 上做到桌面图标之下，再做 Windows。
-5. **本周 / 本月**。
-6. **活动管理、计划、日记、设置**。
-7. **打包**：macOS dmg（arm64 + x64）、Windows nsis；GitHub Actions 出包。
-8. **同步层**：Supabase 建表 + 桌面端 push/pull + 实时订阅（手表开始计时后 Overlay 卡片实时变化）。
-9. **iPhone**：原生 Swift 工程，SwiftData 本地库 + 同步，Live Activity 显示进行中计时。
-10. **Apple Watch**：watchOS target，表盘复杂功能 + 开始/暂停/结束。
+3. **Overlay 窗口**：三张卡 + 位置/透明度设置。先在 macOS 上做到桌面图标之下，再做 Windows。
+4. **本周 / 本月**。
+5. **活动管理、计划、日记、设置**（含 4.3.1 主题、3.3 的导入/导出）。
+6. **打包**：macOS dmg（arm64 + x64）、Windows nsis；GitHub Actions 出包。
+7. **同步层**：Supabase 建表 + 桌面端 push/pull + 实时订阅（手表开始计时后 Overlay 卡片实时变化）。
+8. **iPhone**：原生 Swift 工程，SwiftData 本地库 + 同步，Live Activity 显示进行中计时。
+9. **Apple Watch**：watchOS target，表盘复杂功能 + 开始/暂停/结束。
 
 ## 8. 环境要求
 
 - Rust stable（`rustup`）
 - Node 20+
-- macOS：Xcode 完整版（阶段 9、10 需要）
-- Apple Developer Program（阶段 9、10 要长期装到真机、上 TestFlight 需要付费账号）
-- Supabase 账号（阶段 8）
+- macOS：Xcode 完整版（阶段 8、9 需要）
+- Apple Developer Program（阶段 8、9 要长期装到真机、上 TestFlight 需要付费账号）
+- Supabase 账号（阶段 7）
 - Windows 打包：在 Windows 机器或 CI 上做
 
 ## 9. 多端与同步

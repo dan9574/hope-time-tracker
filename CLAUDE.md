@@ -11,7 +11,7 @@
 - 所有用户可见文案通过 i18next key，`zh-CN` 和 `en` 两个文件同步更新。
 - Rust command 是数据唯一入口；前端不直接碰 SQLite。
 - 新增 npm / crate 依赖要在 PR 说明里写清为什么不能自己写。
-- `legacy/` 是旧 Electron 代码，只读，不修改、不构建。
+- `legacy/` 是旧 Electron 代码，只读，不修改、不构建、不导入。
 
 ## 工作方式
 
@@ -34,5 +34,6 @@
 
 ## 当前状态
 
-- 旧 Electron 代码仍在仓库根目录，尚未移入 `legacy/`，第 1 阶段的第一步就是移它。
-- 工作区有一个未提交的 `package-lock.json` 改动，属于旧项目，移入 `legacy/` 时一并处理。
+- 阶段 1、2 已完成（Tauri 骨架、activity/session command、托盘、Today 视图）。
+- 不做旧库直接导入；数据进出口只有 rebuild-plan 3.3 的 JSON 格式。
+- 下一步：阶段 3（Overlay 窗口）。
