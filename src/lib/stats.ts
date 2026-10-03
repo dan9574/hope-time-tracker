@@ -19,6 +19,8 @@ export interface DayEntry {
   /** Clipped to the range, for drawing. */
   segments: Array<{ startMs: number; endMs: number }>;
   note: string | null;
+  /** The sessions behind this row, oldest first (several when paused and resumed). */
+  sessions: Session[];
 }
 
 export interface DaySummary {
@@ -80,6 +82,7 @@ export function summarizeDay(
       durationMs,
       segments,
       note: chain.map((s) => s.note).find((n): n is string => !!n) ?? null,
+      sessions: chain,
     });
   }
   entries.sort((a, b) => a.startMs - b.startMs);

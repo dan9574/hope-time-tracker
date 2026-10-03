@@ -22,6 +22,8 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::activity::activity_upsert,
             commands::activity::activity_archive,
             commands::activity::activity_reorder,
+            commands::activity::activity_usage,
+            commands::activity::activity_delete,
             commands::session::session_start,
             commands::session::session_pause,
             commands::session::session_resume,
@@ -30,6 +32,8 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::session::session_list,
             commands::session::session_upsert,
             commands::session::session_delete,
+            commands::session::session_save,
+            commands::session::session_delete_many,
             commands::tray::tray_set_strings,
             commands::tray::timer_menu_popup,
             commands::overlay::overlay_show,
@@ -45,6 +49,9 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::journal::journal_delete,
             commands::data::data_export,
             commands::data::data_import,
+            commands::data::data_wipe,
+            commands::dialog::dialog_confirm,
+            commands::dialog::dialog_alert,
         ])
         .events(collect_events![events::DataChanged, events::SettingChanged, overlay::OverlayEditing])
 }

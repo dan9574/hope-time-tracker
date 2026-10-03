@@ -13,6 +13,10 @@ export const commands = {
 	activityArchive: (id: string, archived: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("activity_archive", { id, archived })),
 	/**  Persists a new order; `ids` lists activities top to bottom. */
 	activityReorder: (ids: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("activity_reorder", { ids })),
+	/**  Live sessions on this activity and its sub-activities; non-zero means it can only be archived. */
+	activityUsage: (id: string) => typedError<number, CommandError>(__TAURI_INVOKE("activity_usage", { id })),
+	/**  Deletes an activity without sessions (with its sub-activities and plans). Ask the user first. */
+	activityDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("activity_delete", { id })),
 	sessionStart: (activityId: string) => typedError<Session, CommandError>(__TAURI_INVOKE("session_start", { activityId })),
 	sessionPause: () => typedError<{
 	id: string,
@@ -38,6 +42,10 @@ export const commands = {
 	sessionList: (range: TimeRange) => typedError<Session[], CommandError>(__TAURI_INVOKE("session_list", { range })),
 	sessionUpsert: (input: SessionInput) => typedError<Session, CommandError>(__TAURI_INVOKE("session_upsert", { input })),
 	sessionDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("session_delete", { id })),
+	/**  Saves every segment of an edited record at once; an overlap anywhere saves nothing. */
+	sessionSave: (inputs: SessionInput[]) => typedError<Session[], CommandError>(__TAURI_INVOKE("session_save", { inputs })),
+	/**  Deletes every segment of a record. Ask the user first. */
+	sessionDeleteMany: (ids: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("session_delete_many", { ids })),
 	traySetStrings: (strings: TrayStrings) => __TAURI_INVOKE<void>("tray_set_strings", { strings }),
 	/**  Shows the tray's timer menu below the main window's timer button (logical px). */
 	timerMenuPopup: (x: number, y: number) => typedError<null, CommandError>(__TAURI_INVOKE("timer_menu_popup", { x, y })),
@@ -69,6 +77,12 @@ export const commands = {
 	plan: TableCounts,
 	journal: TableCounts,
 } | null, CommandError>(__TAURI_INVOKE("data_import")),
+	/**  Clears all records after saving a JSON backup to the Downloads folder. Returns the backup path. */
+	dataWipe: (confirmation: string, backupName: string) => typedError<string, CommandError>(__TAURI_INVOKE("data_wipe", { confirmation, backupName })),
+	/**  Shows a warning sheet on the window; `true` if the user chose `confirm_label`. */
+	dialogConfirm: (title: string, message: string, confirmLabel: string, cancelLabel: string) => __TAURI_INVOKE<boolean>("dialog_confirm", { title, message, confirmLabel, cancelLabel }),
+	/**  Shows an informational sheet with a single button. */
+	dialogAlert: (title: string, message: string, okLabel: string) => __TAURI_INVOKE<void>("dialog_alert", { title, message, okLabel }),
 };
 
 /** Events */
@@ -120,8 +134,11 @@ export type CardFrame = {
 	height: number | null,
 };
 
-/**  Error returned to the frontend as a plain message string. */
-export type CommandError = string;
+/**  Error returned to the frontend: a code for the UI plus the developer-facing message. */
+export type CommandError = {
+	code: ErrorCode,
+	message: string,
+};
 
 /**  Activities or sessions changed; views should refetch. */
 export type DataChanged = null;
@@ -131,6 +148,9 @@ export type DateRange = {
 	from: string,
 	to: string,
 };
+
+/**  Stable reason the frontend can turn into a localized message. */
+export type ErrorCode = "invalid" | "not_found" | "overlap" | "in_use" | "database" | "file" | "internal";
 
 export type ImportReport = {
 	activity: TableCounts,

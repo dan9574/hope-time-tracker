@@ -4,6 +4,8 @@ import { ColorPicker } from "../components/ColorPicker";
 import { commands, type Activity, type ActivityColor } from "../lib/bindings";
 import { activityColorVar } from "../lib/activity";
 import { SYMBOLS } from "../lib/symbols";
+import { errorMessage } from "../lib/errors";
+import { alertInfo, confirmDelete } from "../lib/confirm";
 
 interface Props {
   /** `null` creates a new activity. */
@@ -40,13 +42,30 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
       sort: null,
       parent_id: parentId,
     });
-    if (res.status === "error") setError(res.error);
+    if (res.status === "error") setError(errorMessage(res.error, t));
+    else onClose();
+  };
+  // Only activities without records can be deleted; the rest are archived instead.
+  const remove = async () => {
+    if (!activity) return;
+    const usage = await commands.activityUsage(activity.id);
+    if (usage.status === "error") return setError(errorMessage(usage.error, t));
+    if (usage.data > 0) {
+      await alertInfo(t, t("activities.cannotDeleteTitle"), t("activities.cannotDelete", { name: activity.name, count: usage.data }));
+      return;
+    }
+    const message = childCount > 0
+      ? t("activities.confirmDeleteWithSubs", { name: activity.name, count: childCount })
+      : t("activities.confirmDelete", { name: activity.name });
+    if (!(await confirmDelete(t, message))) return;
+    const res = await commands.activityDelete(activity.id);
+    if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
   };
   const archive = async () => {
     if (!activity) return;
     const res = await commands.activityArchive(activity.id, true);
-    if (res.status === "error") setError(res.error);
+    if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
   };
 
@@ -112,9 +131,14 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
       {error && <p className="activity-editor-error">{error}</p>}
       <div className="activity-editor-actions">
         {activity && (
-          <button type="button" className="settings-button" onClick={() => void archive()}>
-            {t("activities.archive")}
-          </button>
+          <>
+            <button type="button" className="settings-button" onClick={() => void remove()}>
+              {t("common.delete")}
+            </button>
+            <button type="button" className="settings-button" onClick={() => void archive()}>
+              {t("activities.archive")}
+            </button>
+          </>
         )}
         <span className="activity-editor-spacer" />
         <button type="button" className="settings-button" onClick={onClose}>

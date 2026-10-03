@@ -10,13 +10,14 @@ import "./Timeline.css";
 interface Props {
   entries: DayEntry[];
   plans: PlanOccurrence[];
+  onEntryClick: (entry: DayEntry) => void;
   onPlanClick: (plan: Plan) => void;
 }
 
 type Row = { kind: "entry"; startMs: number; entry: DayEntry } | { kind: "plan"; startMs: number; plan: PlanOccurrence };
 
 /** Logged time (solid bar) and plans (dashed bar), in time order. */
-export function Timeline({ entries, plans, onPlanClick }: Props) {
+export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
   const { t, i18n } = useTranslation();
   const clock = (ms: number) => formatClock(ms, i18n.language);
   const rows: Row[] = [
@@ -28,11 +29,13 @@ export function Timeline({ entries, plans, onPlanClick }: Props) {
     <ol className="timeline">
       {rows.map((row) =>
         row.kind === "entry" ? (
-          <li
-            key={row.entry.key}
-            className="timeline-row"
-            style={{ borderLeftColor: activityColorVar(row.entry.activity?.color) }}
-          >
+          <li key={row.entry.key}>
+            <button
+              type="button"
+              className="timeline-row is-entry"
+              style={{ borderLeftColor: activityColorVar(row.entry.activity?.color) }}
+              onClick={() => onEntryClick(row.entry)}
+            >
             <span className="timeline-time tabular">
               {clock(row.entry.startMs)}–{row.entry.endMs === null ? t("today.now") : clock(row.entry.endMs)}
             </span>
@@ -43,6 +46,7 @@ export function Timeline({ entries, plans, onPlanClick }: Props) {
               {row.entry.note && <span className="timeline-note">{row.entry.note}</span>}
             </span>
             <span className="timeline-duration tabular">{formatDuration(row.entry.durationMs)}</span>
+            </button>
           </li>
         ) : (
           <li key={row.plan.key}>

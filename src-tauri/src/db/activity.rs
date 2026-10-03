@@ -220,6 +220,41 @@ pub fn set_archived(conn: &Connection, device: &str, now: i64, id: &str, archive
     Ok(())
 }
 
+/// Live sessions logged on this activity or any of its sub-activities.
+pub fn usage(conn: &Connection, id: &str) -> Result<u32> {
+    Ok(conn.query_row(
+        "SELECT COUNT(*) FROM session WHERE deleted_ms IS NULL AND activity_id IN
+           (SELECT id FROM activity WHERE (id = ?1 OR parent_id = ?1) AND deleted_ms IS NULL)",
+        [id],
+        |r| r.get(0),
+    )?)
+}
+
+/// Soft-deletes an activity with no sessions, its sub-activities and their plans.
+/// Activities with sessions can only be archived.
+pub fn delete(conn: &mut Connection, device: &str, now: i64, id: &str) -> Result<()> {
+    if get(conn, id)?.is_none() {
+        return Err(Error::NotFound("activity"));
+    }
+    if usage(conn, id)? > 0 {
+        return Err(Error::InUse);
+    }
+    let tx = conn.transaction()?;
+    tx.execute(
+        "UPDATE plan SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3
+         WHERE deleted_ms IS NULL AND activity_id IN
+           (SELECT id FROM activity WHERE (id = ?1 OR parent_id = ?1) AND deleted_ms IS NULL)",
+        params![id, now, device],
+    )?;
+    tx.execute(
+        "UPDATE activity SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3
+         WHERE (id = ?1 OR parent_id = ?1) AND deleted_ms IS NULL",
+        params![id, now, device],
+    )?;
+    tx.commit()?;
+    Ok(())
+}
+
 /// Sets `sort` to each id's position in `ids`.
 pub fn reorder(conn: &mut Connection, device: &str, now: i64, ids: &[String]) -> Result<()> {
     let tx = conn.transaction()?;
@@ -303,6 +338,24 @@ mod tests {
         // Moving a child to another parent is allowed.
         let moved = upsert(&conn, "d", 3, ActivityInput { id: Some(linalg.id.clone()), ..child("Linear algebra", &read.id) }).unwrap();
         assert_eq!(moved.parent_id.as_deref(), Some(read.id.as_str()));
+    }
+
+    #[test]
+    fn delete_only_without_sessions() {
+        let mut conn = test_conn();
+        let study = upsert(&conn, "d", 1, input("Study")).unwrap();
+        let linalg = upsert(&conn, "d", 1, child("Linear algebra", &study.id)).unwrap();
+        conn.execute(
+            "INSERT INTO session (id, activity_id, start_ms, end_ms, updated_ms, device_id) VALUES ('s', ?1, 0, 10, 0, 'd')",
+            [&linalg.id],
+        )
+        .unwrap();
+        assert_eq!(usage(&conn, &study.id).unwrap(), 1, "counts sub-activity sessions");
+        assert!(matches!(delete(&mut conn, "d", 2, &study.id), Err(Error::InUse)));
+
+        conn.execute("UPDATE session SET deleted_ms = 1", []).unwrap();
+        delete(&mut conn, "d", 3, &study.id).unwrap();
+        assert!(list(&conn, true).unwrap().is_empty(), "children go with the parent");
     }
 
     #[test]

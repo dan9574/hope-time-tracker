@@ -154,12 +154,26 @@ pub fn list(conn: &Connection, from_ms: i64, to_ms: i64) -> Result<Vec<Session>>
     Ok(rows)
 }
 
+/// Fails with `Overlap` if `[start, end)` intersects another live session (a running one ends at `now`).
+fn check_overlap(conn: &Connection, id: Option<&str>, start: i64, end: Option<i64>, now: i64) -> Result<()> {
+    let end = end.unwrap_or(now.max(start));
+    let clashes: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM session
+         WHERE deleted_ms IS NULL AND id IS NOT ?1 AND start_ms < ?3 AND COALESCE(end_ms, ?4) > ?2",
+        params![id, start, end, now],
+        |r| r.get(0),
+    )?;
+    if clashes > 0 { Err(Error::Overlap) } else { Ok(()) }
+}
+
+/// Edits or adds a session by hand. Overlapping another session is rejected, never trimmed.
 pub fn upsert(conn: &Connection, device: &str, now: i64, input: SessionInput) -> Result<Session> {
     if let Some(end) = input.end_ms {
         if end < input.start_ms {
             return Err(Error::Invalid("session ends before it starts".into()));
         }
     }
+    check_overlap(conn, input.id.as_deref(), input.start_ms, input.end_ms, now)?;
     let note = input.note.as_deref().map(str::trim).filter(|n| !n.is_empty());
     let id = match input.id {
         Some(id) => {
@@ -187,6 +201,29 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: SessionInput) ->
         }
     };
     get(conn, &id)?.ok_or(Error::NotFound("session"))
+}
+
+/// Saves several sessions (e.g. every segment of a pause chain) all-or-nothing.
+pub fn upsert_many(conn: &mut Connection, device: &str, now: i64, inputs: Vec<SessionInput>) -> Result<Vec<Session>> {
+    let tx = conn.transaction()?;
+    let saved = inputs.into_iter().map(|i| upsert(&tx, device, now, i)).collect::<Result<Vec<_>>>()?;
+    tx.commit()?;
+    Ok(saved)
+}
+
+/// Soft-deletes several sessions all-or-nothing.
+pub fn delete_many(conn: &mut Connection, device: &str, now: i64, ids: &[String]) -> Result<()> {
+    let tx = conn.transaction()?;
+    for id in ids {
+        delete(&tx, device, now, id)?;
+    }
+    if let Some(paused) = setting::get(&tx, setting::PAUSED_SESSION_ID)? {
+        if ids.contains(&paused) {
+            setting::remove(&tx, setting::PAUSED_SESSION_ID)?;
+        }
+    }
+    tx.commit()?;
+    Ok(())
 }
 
 /// Soft delete.
@@ -301,6 +338,33 @@ mod tests {
         assert_eq!(s.note, None);
         delete(&conn, "d", 30, &s.id).unwrap();
         assert!(list(&conn, 0, 100).unwrap().is_empty());
+    }
+
+    #[test]
+    fn manual_edits_cannot_overlap() {
+        let mut conn = test_conn();
+        let a = activity(&conn, "A");
+        let mk = |id: Option<String>, s, e| SessionInput { id, activity_id: a.clone(), start_ms: s, end_ms: Some(e), note: None };
+        let first = upsert(&conn, "d", 0, mk(None, 100, 200)).unwrap();
+        upsert(&conn, "d", 0, mk(None, 200, 300)).unwrap(); // touching is fine
+        assert!(matches!(upsert(&conn, "d", 0, mk(None, 150, 250)), Err(Error::Overlap)));
+        assert!(matches!(upsert(&conn, "d", 0, mk(Some(first.id.clone()), 100, 210)), Err(Error::Overlap)));
+        upsert(&conn, "d", 0, mk(Some(first.id), 90, 200)).unwrap(); // editing itself is not a clash
+
+        start(&mut conn, "d", 1000, &a).unwrap(); // running from 1000, counts until now
+        assert!(matches!(upsert(&conn, "d", 1500, mk(None, 1200, 1300)), Err(Error::Overlap)));
+        upsert(&conn, "d", 1500, mk(None, 600, 900)).unwrap();
+    }
+
+    #[test]
+    fn saving_many_is_all_or_nothing() {
+        let mut conn = test_conn();
+        let a = activity(&conn, "A");
+        let mk = |s, e| SessionInput { id: None, activity_id: a.clone(), start_ms: s, end_ms: Some(e), note: None };
+        upsert(&conn, "d", 0, mk(500, 600)).unwrap();
+        let res = upsert_many(&mut conn, "d", 0, vec![mk(100, 200), mk(550, 650)]);
+        assert!(matches!(res, Err(Error::Overlap)));
+        assert_eq!(list(&conn, 0, 1000).unwrap().len(), 1, "first segment rolled back");
     }
 
     #[test]

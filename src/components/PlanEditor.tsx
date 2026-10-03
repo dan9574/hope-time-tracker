@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { commands, type Activity, type Plan } from "../lib/bindings";
 import { makeRule, ruleDays } from "../lib/plans";
 import { ActivityPicker } from "./ActivityPicker";
+import { errorMessage } from "../lib/errors";
+import { confirmDelete } from "../lib/confirm";
 import { dateKey, weekDays } from "../lib/time";
-import "./PlanEditor.css";
+import "./Sheet.css";
 
 interface Props {
   /** `null` creates a plan for `date`. */
@@ -41,13 +43,15 @@ export function PlanEditor({ plan, date, activities, onClose }: Props) {
       end_hm: end,
       rule: makeRule(days),
     });
-    if (res.status === "error") setError(res.error);
+    if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
   };
   const remove = async () => {
     if (!plan) return;
+    const message = plan.rule ? t("plan.confirmDeleteSeries") : t("plan.confirmDelete");
+    if (!(await confirmDelete(t, message))) return;
     const res = await commands.planDelete(plan.id);
-    if (res.status === "error") setError(res.error);
+    if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
   };
 

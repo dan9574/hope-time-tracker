@@ -284,6 +284,20 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
     Ok(report)
 }
 
+/// Soft-deletes every record (so the deletion also syncs). Local settings stay.
+pub fn wipe(conn: &mut Connection, device: &str, now: i64) -> Result<()> {
+    let tx = conn.transaction()?;
+    for table in ["activity", "session", "plan", "journal", "day"] {
+        tx.execute(
+            &format!("UPDATE {table} SET deleted_ms = ?1, updated_ms = ?1, device_id = ?2 WHERE deleted_ms IS NULL"),
+            params![now, device],
+        )?;
+    }
+    super::setting::remove(&tx, super::setting::PAUSED_SESSION_ID)?;
+    tx.commit()?;
+    Ok(())
+}
+
 #[derive(Debug, PartialEq, Eq)]
 enum Action {
     Insert,
@@ -418,6 +432,14 @@ mod tests {
         assert_eq!(out.activity[0].parent_id, None);
         assert!(out.plan[0].auto_log, "plans from older files auto-log by default");
         assert_eq!(out.plan[0].until, None);
+    }
+
+    #[test]
+    fn wipe_removes_everything_live() {
+        let mut conn = seeded();
+        wipe(&mut conn, "d", 999).unwrap();
+        let out = export(&conn, 0).unwrap();
+        assert!(out.activity.is_empty() && out.session.is_empty() && out.plan.is_empty() && out.journal.is_empty());
     }
 
     #[test]

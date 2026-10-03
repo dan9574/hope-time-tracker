@@ -58,7 +58,14 @@
     "appearanceMode": "颜色模式",
     "appearance_system": "跟随系统",
     "appearance_light": "浅色",
-    "appearance_dark": "深色"
+    "appearance_dark": "深色",
+    "wipe": "清空全部数据…",
+    "wipeHint": "删除所有活动、记录、计划和日记",
+    "wipeTitle": "清空全部数据",
+    "wipeBody": "所有活动、记录、计划和日记都会被删除。清空前会自动导出一份 JSON 备份到「下载」文件夹，之后可以从「导入…」恢复。",
+    "wipeType": "输入 {{phrase}} 以确认",
+    "wipeConfirm": "清空",
+    "wiped": "已清空。备份保存在 {{path}}"
   },
   "today": {
     "total": "已记录",
@@ -111,12 +118,17 @@
     "subNamePlaceholder": "「{{name}}」下的子活动名称",
     "parent": "上级",
     "topLevel": "无（顶层活动）",
-    "colorFollows": "跟随「{{name}}」"
+    "colorFollows": "跟随「{{name}}」",
+    "cannotDeleteTitle": "不能删除",
+    "cannotDelete": "「{{name}}」下有 {{count}} 条记录，不能删除。不再使用的话可以归档。",
+    "confirmDelete": "删除「{{name}}」？它的计划也会一起删除，此操作无法撤销。",
+    "confirmDeleteWithSubs": "删除「{{name}}」及其 {{count}} 个子活动？它们的计划也会一起删除，此操作无法撤销。"
   },
   "common": {
     "cancel": "取消",
     "save": "保存",
-    "delete": "删除"
+    "delete": "删除",
+    "ok": "好"
   },
   "plan": {
     "add": "计划",
@@ -130,10 +142,32 @@
     "deleteSeries": "删除整个系列",
     "repeats": "每周重复",
     "needActivity": "请先选择活动",
-    "endAfterStart": "结束时间要晚于开始时间"
+    "endAfterStart": "结束时间要晚于开始时间",
+    "confirmDelete": "删除这个计划？",
+    "confirmDeleteSeries": "删除这个每周重复的计划？整个系列都会删除。"
   },
   "journal": {
     "title": "今天的日记",
     "placeholder": "写点什么…"
+  },
+  "errors": {
+    "overlap": "这段时间和另一条记录重叠了。请先调整那条记录。",
+    "in_use": "这个活动下还有记录，只能归档。",
+    "not_found": "找不到这条数据，可能已被删除。",
+    "generic": "出错了：{{message}}"
+  },
+  "confirm": {
+    "title": "确认删除"
+  },
+  "record": {
+    "add": "补录",
+    "new": "补录一条记录",
+    "edit": "编辑记录",
+    "date": "日期",
+    "segment": "第 {{n}} 段",
+    "running": "进行中",
+    "note": "备注",
+    "badTime": "请填写完整的时间",
+    "confirmDelete": "删除「{{name}}」{{range}} 的记录？此操作无法撤销。"
   }
 }

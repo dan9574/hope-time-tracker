@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type ImportReport } from "../../lib/bindings";
 import { dateKey } from "../../lib/time";
+import { errorMessage } from "../../lib/errors";
+import { WipeData } from "./WipeData";
 
 type Status = { kind: "ok" | "error"; text: string } | null;
 
@@ -10,12 +12,13 @@ export function DataSettings() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<Status>(null);
   const [busy, setBusy] = useState(false);
+  const [wiping, setWiping] = useState(false);
 
   const exportData = async () => {
     setBusy(true);
     const res = await commands.dataExport(`hope-${dateKey(new Date())}.json`);
     setBusy(false);
-    if (res.status === "error") setStatus({ kind: "error", text: t("settings.dataFailed", { message: res.error }) });
+    if (res.status === "error") setStatus({ kind: "error", text: t("settings.dataFailed", { message: errorMessage(res.error, t) }) });
     else if (res.data) setStatus({ kind: "ok", text: t("settings.exported", { path: res.data }) });
   };
 
@@ -23,7 +26,7 @@ export function DataSettings() {
     setBusy(true);
     const res = await commands.dataImport();
     setBusy(false);
-    if (res.status === "error") setStatus({ kind: "error", text: t("settings.dataFailed", { message: res.error }) });
+    if (res.status === "error") setStatus({ kind: "error", text: t("settings.dataFailed", { message: errorMessage(res.error, t) }) });
     else if (res.data) setStatus({ kind: "ok", text: summarize(res.data, t) });
   };
 
@@ -42,7 +45,22 @@ export function DataSettings() {
             </button>
           </span>
         </div>
+        <div className="settings-row">
+          <span>{t("settings.wipeHint")}</span>
+          <button type="button" className="settings-button" disabled={busy} onClick={() => setWiping(true)}>
+            {t("settings.wipe")}
+          </button>
+        </div>
       </div>
+      {wiping && (
+        <WipeData
+          onClose={() => setWiping(false)}
+          onDone={(path) => {
+            setWiping(false);
+            setStatus({ kind: "ok", text: t("settings.wiped", { path }) });
+          }}
+        />
+      )}
       {status && <p className={status.kind === "error" ? "settings-footnote is-error" : "settings-footnote"}>{status.text}</p>}
     </section>
   );

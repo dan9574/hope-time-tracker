@@ -1,6 +1,7 @@
 pub mod activity;
 pub mod app;
 pub mod data;
+pub mod dialog;
 pub mod journal;
 pub mod overlay;
 pub mod plan;
@@ -9,27 +10,54 @@ pub mod setting;
 pub mod tray;
 
 use serde::Serialize;
+use specta::Type;
 
-/// Error returned to the frontend as a plain message string.
-#[derive(Debug, Serialize, specta::Type)]
-#[serde(transparent)]
-pub struct CommandError(String);
+use crate::error::Error;
 
-impl From<crate::error::Error> for CommandError {
-    fn from(e: crate::error::Error) -> Self {
-        Self(e.to_string())
+/// Stable reason the frontend can turn into a localized message.
+#[derive(Debug, Clone, Copy, Serialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum ErrorCode {
+    Invalid,
+    NotFound,
+    Overlap,
+    InUse,
+    Database,
+    File,
+    Internal,
+}
+
+/// Error returned to the frontend: a code for the UI plus the developer-facing message.
+#[derive(Debug, Serialize, Type)]
+pub struct CommandError {
+    pub code: ErrorCode,
+    pub message: String,
+}
+
+impl From<Error> for CommandError {
+    fn from(e: Error) -> Self {
+        let code = match &e {
+            Error::Invalid(_) => ErrorCode::Invalid,
+            Error::NotFound(_) => ErrorCode::NotFound,
+            Error::Overlap => ErrorCode::Overlap,
+            Error::InUse => ErrorCode::InUse,
+            Error::Sql(_) => ErrorCode::Database,
+            Error::Io(_) => ErrorCode::File,
+            Error::Tauri(_) => ErrorCode::Internal,
+        };
+        Self { code, message: e.to_string() }
     }
 }
 
 impl From<rusqlite::Error> for CommandError {
     fn from(e: rusqlite::Error) -> Self {
-        Self(e.to_string())
+        Error::from(e).into()
     }
 }
 
 impl From<tauri::Error> for CommandError {
     fn from(e: tauri::Error) -> Self {
-        Self(e.to_string())
+        Error::from(e).into()
     }
 }
 

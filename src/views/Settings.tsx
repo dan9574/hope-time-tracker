@@ -29,7 +29,7 @@ function About() {
   useEffect(() => {
     commands.appInfo().then((res) => {
       if (res.status === "ok") setInfo(res.data);
-      else setError(res.error);
+      else setError(res.error.message);
     });
   }, []);
 

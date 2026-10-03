@@ -58,7 +58,14 @@
     "appearanceMode": "Mode",
     "appearance_system": "System",
     "appearance_light": "Light",
-    "appearance_dark": "Dark"
+    "appearance_dark": "Dark",
+    "wipe": "Clear All Data…",
+    "wipeHint": "Delete every activity, record, plan and journal entry",
+    "wipeTitle": "Clear All Data",
+    "wipeBody": "Every activity, record, plan and journal entry will be deleted. A JSON backup is saved to your Downloads folder first; you can restore it with Import….",
+    "wipeType": "Type {{phrase}} to confirm",
+    "wipeConfirm": "Clear",
+    "wiped": "Cleared. Backup saved to {{path}}"
   },
   "today": {
     "total": "Tracked",
@@ -111,12 +118,17 @@
     "subNamePlaceholder": "Sub-activity of {{name}}",
     "parent": "Parent",
     "topLevel": "None (top level)",
-    "colorFollows": "Same as {{name}}"
+    "colorFollows": "Same as {{name}}",
+    "cannotDeleteTitle": "Can't Delete",
+    "cannotDelete": "{{name}} has {{count}} records, so it can't be deleted. Archive it if you no longer use it.",
+    "confirmDelete": "Delete {{name}}? Its plans are deleted too. This can't be undone.",
+    "confirmDeleteWithSubs": "Delete {{name}} and its {{count}} sub-activities? Their plans are deleted too. This can't be undone."
   },
   "common": {
     "cancel": "Cancel",
     "save": "Save",
-    "delete": "Delete"
+    "delete": "Delete",
+    "ok": "OK"
   },
   "plan": {
     "add": "Plan",
@@ -130,10 +142,32 @@
     "deleteSeries": "Delete Series",
     "repeats": "Repeats weekly",
     "needActivity": "Choose an activity first",
-    "endAfterStart": "End must be after start"
+    "endAfterStart": "End must be after start",
+    "confirmDelete": "Delete this plan?",
+    "confirmDeleteSeries": "Delete this weekly plan? The whole series is deleted."
   },
   "journal": {
     "title": "Today's Journal",
     "placeholder": "Write something…"
+  },
+  "errors": {
+    "overlap": "This overlaps another record. Adjust that one first.",
+    "in_use": "This activity has records, so it can only be archived.",
+    "not_found": "This item no longer exists; it may have been deleted.",
+    "generic": "Something went wrong: {{message}}"
+  },
+  "confirm": {
+    "title": "Confirm Delete"
+  },
+  "record": {
+    "add": "Add Record",
+    "new": "Add a Past Record",
+    "edit": "Edit Record",
+    "date": "Date",
+    "segment": "Part {{n}}",
+    "running": "running",
+    "note": "Note",
+    "badTime": "Fill in both times",
+    "confirmDelete": "Delete the {{name}} record from {{range}}? This can't be undone."
   }
 }

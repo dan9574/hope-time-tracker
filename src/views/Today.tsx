@@ -1,23 +1,27 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus } from "lucide-react";
+import { History, Plus } from "lucide-react";
 import { Journal } from "../components/Journal";
 import { Page } from "../components/Page";
 import { PlanEditor } from "../components/PlanEditor";
+import { RecordEditor } from "../components/RecordEditor";
 import { Ring, type RingSegment } from "../components/Ring";
 import { Timeline } from "../components/Timeline";
 import { commands, type Plan } from "../lib/bindings";
 import { useQuery } from "../lib/data";
 import { occurrencesOn } from "../lib/plans";
 import { useRingWidth } from "../lib/preferences";
-import { ringRecords } from "../lib/stats";
+import { ringRecords, type DayEntry } from "../lib/stats";
 import { dateKey, formatClock, formatDuration } from "../lib/time";
 import { useNow } from "../lib/useNow";
 import { useToday } from "../lib/useToday";
 import "./Today.css";
 
-/** `null` = closed, `"new"` = creating, otherwise the plan being edited. */
-type Editing = Plan | "new" | null;
+/** Which sheet is open. */
+type Editing =
+  | { kind: "plan"; plan: Plan | null }
+  | { kind: "record"; entry: DayEntry | null }
+  | null;
 
 export function Today() {
   const { t, i18n } = useTranslation();
@@ -63,7 +67,21 @@ export function Today() {
       </section>
 
       <div className="today-toolbar">
-        <button type="button" className="today-add" disabled={pickable.length === 0} onClick={() => setEditing("new")}>
+        <button
+          type="button"
+          className="today-add"
+          disabled={pickable.length === 0}
+          onClick={() => setEditing({ kind: "record", entry: null })}
+        >
+          <History size={14} aria-hidden />
+          {t("record.add")}
+        </button>
+        <button
+          type="button"
+          className="today-add"
+          disabled={pickable.length === 0}
+          onClick={() => setEditing({ kind: "plan", plan: null })}
+        >
           <Plus size={14} aria-hidden />
           {t("plan.add")}
         </button>
@@ -72,18 +90,21 @@ export function Today() {
       {loaded && summary.entries.length === 0 && occurrences.length === 0 ? (
         <p className="today-empty">{t("today.empty")}</p>
       ) : (
-        <Timeline entries={summary.entries} plans={occurrences} onPlanClick={setEditing} />
+        <Timeline
+          entries={summary.entries}
+          plans={occurrences}
+          onEntryClick={(entry) => setEditing({ kind: "record", entry })}
+          onPlanClick={(plan) => setEditing({ kind: "plan", plan })}
+        />
       )}
 
       <Journal date={key} />
 
-      {editing !== null && (
-        <PlanEditor
-          plan={editing === "new" ? null : editing}
-          date={today}
-          activities={pickable}
-          onClose={() => setEditing(null)}
-        />
+      {editing?.kind === "plan" && (
+        <PlanEditor plan={editing.plan} date={today} activities={pickable} onClose={() => setEditing(null)} />
+      )}
+      {editing?.kind === "record" && (
+        <RecordEditor entry={editing.entry} activities={activities ?? []} date={today} onClose={() => setEditing(null)} />
       )}
     </Page>
   );

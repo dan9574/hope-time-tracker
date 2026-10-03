@@ -19,7 +19,18 @@
   margin-top: var(--s-1);
 }
 
-/* Plans: dashed bar, quieter text, clickable to edit. */
+/* Both kinds of row open an editor. */
+.timeline-row.is-entry,
+.timeline-row.is-plan {
+  width: 100%;
+  text-align: left;
+}
+
+.timeline-row.is-entry:hover {
+  background: var(--mat-hover);
+}
+
+/* Plans: dashed bar, quieter text. */
 .timeline-row.is-plan {
   width: 100%;
   text-align: left;

@@ -35,3 +35,19 @@ pub fn activity_reorder(app: AppHandle, db: State<'_, Db>, ids: Vec<String>) -> 
     events::data_changed(&app);
     Ok(())
 }
+
+/// Live sessions on this activity and its sub-activities; non-zero means it can only be archived.
+#[tauri::command]
+#[specta::specta]
+pub fn activity_usage(db: State<'_, Db>, id: String) -> CmdResult<u32> {
+    Ok(activity::usage(&db.conn(), &id)?)
+}
+
+/// Deletes an activity without sessions (with its sub-activities and plans). Ask the user first.
+#[tauri::command]
+#[specta::specta]
+pub fn activity_delete(app: AppHandle, db: State<'_, Db>, id: String) -> CmdResult<()> {
+    activity::delete(&mut db.conn(), db.device_id(), now_ms(), &id)?;
+    events::data_changed(&app);
+    Ok(())
+}

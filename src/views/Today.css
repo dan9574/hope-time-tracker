@@ -27,6 +27,7 @@
 .today-toolbar {
   display: flex;
   justify-content: flex-end;
+  gap: var(--s-4);
   margin-bottom: var(--s-2);
 }
 

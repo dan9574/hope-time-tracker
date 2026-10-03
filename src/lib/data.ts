@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { commands, events } from "./bindings";
+import { commands, events, type CommandError } from "./bindings";
 
-type Result<T> = { status: "ok"; data: T } | { status: "error"; error: string };
+type Result<T> = { status: "ok"; data: T } | { status: "error"; error: CommandError };
 
 // Bumped whenever Rust reports a data change (from a command or the tray).
 let version = 0;

@@ -83,3 +83,45 @@
 .sheet-spacer {
   flex: 1;
 }
+
+.sheet-row.is-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s-1);
+}
+
+.sheet-textarea {
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background: var(--mat-hover);
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: var(--s-2);
+  resize: vertical;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.sheet-running {
+  font-size: var(--text-sm);
+  color: var(--accent-text);
+}
+
+.sheet-message {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.sheet-input {
+  font: inherit;
+  font-size: var(--text-md);
+  color: var(--fg);
+  background: var(--mat-hover);
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: var(--s-2);
+  -webkit-user-select: text;
+  user-select: text;
+}

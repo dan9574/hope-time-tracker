@@ -57,3 +57,27 @@ pub async fn data_import(app: AppHandle, window: WebviewWindow) -> CmdResult<Opt
     events::data_changed(&app);
     Ok(Some(report))
 }
+
+/// The phrase the user must type before everything is cleared.
+const WIPE_PHRASE: &str = "DELETE";
+
+/// Clears all records after saving a JSON backup to the Downloads folder. Returns the backup path.
+#[tauri::command]
+#[specta::specta]
+pub async fn data_wipe(app: AppHandle, confirmation: String, backup_name: String) -> CmdResult<String> {
+    if confirmation != WIPE_PHRASE {
+        return Err(Error::Invalid("confirmation phrase does not match".into()).into());
+    }
+    if backup_name.contains(['/', '\\']) || !backup_name.ends_with(".json") {
+        return Err(Error::Invalid("bad backup file name".into()).into());
+    }
+    let path = app.path().download_dir()?.join(backup_name);
+    let db = app.state::<Db>();
+    let mut conn = db.conn();
+    let json = serde_json::to_string_pretty(&transfer::export(&conn, now_ms())?).map_err(|e| Error::Invalid(e.to_string()))?;
+    std::fs::write(&path, json).map_err(Error::from)?;
+    transfer::wipe(&mut conn, db.device_id(), now_ms())?;
+    drop(conn);
+    events::data_changed(&app);
+    Ok(path.display().to_string())
+}

@@ -69,6 +69,24 @@ pub fn session_upsert(app: AppHandle, db: State<'_, Db>, input: SessionInput) ->
     Ok(s)
 }
 
+/// Saves every segment of an edited record at once; an overlap anywhere saves nothing.
+#[tauri::command]
+#[specta::specta]
+pub fn session_save(app: AppHandle, db: State<'_, Db>, inputs: Vec<SessionInput>) -> CmdResult<Vec<Session>> {
+    let saved = session::upsert_many(&mut db.conn(), db.device_id(), now_ms(), inputs)?;
+    events::data_changed(&app);
+    Ok(saved)
+}
+
+/// Deletes every segment of a record. Ask the user first.
+#[tauri::command]
+#[specta::specta]
+pub fn session_delete_many(app: AppHandle, db: State<'_, Db>, ids: Vec<String>) -> CmdResult<()> {
+    session::delete_many(&mut db.conn(), db.device_id(), now_ms(), &ids)?;
+    events::data_changed(&app);
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn session_delete(app: AppHandle, db: State<'_, Db>, id: String) -> CmdResult<()> {

@@ -8,6 +8,10 @@ pub enum Error {
     /// Input rejected by validation; the message is developer-facing.
     Invalid(String),
     NotFound(&'static str),
+    /// A session would overlap another one.
+    Overlap,
+    /// An activity still has sessions, so it can only be archived.
+    InUse,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -20,6 +24,8 @@ impl fmt::Display for Error {
             Error::Io(e) => write!(f, "file error: {e}"),
             Error::Invalid(msg) => write!(f, "invalid input: {msg}"),
             Error::NotFound(what) => write!(f, "{what} not found"),
+            Error::Overlap => write!(f, "overlaps another session"),
+            Error::InUse => write!(f, "activity has sessions"),
         }
     }
 }
