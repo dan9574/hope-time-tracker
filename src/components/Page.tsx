@@ -4,15 +4,20 @@ import "./Page.css";
 interface PageProps {
   title: string;
   subtitle: string;
+  /** Controls aligned to the right of the title, e.g. period navigation. */
+  accessory?: ReactNode;
   children?: ReactNode;
 }
 
-export function Page({ title, subtitle, children }: PageProps) {
+export function Page({ title, subtitle, accessory, children }: PageProps) {
   return (
     <article className="page">
       <header className="page-header">
-        <h1 className="page-title">{title}</h1>
-        <p className="page-subtitle">{subtitle}</p>
+        <div>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-subtitle">{subtitle}</p>
+        </div>
+        {accessory && <div className="page-accessory">{accessory}</div>}
       </header>
       {children}
     </article>

@@ -7,12 +7,6 @@
     "settings": "Settings"
   },
   "views": {
-    "week": {
-      "subtitle": "How your seven days were spent"
-    },
-    "month": {
-      "subtitle": "Where this month went"
-    },
     "activities": {
       "subtitle": "Manage what you track"
     },
@@ -65,5 +59,14 @@
     "nothingYet": "Nothing yet",
     "vsLastWeek": "{{delta}} vs. last week",
     "dragHint": "Drag to move, then click Done in Settings"
+  },
+  "period": {
+    "previous": "Previous",
+    "next": "Next",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "byActivity": "By Activity",
+    "total": "Total",
+    "empty": "Nothing tracked in this period"
   }
 }

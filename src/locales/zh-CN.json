@@ -7,12 +7,6 @@
     "settings": "设置"
   },
   "views": {
-    "week": {
-      "subtitle": "七天的时间分布"
-    },
-    "month": {
-      "subtitle": "这个月的时间去向"
-    },
     "activities": {
       "subtitle": "管理你记录的活动"
     },
@@ -65,5 +59,14 @@
     "nothingYet": "还没有记录",
     "vsLastWeek": "比上周同期 {{delta}}",
     "dragHint": "拖动调整位置，完成后回到设置点「完成」"
+  },
+  "period": {
+    "previous": "上一页",
+    "next": "下一页",
+    "thisWeek": "回到本周",
+    "thisMonth": "回到本月",
+    "byActivity": "按活动",
+    "total": "合计",
+    "empty": "这段时间没有记录"
   }
 }

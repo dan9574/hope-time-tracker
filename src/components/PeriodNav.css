@@ -1,0 +1,29 @@
+.period-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.period-nav-step {
+  display: grid;
+  place-items: center;
+  width: calc(var(--s-6) + var(--s-1));
+  height: calc(var(--s-6) + var(--s-1));
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+}
+
+.period-nav-step:hover:not(:disabled) {
+  background: var(--mat-hover);
+  color: var(--fg);
+}
+
+.period-nav-step:disabled {
+  color: var(--fg-3);
+}
+
+.period-nav-current {
+  margin-right: var(--s-2);
+  font-size: var(--text-sm);
+  color: var(--accent);
+}

@@ -23,6 +23,21 @@ export function weekDays(date: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
 }
 
+/** Every local day of the month containing `date`. */
+export function monthDays(date: Date): Date[] {
+  const count = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  return Array.from({ length: count }, (_, i) => new Date(date.getFullYear(), date.getMonth(), i + 1));
+}
+
+/** `date` moved by whole weeks / months (month math clamps to the 1st to avoid overflow). */
+export function addWeeks(date: Date, weeks: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + weeks * 7);
+}
+
+export function addMonths(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
 /** Same wall-clock moment `days` days away (calendar math, so DST-safe). */
 export function shiftDays(ms: number, days: number): number {
   const d = new Date(ms);
@@ -69,4 +84,10 @@ export function formatClock(ms: number, locale: string): string {
     clockFormats.set(locale, f);
   }
   return f.format(ms);
+}
+
+/** "Last week", "3 months ago" … in the user's locale, capitalized for use as a title. */
+export function relativePeriod(offset: number, unit: "week" | "month", locale: string): string {
+  const text = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(offset, unit);
+  return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
 }

@@ -5,7 +5,16 @@
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
   margin-bottom: var(--s-8);
+}
+
+.page-accessory {
+  flex-shrink: 0;
+  padding-top: var(--s-1);
 }
 
 .page-title {

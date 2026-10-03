@@ -1,5 +1,6 @@
 import type { Activity, Session, TimeRange } from "./bindings";
 import type { RingSegment } from "../components/Ring";
+import { dateKey, dayRange } from "./time";
 
 /** One timeline row: a pause/resume chain shown as a single entry. */
 export interface DayEntry {
@@ -103,4 +104,32 @@ export function ringRecords(entries: DayEntry[]): RingSegment[] {
   return entries.flatMap((e) =>
     e.segments.map((seg) => ({ key: `${e.key}-${seg.startMs}`, ...seg, color: e.activity?.color })),
   );
+}
+
+export interface DayTotals {
+  key: string;
+  date: Date;
+  totalMs: number;
+  parts: ActivityTotal[];
+}
+
+/** Each day's total and per-activity split; sessions crossing midnight are split between days. */
+export function summarizeDays(sessions: Session[], activities: Activity[], days: Date[], now: number): DayTotals[] {
+  return days.map((date) => {
+    const s = summarizeDay(sessions, activities, dayRange(date), now);
+    return { key: dateKey(date), date, totalMs: s.totalMs, parts: totalsByActivity(s.entries) };
+  });
+}
+
+/** Per-activity totals across several days, largest first. */
+export function mergeTotals(days: DayTotals[]): ActivityTotal[] {
+  const merged = new Map<string, ActivityTotal>();
+  for (const d of days) {
+    for (const p of d.parts) {
+      const m = merged.get(p.activityId);
+      if (m) m.ms += p.ms;
+      else merged.set(p.activityId, { ...p });
+    }
+  }
+  return [...merged.values()].sort((a, b) => b.ms - a.ms);
 }
