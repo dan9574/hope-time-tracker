@@ -1,0 +1,30 @@
+.journal {
+  margin-top: var(--s-12);
+}
+
+.journal-title {
+  margin-bottom: var(--s-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--fg-2);
+}
+
+.journal-text {
+  width: 100%;
+  resize: vertical;
+  padding: var(--s-3) var(--s-4);
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--mat-card);
+  font: inherit;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--fg);
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.journal-text::placeholder {
+  color: var(--fg-3);
+}

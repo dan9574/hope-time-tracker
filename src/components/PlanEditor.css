@@ -1,0 +1,82 @@
+.sheet {
+  width: min(420px, calc(100vw - var(--s-12))); /* sheet width, not spacing */
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--mat-window);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  color: var(--fg);
+}
+
+.sheet::backdrop {
+  background: var(--mat-hover);
+}
+
+.sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-6);
+}
+
+.sheet-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--s-2);
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  font-size: var(--text-sm);
+}
+
+.sheet-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--fg-2);
+}
+
+.weekday-chips {
+  display: flex;
+  gap: var(--s-1);
+}
+
+.weekday-chip {
+  width: calc(var(--s-6) + var(--s-1));
+  height: calc(var(--s-6) + var(--s-1));
+  border-radius: 50%;
+  font-size: var(--text-xs);
+  color: var(--fg-2);
+  background: var(--mat-hover);
+}
+
+.weekday-chip[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.sheet-note {
+  font-size: var(--text-xs);
+  color: var(--fg-3);
+}
+
+.sheet-error {
+  font-size: var(--text-sm);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.sheet-spacer {
+  flex: 1;
+}

@@ -31,7 +31,30 @@
     "overlayPosition": "Position",
     "adjustPosition": "Adjust Position",
     "done": "Done",
-    "resetPosition": "Reset"
+    "resetPosition": "Reset",
+    "general": "General",
+    "language": "Language",
+    "languageSystem": "System",
+    "schedule": "Schedule",
+    "wake": "Wake up",
+    "sleep": "Bedtime",
+    "scheduleHint": "The ring on Today spans from wake-up to bedtime.",
+    "appearance": "Appearance",
+    "tint": "Material tint",
+    "tint_clear": "Clear",
+    "tint_warm": "Warm",
+    "tint_cool": "Cool",
+    "accent": "Accent color",
+    "ringWidth": "Ring width",
+    "ring_10": "Thin",
+    "ring_16": "Thick",
+    "data": "Data",
+    "dataHint": "JSON file (hope/1 format)",
+    "import": "Import…",
+    "export": "Export…",
+    "exported": "Exported to {{path}}",
+    "imported": "Import finished: {{added}} added, {{updated}} updated, {{unchanged}} unchanged.",
+    "dataFailed": "Failed: {{message}}"
   },
   "today": {
     "total": "Tracked",
@@ -68,5 +91,38 @@
     "byActivity": "By Activity",
     "total": "Total",
     "empty": "Nothing tracked in this period"
+  },
+  "activities": {
+    "add": "New Activity",
+    "archived": "Archived ({{count}})",
+    "restore": "Restore",
+    "archive": "Archive",
+    "nameRequired": "Enter a name",
+    "namePlaceholder": "Activity name",
+    "color": "Color",
+    "symbol": "Icon"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete"
+  },
+  "plan": {
+    "add": "Plan",
+    "new": "New Plan",
+    "edit": "Edit Plan",
+    "activity": "Activity",
+    "time": "Time",
+    "repeat": "Repeat weekly",
+    "onceHint": "Just this day. Pick weekdays to repeat every week.",
+    "seriesHint": "Repeats weekly: changes and deletion apply to the whole series.",
+    "deleteSeries": "Delete Series",
+    "repeats": "Repeats weekly",
+    "needActivity": "Choose an activity first",
+    "endAfterStart": "End must be after start"
+  },
+  "journal": {
+    "title": "Today's Journal",
+    "placeholder": "Write something…"
   }
 }

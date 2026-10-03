@@ -22,6 +22,7 @@
 状态   Zustand（只存 UI 状态；数据以 Rust 侧为准，前端通过 query 拉取）
 路由   不用路由库；单窗口 + 一个 `view` 状态切换
 图标   lucide-react（唯一图标来源）
+文件   tauri-plugin-dialog（导入/导出的原生打开、存储面板）
 图表   自写 SVG（环、柱），不引入 d3
 动画   CSS transition 为主；framer-motion 不引入
 i18n   i18next + react-i18next，文案在 src/locales/{zh-CN,en}.json
@@ -56,6 +57,8 @@ setting   (key, value)                                                     -- �
 - **所有 `id` 用 UUID v4 字符串**，不用自增整数，多设备离线写入不会冲突。
 - `activity.color` 存色名（`'blue'` 等 8 个之一，CHECK 约束），不存 hex；hex 在 `tokens.css` 的 `--activity-*`。Supabase 表用同样的 CHECK。
 - **表之间不加外键**：同步可能乱序到达。UI 和统计必须容忍孤儿记录——找不到 activity 的 session 显示为灰色"未知活动"，照常计入总时长。
+- `plan.rule` 的星期用 ISO 编号：1=周一 … 7=周日，`'weekly:1,3,5'` = 一三五；`date` 为首个生效日。重复计划没有单次例外，修改/删除作用于整个系列。
+- `journal` 每天一篇：同一 `date` 只保留一条存活记录（Rust 按 date upsert，不加唯一索引，以免同步时冲突）。
 - `session.continues_id`：暂停后恢复，新 session 指向被暂停的那条；UI 把链上的几段显示成一条。
 - "进行中"全局唯一：任何设备开始新 session 时，先结束所有 `end_ms IS NULL` 的记录（本地和服务端都执行这条规则）。
 - 旧库的 `weekly_schedule_events` / `manual_study_plans` / `daily_instantiated_plans` 三张表合并为 `plan`。
@@ -164,7 +167,7 @@ purple  #B08CFF   teal    #5CD0D0   yellow  #F5D56A   gray    #A5A5AC
 ### 4.3.1 主题（Settings 里的三个选项，仅此三个）
 
 1. 材质色温：Clear（默认，无色）/ Warm（`--mat-window` 叠 4% 的 #F5E6C8）/ Cool（叠 4% 的 #C8D8E6）。
-2. 强调色：从 4.3 的 8 色里选一个作为 `--accent`，影响按钮、选中态、当前时刻圆点。
+2. 强调色：从 4.3 的 8 色里选一个作为 `--accent`（默认 blue），影响按钮、选中态、当前时刻圆点。文字用派生的 `--accent-text`（浅色模式混 40% 黑，深色模式等于 `--accent`），保证低饱和色做文字时可读。
 3. 环线宽：10px / 16px。
 
 主题不改变布局、字体、圆角；禁止任何形式的渐变背景。
@@ -194,6 +197,8 @@ purple  #B08CFF   teal    #5CD0D0   yellow  #F5D56A   gray    #A5A5AC
 **本月**：7 列月历（周一起），每格：日期 + 当天总时长 + 一条按活动着色的细条（长度按当月最忙一天归一，未来日期不画）；下方按活动汇总。
 
 本周 / 本月都可用标题右侧 ‹ › 翻看过去（不能翻到未来）；不在当前周期时出现「回到本周/本月」，标题改为相对时间（上周、3 个月前）。
+
+**计划与日记**（不单独占导航）：都在今天页。时间线上方「+ 计划」，可选每周重复；点任一条计划可改/删。页底「今天的日记」文本框，自动保存。
 
 **开始计时**：不在页面里。菜单栏 / 托盘图标点一下弹出活动列表，点即开始；再点即停。主窗口右上角也放一个同样的按钮。
 

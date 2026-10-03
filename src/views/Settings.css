@@ -83,5 +83,35 @@
 }
 
 .settings-button[aria-pressed="true"] {
-  color: var(--accent);
+  color: var(--accent-text);
+}
+
+.settings-footnote {
+  margin-top: var(--s-2);
+  padding: 0 var(--s-4);
+  font-size: var(--text-xs);
+  color: var(--fg-2);
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.settings-footnote.is-error {
+  color: var(--fg);
+}
+
+.settings-select,
+.settings-time {
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background: var(--mat-hover);
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: var(--s-1) var(--s-2);
+}
+
+.settings-button.is-primary {
+  color: var(--accent-text);
+  font-weight: 600;
 }

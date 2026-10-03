@@ -4,6 +4,7 @@ use std::fmt;
 pub enum Error {
     Sql(rusqlite::Error),
     Tauri(tauri::Error),
+    Io(std::io::Error),
     /// Input rejected by validation; the message is developer-facing.
     Invalid(String),
     NotFound(&'static str),
@@ -16,6 +17,7 @@ impl fmt::Display for Error {
         match self {
             Error::Sql(e) => write!(f, "database error: {e}"),
             Error::Tauri(e) => write!(f, "tauri error: {e}"),
+            Error::Io(e) => write!(f, "file error: {e}"),
             Error::Invalid(msg) => write!(f, "invalid input: {msg}"),
             Error::NotFound(what) => write!(f, "{what} not found"),
         }
@@ -33,5 +35,11 @@ impl From<rusqlite::Error> for Error {
 impl From<tauri::Error> for Error {
     fn from(e: tauri::Error) -> Self {
         Error::Tauri(e)
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::Io(e)
     }
 }

@@ -23,3 +23,21 @@
   font-size: var(--text-sm);
   color: var(--fg-3);
 }
+
+.today-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--s-2);
+}
+
+.today-add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--text-sm);
+  color: var(--accent-text);
+}
+
+.today-add:disabled {
+  color: var(--fg-3);
+}

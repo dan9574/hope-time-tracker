@@ -31,7 +31,30 @@
     "overlayPosition": "位置",
     "adjustPosition": "调整位置",
     "done": "完成",
-    "resetPosition": "恢复默认"
+    "resetPosition": "恢复默认",
+    "general": "通用",
+    "language": "语言",
+    "languageSystem": "跟随系统",
+    "schedule": "作息",
+    "wake": "起床",
+    "sleep": "睡觉",
+    "scheduleHint": "今天页的环从起床时间展开到睡觉时间。",
+    "appearance": "外观",
+    "tint": "材质色温",
+    "tint_clear": "无色",
+    "tint_warm": "暖",
+    "tint_cool": "冷",
+    "accent": "强调色",
+    "ringWidth": "环线宽",
+    "ring_10": "细",
+    "ring_16": "粗",
+    "data": "数据",
+    "dataHint": "JSON 文件（hope/1 格式）",
+    "import": "导入…",
+    "export": "导出…",
+    "exported": "已导出到 {{path}}",
+    "imported": "导入完成：新增 {{added}}，更新 {{updated}}，未变 {{unchanged}}。",
+    "dataFailed": "操作失败：{{message}}"
   },
   "today": {
     "total": "已记录",
@@ -68,5 +91,38 @@
     "byActivity": "按活动",
     "total": "合计",
     "empty": "这段时间没有记录"
+  },
+  "activities": {
+    "add": "新建活动",
+    "archived": "已归档（{{count}}）",
+    "restore": "恢复",
+    "archive": "归档",
+    "nameRequired": "请输入名称",
+    "namePlaceholder": "活动名称",
+    "color": "颜色",
+    "symbol": "图标"
+  },
+  "common": {
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除"
+  },
+  "plan": {
+    "add": "计划",
+    "new": "新建计划",
+    "edit": "编辑计划",
+    "activity": "活动",
+    "time": "时间",
+    "repeat": "每周重复",
+    "onceHint": "只在这一天。选择星期即可每周重复。",
+    "seriesHint": "每周重复：修改或删除会作用于整个系列。",
+    "deleteSeries": "删除整个系列",
+    "repeats": "每周重复",
+    "needActivity": "请先选择活动",
+    "endAfterStart": "结束时间要晚于开始时间"
+  },
+  "journal": {
+    "title": "今天的日记",
+    "placeholder": "写点什么…"
   }
 }

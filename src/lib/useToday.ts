@@ -1,10 +1,9 @@
 import { commands } from "./bindings";
 import { useQuery, useSetting } from "./data";
 import { summarizeDay } from "./stats";
+import { DEFAULT_SLEEP, DEFAULT_WAKE, PREF } from "./preferences";
 import { atClock, dateKey, DAY, dayRange } from "./time";
 
-const DEFAULT_WAKE = "07:00";
-const DEFAULT_SLEEP = "23:00";
 
 /** Today's sessions summarized, plus the waking window the ring spans. */
 export function useToday(now: number) {
@@ -14,8 +13,8 @@ export function useToday(now: number) {
 
   const sessions = useQuery(() => commands.sessionList(range), [key]);
   const activities = useQuery(() => commands.activityList(true), []);
-  const wakeHm = useSetting("wake_hm");
-  const sleepHm = useSetting("sleep_hm");
+  const wakeHm = useSetting(PREF.wake);
+  const sleepHm = useSetting(PREF.sleep);
 
   const summary = summarizeDay(sessions ?? [], activities ?? [], range, now);
   const wakeMs = atClock(today, wakeHm ?? DEFAULT_WAKE) ?? atClock(today, DEFAULT_WAKE)!;

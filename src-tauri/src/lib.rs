@@ -20,6 +20,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::activity::activity_list,
             commands::activity::activity_upsert,
             commands::activity::activity_archive,
+            commands::activity::activity_reorder,
             commands::session::session_start,
             commands::session::session_pause,
             commands::session::session_resume,
@@ -35,6 +36,14 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::overlay::overlay_set_editing,
             commands::overlay::overlay_reset_position,
             commands::overlay::overlay_layout,
+            commands::plan::plan_list,
+            commands::plan::plan_upsert,
+            commands::plan::plan_delete,
+            commands::journal::journal_list,
+            commands::journal::journal_upsert,
+            commands::journal::journal_delete,
+            commands::data::data_export,
+            commands::data::data_import,
         ])
         .events(collect_events![events::DataChanged, events::SettingChanged, overlay::OverlayEditing])
 }
@@ -53,6 +62,7 @@ pub fn run() {
     export_bindings(&builder);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(builder.invoke_handler())
         .on_menu_event(|app, event| tray::handle_menu_event(app, event.id().as_ref()))
         .on_window_event(|window, event| {

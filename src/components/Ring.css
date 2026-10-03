@@ -26,7 +26,7 @@
 }
 
 .ring-now {
-  fill: var(--fg);
+  fill: var(--accent);
 }
 
 .ring-end-label {

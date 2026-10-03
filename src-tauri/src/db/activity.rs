@@ -178,6 +178,19 @@ pub fn set_archived(conn: &Connection, device: &str, now: i64, id: &str, archive
     Ok(())
 }
 
+/// Sets `sort` to each id's position in `ids`.
+pub fn reorder(conn: &mut Connection, device: &str, now: i64, ids: &[String]) -> Result<()> {
+    let tx = conn.transaction()?;
+    for (i, id) in ids.iter().enumerate() {
+        tx.execute(
+            "UPDATE activity SET sort = ?2, updated_ms = ?3, device_id = ?4 WHERE id = ?1 AND deleted_ms IS NULL",
+            params![id, i as i64, now, device],
+        )?;
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 /// Debug builds only: give an empty database something to click on.
 #[cfg(debug_assertions)]
 pub fn seed_samples_if_empty(conn: &Connection, device: &str, now: i64) -> Result<()> {
@@ -230,6 +243,16 @@ mod tests {
         assert!(matches!(upsert(&conn, "d", 1, input("  ")), Err(Error::Invalid(_))));
         let missing = ActivityInput { id: Some("nope".into()), ..input("X") };
         assert!(matches!(upsert(&conn, "d", 1, missing), Err(Error::NotFound(_))));
+    }
+
+    #[test]
+    fn reorder_sets_positions() {
+        let mut conn = test_conn();
+        let a = upsert(&conn, "d", 1, input("A")).unwrap();
+        let b = upsert(&conn, "d", 1, input("B")).unwrap();
+        reorder(&mut conn, "d", 2, &[b.id.clone(), a.id.clone()]).unwrap();
+        let names: Vec<_> = list(&conn, false).unwrap().into_iter().map(|x| x.name).collect();
+        assert_eq!(names, ["B", "A"]);
     }
 
     #[test]

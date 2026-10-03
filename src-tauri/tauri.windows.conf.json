@@ -10,7 +10,12 @@
         "minWidth": 720,
         "minHeight": 480,
         "transparent": true,
-        "windowEffects": { "effects": ["mica"] }
+        "windowEffects": {
+          "effects": [
+            "mica"
+          ]
+        },
+        "dragDropEnabled": false
       }
     ]
   }

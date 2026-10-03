@@ -26,3 +26,12 @@ pub fn activity_archive(app: AppHandle, db: State<'_, Db>, id: String, archived:
     events::data_changed(&app);
     Ok(())
 }
+
+/// Persists a new order; `ids` lists activities top to bottom.
+#[tauri::command]
+#[specta::specta]
+pub fn activity_reorder(app: AppHandle, db: State<'_, Db>, ids: Vec<String>) -> CmdResult<()> {
+    activity::reorder(&mut db.conn(), db.device_id(), now_ms(), &ids)?;
+    events::data_changed(&app);
+    Ok(())
+}

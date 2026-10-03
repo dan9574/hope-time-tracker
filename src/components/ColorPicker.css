@@ -1,0 +1,18 @@
+.color-picker {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.color-swatch {
+  display: grid;
+  place-items: center;
+  width: var(--s-6);
+  height: var(--s-6);
+  border-radius: 50%;
+  color: var(--fg);
+}
+
+.color-swatch[aria-checked="true"] {
+  outline: 2px solid var(--fg-3);
+  outline-offset: 2px;
+}

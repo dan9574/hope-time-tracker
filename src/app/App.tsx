@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useUi, type View } from "../stores/ui";
 import { commands } from "../lib/bindings";
+import { useLocalePreference, useThemePreference } from "../lib/preferences";
 import { TimerButton } from "../components/TimerButton";
 import { Sidebar } from "./Sidebar";
 import { Today } from "../views/Today";
@@ -38,6 +39,8 @@ function useTrayStrings() {
 export function App() {
   const view = useUi((s) => s.view);
   const Current = VIEW_COMPONENTS[view];
+  useLocalePreference();
+  useThemePreference();
   useTrayStrings();
 
   return (

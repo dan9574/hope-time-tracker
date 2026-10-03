@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { commands, events } from "../lib/bindings";
 import { useQuery, useSetting } from "../lib/data";
 import { useNow } from "../lib/useNow";
+import { useLocalePreference } from "../lib/preferences";
 import { useToday } from "../lib/useToday";
 import { NowCard } from "./NowCard";
 import { TodayCard } from "./TodayCard";
@@ -15,6 +16,7 @@ export function Overlay() {
   const cards = parseCards(useSetting(OVERLAY_CARDS));
   const opacity = parseOpacity(useSetting(OVERLAY_OPACITY));
   const editing = useEditing();
+  useLocalePreference();
 
   const timer = useQuery(() => commands.sessionCurrent(), []);
   const now = useNow(timer?.running ? 1000 : 30_000);

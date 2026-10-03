@@ -25,5 +25,5 @@
 .period-nav-current {
   margin-right: var(--s-2);
   font-size: var(--text-sm);
-  color: var(--accent);
+  color: var(--accent-text);
 }

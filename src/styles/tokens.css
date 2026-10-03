@@ -26,7 +26,12 @@
   --fg-2: rgba(0, 0, 0, 0.55);
   --fg-3: rgba(0, 0, 0, 0.32);
 
-  --accent: #0A84FF;
+  /* Accent comes from the activity palette (4.3.1); default blue. Text uses the darker --accent-text. */
+  --accent: var(--activity-blue);
+  --accent-text: color-mix(in srgb, var(--accent) 60%, black);
+
+  /* Material color temperature (4.3.1), layered over the window material */
+  --mat-tint: transparent;
 
   /* Activity palette — the only colors content may use (rebuild-plan 4.3) */
   --activity-blue:   #6AA9FF;
@@ -54,5 +59,18 @@
     --fg:   rgba(255, 255, 255, 0.92);
     --fg-2: rgba(255, 255, 255, 0.58);
     --fg-3: rgba(255, 255, 255, 0.34);
+    --accent-text: var(--accent);
   }
 }
+
+/* Theme choices from Settings (4.3.1) */
+:root[data-accent="green"]  { --accent: var(--activity-green); }
+:root[data-accent="orange"] { --accent: var(--activity-orange); }
+:root[data-accent="pink"]   { --accent: var(--activity-pink); }
+:root[data-accent="purple"] { --accent: var(--activity-purple); }
+:root[data-accent="teal"]   { --accent: var(--activity-teal); }
+:root[data-accent="yellow"] { --accent: var(--activity-yellow); }
+:root[data-accent="gray"]   { --accent: var(--activity-gray); }
+
+:root[data-tint="warm"] { --mat-tint: rgba(245, 230, 200, 0.04); } /* #F5E6C8 at 4% */
+:root[data-tint="cool"] { --mat-tint: rgba(200, 216, 230, 0.04); } /* #C8D8E6 at 4% */

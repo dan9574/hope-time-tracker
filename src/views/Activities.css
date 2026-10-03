@@ -1,0 +1,172 @@
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-md);
+}
+
+.activity-row.is-dragging {
+  opacity: 0.4;
+}
+
+.activity-grip {
+  flex-shrink: 0;
+  color: var(--fg-3);
+  cursor: grab;
+}
+
+.activity-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  text-align: left;
+}
+
+.activity-glyph {
+  display: grid;
+  place-items: center;
+  width: var(--s-4);
+  flex-shrink: 0;
+}
+
+.activity-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-chevron {
+  color: var(--fg-3);
+}
+
+.activity-add {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) 0;
+  font-size: var(--text-md);
+  color: var(--accent-text);
+}
+
+.activity-row.is-archived {
+  padding: var(--s-2) 0 var(--s-2) var(--s-6);
+  color: var(--fg-2);
+}
+
+.activity-archived {
+  margin-top: var(--s-8);
+}
+
+.activity-archived-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--fg-2);
+  margin-bottom: var(--s-2);
+}
+
+.activity-archived-toggle svg {
+  transition: transform 150ms ease;
+}
+
+.activity-archived-toggle svg.is-open {
+  transform: rotate(90deg);
+}
+
+/* Inline editor */
+.activity-editing {
+  border-bottom: 1px solid var(--line);
+}
+
+.activity-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: var(--s-3) 0;
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--mat-card);
+}
+
+.activity-editor-name {
+  font: inherit;
+  font-size: var(--text-lg);
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: var(--s-1) 0;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.activity-editor-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.activity-editor-row.is-top {
+  align-items: flex-start;
+}
+
+.activity-editor-label {
+  width: calc(var(--s-12) + var(--s-4));
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  color: var(--fg-2);
+}
+
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(9, var(--s-8));
+  gap: var(--s-1);
+}
+
+.symbol-option {
+  display: grid;
+  place-items: center;
+  height: var(--s-8);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+}
+
+.symbol-option[aria-checked="true"] {
+  background: var(--mat-hover);
+  outline: 1px solid var(--line);
+}
+
+.symbol-none {
+  width: var(--s-2);
+  height: var(--s-2);
+  border-radius: 50%;
+}
+
+.activity-editor-error {
+  font-size: var(--text-sm);
+  color: var(--fg);
+}
+
+.activity-editor-actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.activity-editor-spacer {
+  flex: 1;
+}

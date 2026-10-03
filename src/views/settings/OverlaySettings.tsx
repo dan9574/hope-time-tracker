@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "../lib/bindings";
-import { run, useSetting } from "../lib/data";
+import { commands } from "../../lib/bindings";
+import { run, useSetting } from "../../lib/data";
 import {
   CARDS,
   OPACITY_MAX,
@@ -12,7 +12,7 @@ import {
   parseCards,
   parseOpacity,
   type CardId,
-} from "../overlay/settings";
+} from "../../overlay/settings";
 
 const CARD_LABEL: Record<CardId, string> = {
   now: "settings.cardNow",

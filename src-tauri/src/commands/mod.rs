@@ -1,6 +1,9 @@
 pub mod activity;
 pub mod app;
+pub mod data;
+pub mod journal;
 pub mod overlay;
+pub mod plan;
 pub mod session;
 pub mod setting;
 pub mod tray;

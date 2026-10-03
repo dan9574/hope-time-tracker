@@ -11,6 +11,8 @@ export const commands = {
 	activityList: (includeArchived: boolean) => typedError<Activity[], CommandError>(__TAURI_INVOKE("activity_list", { includeArchived })),
 	activityUpsert: (input: ActivityInput) => typedError<Activity, CommandError>(__TAURI_INVOKE("activity_upsert", { input })),
 	activityArchive: (id: string, archived: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("activity_archive", { id, archived })),
+	/**  Persists a new order; `ids` lists activities top to bottom. */
+	activityReorder: (ids: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("activity_reorder", { ids })),
 	sessionStart: (activityId: string) => typedError<Session, CommandError>(__TAURI_INVOKE("session_start", { activityId })),
 	sessionPause: () => typedError<{
 	id: string,
@@ -46,6 +48,27 @@ export const commands = {
 	overlayResetPosition: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_reset_position")),
 	/**  Called by the overlay page whenever its cards move or resize. */
 	overlayLayout: (cards: CardFrame[]) => typedError<null, CommandError>(__TAURI_INVOKE("overlay_layout", { cards })),
+	/**  One-off plans in the range plus recurring plans that have started; the frontend expands occurrences. */
+	planList: (range: DateRange) => typedError<Plan[], CommandError>(__TAURI_INVOKE("plan_list", { range })),
+	planUpsert: (input: PlanInput) => typedError<Plan, CommandError>(__TAURI_INVOKE("plan_upsert", { input })),
+	planDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("plan_delete", { id })),
+	journalList: (range: DateRange) => typedError<Journal[], CommandError>(__TAURI_INVOKE("journal_list", { range })),
+	/**  Saves the day's entry; blank text removes it and returns `null`. */
+	journalUpsert: (date: string, text: string) => typedError<{
+	id: string,
+	date: string,
+	text: string,
+} | null, CommandError>(__TAURI_INVOKE("journal_upsert", { date, text })),
+	journalDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("journal_delete", { id })),
+	/**  Opens a save panel (attached to the window) and writes every live record. `None` if cancelled. */
+	dataExport: (defaultName: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("data_export", { defaultName })),
+	/**  Opens a file panel and merges the chosen export into the database. `None` if cancelled. */
+	dataImport: () => typedError<{
+	activity: TableCounts,
+	session: TableCounts,
+	plan: TableCounts,
+	journal: TableCounts,
+} | null, CommandError>(__TAURI_INVOKE("data_import")),
 };
 
 /** Events */
@@ -97,8 +120,48 @@ export type CommandError = string;
 /**  Activities or sessions changed; views should refetch. */
 export type DataChanged = null;
 
+/**  Inclusive range of 'YYYY-MM-DD' dates. */
+export type DateRange = {
+	from: string,
+	to: string,
+};
+
+export type ImportReport = {
+	activity: TableCounts,
+	session: TableCounts,
+	plan: TableCounts,
+	journal: TableCounts,
+};
+
+/**  One journal per day. Sync could leave two live rows for a date; reads take the newest. */
+export type Journal = {
+	id: string,
+	date: string,
+	text: string,
+};
+
 /**  The overlay entered or left position-editing mode. */
 export type OverlayEditing = boolean;
+
+export type Plan = {
+	id: string,
+	activity_id: string,
+	/**  The day of a one-off plan, or the first day a recurring plan applies. */
+	date: string,
+	start_hm: string,
+	end_hm: string,
+	/**  `None` = one-off; `"weekly:1,3,5"` = Monday, Wednesday, Friday (ISO weekdays, 1 = Monday). */
+	rule: string | null,
+};
+
+export type PlanInput = {
+	id: string | null,
+	activity_id: string,
+	date: string,
+	start_hm: string,
+	end_hm: string,
+	rule: string | null,
+};
 
 export type Session = {
 	id: string,
@@ -122,6 +185,14 @@ export type SessionInput = {
 /**  A local setting was written; windows that depend on it should re-read. */
 export type SettingChanged = {
 	key: string,
+};
+
+/**  Per-table counts shown to the user after an import. */
+export type TableCounts = {
+	added: number,
+	updated: number,
+	/**  Already present with an equal or newer `updated_ms`. */
+	unchanged: number,
 };
 
 /**  Half-open `[from_ms, to_ms)`. The frontend computes day/week bounds in the system time zone. */

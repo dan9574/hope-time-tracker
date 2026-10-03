@@ -16,7 +16,8 @@
           "x": 20,
           "y": 24
         },
-        "transparent": true
+        "transparent": true,
+        "dragDropEnabled": false
       }
     ]
   }

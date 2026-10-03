@@ -15,8 +15,31 @@
   font-size: var(--text-sm);
 }
 
-.timeline-row + .timeline-row {
+.timeline > li + li {
   margin-top: var(--s-1);
+}
+
+/* Plans: dashed bar, quieter text, clickable to edit. */
+.timeline-row.is-plan {
+  width: 100%;
+  text-align: left;
+  border-left-style: dashed;
+  color: var(--fg-2);
+}
+
+.timeline-row.is-plan:hover {
+  background: var(--mat-hover);
+}
+
+.timeline-row.is-plan .timeline-name,
+.timeline-row.is-plan .timeline-duration {
+  color: var(--fg-2);
+}
+
+.timeline-repeat {
+  margin-left: var(--s-1);
+  vertical-align: -1px;
+  color: var(--fg-3);
 }
 
 .timeline-time {

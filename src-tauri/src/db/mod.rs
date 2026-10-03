@@ -1,6 +1,10 @@
 pub mod activity;
+pub mod journal;
+pub mod plan;
 pub mod session;
 pub mod setting;
+pub mod transfer;
+mod validate;
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
