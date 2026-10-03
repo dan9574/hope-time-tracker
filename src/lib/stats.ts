@@ -21,6 +21,8 @@ export interface DayEntry {
   note: string | null;
   /** The sessions behind this row, oldest first (several when paused and resumed). */
   sessions: Session[];
+  /** Logged automatically from a recurring plan. */
+  autoLogged: boolean;
 }
 
 export interface DaySummary {
@@ -83,6 +85,7 @@ export function summarizeDay(
       segments,
       note: chain.map((s) => s.note).find((n): n is string => !!n) ?? null,
       sessions: chain,
+      autoLogged: chain.some((s) => s.plan_id !== null),
     });
   }
   entries.sort((a, b) => a.startMs - b.startMs);

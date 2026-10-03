@@ -26,6 +26,8 @@ export const commands = {
 	end_ms: number | null,
 	note: string | null,
 	continues_id: string | null,
+	/**  Set when the session was logged automatically from a recurring plan. */
+	plan_id: string | null,
 } | null, CommandError>(__TAURI_INVOKE("session_pause")),
 	sessionResume: () => typedError<Session, CommandError>(__TAURI_INVOKE("session_resume")),
 	sessionStop: () => typedError<{
@@ -36,6 +38,8 @@ export const commands = {
 	end_ms: number | null,
 	note: string | null,
 	continues_id: string | null,
+	/**  Set when the session was logged automatically from a recurring plan. */
+	plan_id: string | null,
 } | null, CommandError>(__TAURI_INVOKE("session_stop")),
 	sessionCurrent: () => typedError<TimerState, CommandError>(__TAURI_INVOKE("session_current")),
 	/**  Sessions overlapping the range, including a running one. */
@@ -60,6 +64,11 @@ export const commands = {
 	planList: (range: DateRange) => typedError<Plan[], CommandError>(__TAURI_INVOKE("plan_list", { range })),
 	planUpsert: (input: PlanInput) => typedError<Plan, CommandError>(__TAURI_INVOKE("plan_upsert", { input })),
 	planDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("plan_delete", { id })),
+	/**
+	 *  Logs recurring-plan occurrences that have ended (the page sends today's and the past 30 days').
+	 *  Returns how many sessions were created.
+	 */
+	planAutolog: (occurrences: Occurrence[]) => typedError<number, CommandError>(__TAURI_INVOKE("plan_autolog", { occurrences })),
 	journalList: (range: DateRange) => typedError<Journal[], CommandError>(__TAURI_INVOKE("journal_list", { range })),
 	/**  Saves the day's entry; blank text removes it and returns `null`. */
 	journalUpsert: (date: string, text: string) => typedError<{
@@ -213,6 +222,14 @@ export type Journal = {
 	text: string,
 };
 
+/**  One occurrence of a recurring plan on a local date, as absolute times. */
+export type Occurrence = {
+	plan_id: string,
+	date: string,
+	start_ms: number,
+	end_ms: number,
+};
+
 /**  The overlay entered or left position-editing mode. */
 export type OverlayEditing = boolean;
 
@@ -225,6 +242,10 @@ export type Plan = {
 	end_hm: string,
 	/**  `None` = one-off; `"weekly:1,3,5"` = Monday, Wednesday, Friday (ISO weekdays, 1 = Monday). */
 	rule: string | null,
+	/**  Recurring plans only: log a session when an occurrence ends (rebuild-plan 10 F). */
+	auto_log: boolean,
+	/**  Recurring plans only: last day (inclusive); `None` = repeats forever. */
+	until: string | null,
 };
 
 export type PlanInput = {
@@ -234,6 +255,8 @@ export type PlanInput = {
 	start_hm: string,
 	end_hm: string,
 	rule: string | null,
+	auto_log: boolean,
+	until: string | null,
 };
 
 export type Session = {
@@ -244,6 +267,8 @@ export type Session = {
 	end_ms: number | null,
 	note: string | null,
 	continues_id: string | null,
+	/**  Set when the session was logged automatically from a recurring plan. */
+	plan_id: string | null,
 };
 
 /**  Create (`id: None`) or edit a finished session. Running sessions are only created through `start`. */

@@ -16,6 +16,8 @@ pub struct Session {
     pub end_ms: Option<i64>,
     pub note: Option<String>,
     pub continues_id: Option<String>,
+    /// Set when the session was logged automatically from a recurring plan.
+    pub plan_id: Option<String>,
 }
 
 /// Create (`id: None`) or edit a finished session. Running sessions are only created through `start`.
@@ -37,7 +39,7 @@ pub struct TimerState {
     pub paused: Option<Session>,
 }
 
-const COLUMNS: &str = "id, activity_id, start_ms, end_ms, note, continues_id";
+const COLUMNS: &str = "id, activity_id, start_ms, end_ms, note, continues_id, plan_id";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<Session> {
     Ok(Session {
@@ -47,6 +49,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<Session> {
         end_ms: r.get(3)?,
         note: r.get(4)?,
         continues_id: r.get(5)?,
+        plan_id: r.get(6)?,
     })
 }
 

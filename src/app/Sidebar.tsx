@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { CalendarDays, CalendarRange, Settings, Shapes, Sun, type LucideIcon } from "lucide-react";
+import { CalendarClock, CalendarDays, CalendarRange, Settings, Shapes, Sun, type LucideIcon } from "lucide-react";
 import { useUi, VIEWS, type View } from "../stores/ui";
 
 const ICONS: Record<View, LucideIcon> = {
   today: Sun,
   week: CalendarRange,
   month: CalendarDays,
+  schedule: CalendarClock,
   activities: Shapes,
   settings: Settings,
 };

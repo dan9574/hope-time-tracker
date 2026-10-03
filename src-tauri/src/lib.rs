@@ -44,6 +44,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::plan::plan_list,
             commands::plan::plan_upsert,
             commands::plan::plan_delete,
+            commands::plan::plan_autolog,
             commands::journal::journal_list,
             commands::journal::journal_upsert,
             commands::journal::journal_delete,

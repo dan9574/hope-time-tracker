@@ -257,11 +257,10 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
             start_hm: row.start_hm,
             end_hm: row.end_hm,
             rule: row.rule,
+            auto_log: row.auto_log,
+            until: row.until.clone(),
         };
         let rule = plan::check(&input)?;
-        if let Some(until) = &row.until {
-            validate::date(until)?;
-        }
         let (id, ms) = (row.id.unwrap_or_else(new_id), row.updated_ms.unwrap_or(now));
         let action = decide(&tx, "plan", &id, ms)?;
         if action != Action::Skip {
@@ -408,6 +407,8 @@ mod tests {
                 start_hm: "09:00".into(),
                 end_hm: "10:00".into(),
                 rule: Some("weekly:1,3".into()),
+                auto_log: false,
+                until: Some("2026-12-31".into()),
             },
         )
         .unwrap();

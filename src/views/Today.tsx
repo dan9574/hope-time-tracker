@@ -9,7 +9,7 @@ import { Ring, type RingSegment } from "../components/Ring";
 import { Timeline } from "../components/Timeline";
 import { commands, type Plan } from "../lib/bindings";
 import { useQuery } from "../lib/data";
-import { occurrencesOn } from "../lib/plans";
+import { autoLogs, occurrencesOn } from "../lib/plans";
 import { useRingWidth } from "../lib/preferences";
 import { ringRecords, type DayEntry } from "../lib/stats";
 import { dateKey, formatClock, formatDuration } from "../lib/time";
@@ -36,7 +36,10 @@ export function Today() {
 
   const key = dateKey(today);
   const plans = useQuery(() => commands.planList({ from: key, to: key }), [key]);
-  const occurrences = occurrencesOn(plans ?? [], activities ?? [], today);
+  // Plans whose time has passed and that log themselves now appear as real records instead.
+  const occurrences = occurrencesOn(plans ?? [], activities ?? [], today).filter(
+    (o) => !(autoLogs(o.plan) && o.endMs <= now),
+  );
   const planSegments: RingSegment[] = occurrences.map((o) => ({
     key: o.key,
     startMs: o.startMs,

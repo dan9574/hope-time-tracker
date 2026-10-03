@@ -1,0 +1,90 @@
+.schedule {
+  --schedule-gutter: calc(var(--s-12) - var(--s-2));
+  font-size: var(--text-xs);
+}
+
+.schedule-head {
+  display: grid;
+  grid-template-columns: var(--schedule-gutter) repeat(7, 1fr);
+  padding-bottom: var(--s-2);
+  text-align: center;
+  color: var(--fg-2);
+}
+
+.schedule-head .is-today {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.schedule-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--schedule-gutter) repeat(7, 1fr);
+}
+
+.schedule-hours {
+  position: relative;
+}
+
+.schedule-hours span {
+  position: absolute;
+  right: var(--s-2);
+  transform: translateY(-50%);
+  color: var(--fg-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-hours span:first-child {
+  transform: none;
+}
+
+.schedule-day {
+  position: relative;
+  border-left: 1px solid var(--line);
+  cursor: copy;
+}
+
+.schedule-day:hover {
+  background: var(--mat-hover);
+}
+
+.schedule-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--line);
+}
+
+.schedule-block {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-1);
+  border-left: 3px solid;
+  border-radius: calc(var(--r-sm) / 2);
+  overflow: hidden;
+  text-align: left;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.schedule-block-name {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.schedule-block-time {
+  color: var(--fg-2);
+}
+
+.schedule-empty {
+  margin-top: var(--s-4);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--fg-3);
+}

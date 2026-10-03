@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export const VIEWS = ["today", "week", "month", "activities", "settings"] as const;
+export const VIEWS = ["today", "week", "month", "schedule", "activities", "settings"] as const;
 export type View = (typeof VIEWS)[number];
 
 interface UiState {

@@ -15,6 +15,10 @@ pub struct Plan {
     pub end_hm: String,
     /// `None` = one-off; `"weekly:1,3,5"` = Monday, Wednesday, Friday (ISO weekdays, 1 = Monday).
     pub rule: Option<String>,
+    /// Recurring plans only: log a session when an occurrence ends (rebuild-plan 10 F).
+    pub auto_log: bool,
+    /// Recurring plans only: last day (inclusive); `None` = repeats forever.
+    pub until: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
@@ -25,6 +29,8 @@ pub struct PlanInput {
     pub start_hm: String,
     pub end_hm: String,
     pub rule: Option<String>,
+    pub auto_log: bool,
+    pub until: Option<String>,
 }
 
 /// Inclusive range of 'YYYY-MM-DD' dates.
@@ -34,7 +40,7 @@ pub struct DateRange {
     pub to: String,
 }
 
-const COLUMNS: &str = "id, activity_id, date, start_hm, end_hm, rule";
+const COLUMNS: &str = "id, activity_id, date, start_hm, end_hm, rule, auto_log, until";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<Plan> {
     Ok(Plan {
@@ -44,6 +50,8 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<Plan> {
         start_hm: r.get(3)?,
         end_hm: r.get(4)?,
         rule: r.get(5)?,
+        auto_log: r.get(6)?,
+        until: r.get(7)?,
     })
 }
 
@@ -62,11 +70,17 @@ pub fn normalize_rule(rule: Option<&str>) -> Result<Option<String>> {
     Ok(Some(format!("weekly:{}", list.join(","))))
 }
 
-/// Validates and normalizes; shared by `upsert` and the JSON importer.
+/// Validates and normalizes the rule; shared by `upsert` and the JSON importer.
 pub fn check(input: &PlanInput) -> Result<Option<String>> {
     validate::date(&input.date)?;
     if validate::hm(&input.start_hm)? >= validate::hm(&input.end_hm)? {
         return Err(Error::Invalid("plan must end after it starts".into()));
+    }
+    if let Some(until) = &input.until {
+        validate::date(until)?;
+        if until < &input.date {
+            return Err(Error::Invalid("plan ends before it starts repeating".into()));
+        }
     }
     normalize_rule(input.rule.as_deref())
 }
@@ -82,7 +96,8 @@ pub fn list(conn: &Connection, range: &DateRange) -> Result<Vec<Plan>> {
     let sql = format!(
         "SELECT {COLUMNS} FROM plan
          WHERE deleted_ms IS NULL
-           AND ((rule IS NULL AND date BETWEEN ?1 AND ?2) OR (rule IS NOT NULL AND date <= ?2))
+           AND ((rule IS NULL AND date BETWEEN ?1 AND ?2)
+                OR (rule IS NOT NULL AND date <= ?2 AND (until IS NULL OR until >= ?1)))
          ORDER BY start_hm, date"
     );
     let rows = conn
@@ -94,13 +109,15 @@ pub fn list(conn: &Connection, range: &DateRange) -> Result<Vec<Plan>> {
 
 pub fn upsert(conn: &Connection, device: &str, now: i64, input: PlanInput) -> Result<Plan> {
     let rule = check(&input)?;
+    // Both options only mean something for recurring plans.
+    let until = if rule.is_some() { input.until.clone() } else { None };
     let id = match &input.id {
         Some(id) => {
             let changed = conn.execute(
                 "UPDATE plan SET activity_id = ?2, date = ?3, start_hm = ?4, end_hm = ?5, rule = ?6,
-                     updated_ms = ?7, device_id = ?8
+                     auto_log = ?7, until = ?8, updated_ms = ?9, device_id = ?10
                  WHERE id = ?1 AND deleted_ms IS NULL",
-                params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, now, device],
+                params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, input.auto_log, until, now, device],
             )?;
             if changed == 0 {
                 return Err(Error::NotFound("plan"));
@@ -110,9 +127,9 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: PlanInput) -> Re
         None => {
             let id = new_id();
             conn.execute(
-                "INSERT INTO plan (id, activity_id, date, start_hm, end_hm, rule, updated_ms, device_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, now, device],
+                "INSERT INTO plan (id, activity_id, date, start_hm, end_hm, rule, auto_log, until, updated_ms, device_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, input.auto_log, until, now, device],
             )?;
             id
         }
@@ -144,6 +161,8 @@ mod tests {
             start_hm: "09:00".into(),
             end_hm: "10:30".into(),
             rule: rule.map(Into::into),
+            auto_log: true,
+            until: None,
         }
     }
 
@@ -169,6 +188,8 @@ mod tests {
         upsert(&conn, "d", 0, input("2026-09-01", None)).unwrap(); // outside
         let weekly = upsert(&conn, "d", 0, input("2026-09-01", Some("weekly:1"))).unwrap();
         upsert(&conn, "d", 0, input("2026-11-01", Some("weekly:1"))).unwrap(); // not started yet
+        let ended = PlanInput { until: Some("2026-09-20".into()), ..input("2026-09-01", Some("weekly:2")) };
+        upsert(&conn, "d", 0, ended).unwrap(); // already over
 
         let range = DateRange { from: "2026-09-28".into(), to: "2026-10-04".into() };
         let mut ids: Vec<_> = list(&conn, &range).unwrap().into_iter().map(|p| p.id).collect();

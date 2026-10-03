@@ -1,4 +1,5 @@
 pub mod activity;
+pub mod autolog;
 pub mod day;
 pub mod journal;
 pub mod plan;

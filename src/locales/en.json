@@ -4,7 +4,8 @@
     "week": "This Week",
     "month": "This Month",
     "activities": "Activities",
-    "settings": "Settings"
+    "settings": "Settings",
+    "schedule": "Schedule"
   },
   "views": {
     "activities": {
@@ -12,6 +13,9 @@
     },
     "settings": {
       "subtitle": "Preferences and data"
+    },
+    "schedule": {
+      "subtitle": "Your weekly routine. Click an empty slot to add."
     }
   },
   "placeholder": "This will be built in a later stage.",
@@ -146,7 +150,13 @@
     "needActivity": "Choose an activity first",
     "endAfterStart": "End must be after start",
     "confirmDelete": "Delete this plan?",
-    "confirmDeleteSeries": "Delete this weekly plan? The whole series is deleted."
+    "confirmDeleteSeries": "Delete this weekly plan? The whole series is deleted.",
+    "until": "End date",
+    "forever": "Forever",
+    "autoLog": "Log automatically",
+    "autoLogHint": "Repeats weekly. When it ends and you haven't recorded anything then, a record is added for you. Delete that record to mark it as skipped.",
+    "autoLogged": "Logged from a plan",
+    "untilBeforeStart": "The end date is before the start"
   },
   "journal": {
     "title": "Today's Journal",
@@ -183,5 +193,8 @@
     "editWakeHint": "Changes this day only; Settings holds the default.",
     "editSleepHint": "A time before the wake-up counts as after midnight. Changes this day only.",
     "useDefault": "Use Default"
+  },
+  "schedule": {
+    "empty": "No weekly routine yet. Click any slot above to add one, like a class."
   }
 }

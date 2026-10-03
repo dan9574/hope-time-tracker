@@ -42,6 +42,7 @@ export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
             <span className="timeline-main">
               <span className={row.entry.activity ? "timeline-name" : "timeline-name is-unknown"}>
                 {activityName(row.entry.activity, t, row.entry.parent)}
+                {row.entry.autoLogged && <Repeat className="timeline-repeat" size={12} aria-label={t("plan.autoLogged")} />}
               </span>
               {row.entry.note && <span className="timeline-note">{row.entry.note}</span>}
             </span>

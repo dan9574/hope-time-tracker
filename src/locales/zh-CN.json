@@ -4,7 +4,8 @@
     "week": "本周",
     "month": "本月",
     "activities": "活动",
-    "settings": "设置"
+    "settings": "设置",
+    "schedule": "日程"
   },
   "views": {
     "activities": {
@@ -12,6 +13,9 @@
     },
     "settings": {
       "subtitle": "偏好与数据"
+    },
+    "schedule": {
+      "subtitle": "每周重复的安排，点空白处添加"
     }
   },
   "placeholder": "这里将在后续阶段完成。",
@@ -146,7 +150,13 @@
     "needActivity": "请先选择活动",
     "endAfterStart": "结束时间要晚于开始时间",
     "confirmDelete": "删除这个计划？",
-    "confirmDeleteSeries": "删除这个每周重复的计划？整个系列都会删除。"
+    "confirmDeleteSeries": "删除这个每周重复的计划？整个系列都会删除。",
+    "until": "结束日期",
+    "forever": "一直重复",
+    "autoLog": "到点自动计入",
+    "autoLogHint": "每周重复；结束后若这段时间没有手动记录，会自动记一条。删除那条记录就代表那次没去。",
+    "autoLogged": "由计划自动计入",
+    "untilBeforeStart": "结束日期不能早于开始日期"
   },
   "journal": {
     "title": "今天的日记",
@@ -183,5 +193,8 @@
     "editWakeHint": "只改这一天；设置里的起床时间是默认值。",
     "editSleepHint": "早于起床时间会算作第二天凌晨。只改这一天。",
     "useDefault": "用默认值"
+  },
+  "schedule": {
+    "empty": "还没有每周重复的安排。点上方任意时间格添加，比如一节课。"
   }
 }

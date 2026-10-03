@@ -5,11 +5,13 @@ import { commands } from "../lib/bindings";
 import { useLocalePreference, useThemePreference } from "../lib/preferences";
 import { TimerButton } from "../components/TimerButton";
 import { useNow } from "../lib/useNow";
+import { useAutoLog } from "../lib/useAutoLog";
 import { useToday, utcOffsetMin } from "../lib/useToday";
 import { Sidebar } from "./Sidebar";
 import { Today } from "../views/Today";
 import { Week } from "../views/Week";
 import { Month } from "../views/Month";
+import { Schedule } from "../views/Schedule";
 import { Activities } from "../views/Activities";
 import { Settings } from "../views/Settings";
 import "./App.css";
@@ -18,6 +20,7 @@ const VIEW_COMPONENTS: Record<View, () => JSX.Element> = {
   today: Today,
   week: Week,
   month: Month,
+  schedule: Schedule,
   activities: Activities,
   settings: Settings,
 };
@@ -58,6 +61,7 @@ export function App() {
   useThemePreference();
   useTrayStrings();
   useTrayDayAction();
+  useAutoLog();
 
   return (
     <div className="shell">

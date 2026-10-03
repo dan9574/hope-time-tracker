@@ -129,3 +129,8 @@
 .sheet.is-narrow {
   width: min(340px, calc(100vw - var(--s-12))); /* sheet width, not spacing */
 }
+
+.sheet-check {
+  accent-color: var(--accent);
+  margin: 0;
+}

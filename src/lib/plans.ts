@@ -33,7 +33,13 @@ export function makeRule(days: number[]): string | null {
 export function occursOn(plan: Plan, date: Date): boolean {
   const key = dateKey(date);
   if (plan.rule === null) return plan.date === key;
+  if (plan.until !== null && key > plan.until) return false;
   return plan.date <= key && ruleDays(plan.rule).includes(isoWeekday(date));
+}
+
+/** A recurring plan that logs itself once its time has passed (rebuild-plan 10 F). */
+export function autoLogs(plan: Plan): boolean {
+  return plan.rule !== null && plan.auto_log;
 }
 
 export function occurrencesOn(plans: Plan[], activities: Activity[], date: Date): PlanOccurrence[] {
