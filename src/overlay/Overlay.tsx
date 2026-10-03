@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events } from "../lib/bindings";
 import { useQuery, useSetting } from "../lib/data";
@@ -46,26 +46,50 @@ function useEditing(): boolean {
   return editing;
 }
 
-/** Tells Rust where each card is so it can place a blurred native backdrop under it. */
+/**
+ * Tells Rust where each card is so it can place a blurred native backdrop under it.
+ * Re-measures whenever a card can move, resize, appear or disappear; unchanged frames are not resent.
+ */
 function useCardBackdrops(stackRef: React.RefObject<HTMLDivElement>) {
   const last = useRef("");
-  useLayoutEffect(() => {
+  const report = useCallback(() => {
     const stack = stackRef.current;
     if (!stack) return;
-    const report = () => {
-      const frames = [...stack.querySelectorAll<HTMLElement>(".overlay-card")].map((el) => {
-        const r = el.getBoundingClientRect();
-        return { x: r.left, y: r.top, width: r.width, height: r.height };
-      });
-      const key = JSON.stringify(frames);
-      if (key === last.current) return;
-      last.current = key;
-      void commands.overlayLayout(frames);
+    const frames = [...stack.querySelectorAll<HTMLElement>(".overlay-card")].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left, y: r.top, width: r.width, height: r.height };
+    });
+    const key = JSON.stringify(frames);
+    if (key === last.current) return;
+    last.current = key;
+    void commands.overlayLayout(frames);
+  }, [stackRef]);
+
+  // After every render: cards toggled, data changed, the edit hint appeared.
+  useLayoutEffect(report);
+
+  // Between renders: text/font size changes, cards mounting or unmounting, the window resizing
+  // (which re-centers the stack without changing its size).
+  useEffect(() => {
+    const stack = stackRef.current;
+    if (!stack) return;
+    const resize = new ResizeObserver(report);
+    const observeCards = () => {
+      resize.disconnect();
+      resize.observe(stack);
+      stack.querySelectorAll(".overlay-card").forEach((el) => resize.observe(el));
     };
-    report();
-    const observer = new ResizeObserver(report);
-    observer.observe(stack);
-    stack.querySelectorAll(".overlay-card").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  });
+    observeCards();
+    const mutation = new MutationObserver(() => {
+      observeCards();
+      report();
+    });
+    mutation.observe(stack, { childList: true });
+    window.addEventListener("resize", report);
+    return () => {
+      resize.disconnect();
+      mutation.disconnect();
+      window.removeEventListener("resize", report);
+    };
+  }, [stackRef, report]);
 }
