@@ -467,3 +467,56 @@ CREATE TABLE day (                                         -- 每天实际的起
 - 它不再使用强调色（覆盖 10.B 里"强调色作用于当前时刻圆点"那一条），否则会和蓝色活动混淆。
 
 本周 / 本月的柱子不变：段最小高度 2px、段间 1px 间隙、只有整根柱子的顶和底是圆角。
+
+## 12. 阶段 7：同步协议（所有端共用，Swift 端照此实现）
+
+第 9.2 节是原则，这里是可执行的规格。与 9.2 冲突处以本节为准。
+
+### 12.1 云端表（`supabase/schema.sql`，用户在 Supabase SQL Editor 里执行）
+
+- 同步五张表：`activity`、`session`、`plan`、`journal`、`day`。列与本地完全相同，另加：
+  - `user_id uuid not null default auth.uid()`
+  - `server_seq bigint not null`，取自全局序列 `sync_seq`
+- 主键 `(user_id, id)`；`day` 为 `(user_id, date)`。`activity.color` 的 CHECK 与本地一致。无外键。
+- RLS：四种操作都要求 `user_id = auth.uid()`。
+- BEFORE INSERT OR UPDATE 触发器（每张表）：
+  - UPDATE 时若 `(NEW.updated_ms, NEW.device_id) <= (OLD.updated_ms, OLD.device_id)`，返回 OLD（丢弃旧写入）。时间相同时 device_id 大的赢，保证各端结论一致。
+  - 否则 `NEW.server_seq = nextval('sync_seq')`。
+- "进行中唯一"触发器（`session`，AFTER INSERT OR UPDATE）：同一用户有多条 `end_ms IS NULL AND deleted_ms IS NULL` 时，`start_ms` 最晚的那条保持进行中，其余的 `end_ms` 设为它后面那条的 `start_ms`，并抬高 `updated_ms`。
+
+### 12.2 本地（迁移 0003）
+
+- 五张表各加 `dirty INTEGER NOT NULL DEFAULT 1`。任何本地写入置 1；push 成功且该行 `updated_ms` 未再变化时清 0；pull 写入的行为 0。`dirty` 不进 JSON 导出。
+- `setting` 里存：`sync.user_id`、`sync.cursor.<table>`、`sync.last_ok_ms`、`sync.last_error`。
+
+### 12.3 推与拉
+
+- **Push**：PostgREST upsert，`POST /rest/v1/<table>?on_conflict=user_id,id`，`Prefer: resolution=merge-duplicates`，每批 ≤ 500 行。本地写入后 500ms 防抖触发。
+- **Pull**：`GET /rest/v1/<table>?server_seq=gt.<cursor - 50>&order=server_seq.asc&limit=1000`，循环到取完。回读最近 50 个序号是为了盖住并发事务乱序提交的窗口；应用是幂等的，重复无害。
+- 本地应用远端行时用与云端相同的比较规则；本地更新则保留本地并保持 dirty。
+- 节奏：登录状态下每 5 秒 pull 一次；启动时、恢复联网时各做一次完整的 push + pull；出错指数退避，上限 60 秒。
+- pull 改动了数据就发出现有的数据变更事件，主窗口、托盘、Overlay 随之刷新。
+- Realtime（websocket）先不做，5 秒轮询已满足"手表开始、桌面几秒内变化"。以后作为 7b 再加。
+
+### 12.4 登录与配置
+
+- Supabase Auth，邮箱 + 密码（GoTrue REST：`/auth/v1/signup`、`/auth/v1/token?grant_type=password|refresh_token`）。
+- refresh token 存系统钥匙串（`keyring` crate）；access token 只在内存。
+- `SUPABASE_URL`、`SUPABASE_ANON_KEY` 在构建时从根目录 `.env`（已 gitignore，另提交 `.env.example`）读入；CI 用仓库 Secrets。没配置时 app 仍完全可用，只是本地模式，同步设置区显示"未配置"。
+- 所有网络请求在 Rust 里发（`reqwest`，rustls）；前端不直接访问 Supabase。
+- 设置 → 新增「同步」组：状态（未配置 / 未登录 / 同步中 / 上次同步时间 / 错误）、邮箱、密码、登录 / 注册 / 退出。
+- 首次登录：本地已有数据与云端按规则合并。若这台设备上次同步的是另一个账号，先弹确认。退出登录不删本地数据。
+
+### 12.5 批准的新依赖
+
+`reqwest`（`default-features = false`，`rustls-tls` + `json`）、`keyring`。异步运行时用 Tauri 自带的 tokio。
+
+### 12.6 测试
+
+传输层放在 trait 后面；用内存里的假服务端（实现同样的比较规则与序号）做单元测试：两台设备收敛、离线编辑后合并、删除与编辑冲突、进行中唯一、重复 pull 幂等、分页、乱序提交窗口。
+
+### 12.7 Apple 端的落点（阶段 8、9）
+
+- 目录 `apple/`，一个 Xcode 工程：iOS app（先做最小版：登录 + 今日概览 + 承载 Watch app）与 watchOS app。Bundle ID `io.github.dan9574.hope.ios`。
+- 两端各自实现 12.3 的协议（URLSession），本地存储用 SwiftData。
+- 手表的登录态由 iPhone 通过 WatchConnectivity 传过去；手表之后直接连 Supabase。
