@@ -154,7 +154,8 @@ create trigger hope_single_running
 -- ---------------------------------------------------------------------------------------------
 -- Per-table: pull index, trigger, privileges, row-level security
 
-grant usage on sequence public.sync_seq to authenticated;
+grant usage on schema public to authenticated;
+grant usage on sequence public.sync_seq to authenticated;  -- nextval() in hope_lww runs as the caller
 
 do $$
 declare
