@@ -50,6 +50,11 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::data::data_export,
             commands::data::data_import,
             commands::data::data_wipe,
+            commands::day::day_list,
+            commands::day::day_set,
+            commands::day::day_wake_now,
+            commands::day::day_sleep_now,
+            commands::tray::tray_set_day_action,
             commands::dialog::dialog_confirm,
             commands::dialog::dialog_alert,
         ])

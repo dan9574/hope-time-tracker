@@ -91,12 +91,13 @@ overlay.show / hide / set_position
   "activity": [{ "id": "…", "name": "Study", "color": "blue", "symbol": "book", "sort": 0, "archived_at": null, "parent_id": null, "updated_ms": 0 }],
   "session":  [{ "id": "…", "activity_id": "…", "start_ms": 0, "end_ms": 0, "note": "", "continues_id": null, "plan_id": null, "updated_ms": 0 }],
   "plan":     [{ "id": "…", "activity_id": "…", "date": "2026-10-02", "start_hm": "09:00", "end_hm": "11:00", "rule": null, "auto_log": true, "until": null, "updated_ms": 0 }],
-  "journal":  [{ "id": "…", "date": "2026-10-02", "text": "", "updated_ms": 0 }]
+  "journal":  [{ "id": "…", "date": "2026-10-02", "text": "", "updated_ms": 0 }],
+  "day":      [{ "date": "2026-10-02", "wake_ms": 0, "sleep_ms": 0, "utc_offset_min": 480, "updated_ms": 0 }]
 }
 ```
 
 规则：
-- 第 6.5 阶段新增的 `parent_id`、`plan_id`、`auto_log`（缺省为 true）、`until` 都是可选字段，旧文件照常导入；格式名仍是 `hope/1`。
+- 第 6.5 阶段新增的 `parent_id`、`plan_id`、`auto_log`（缺省为 true）、`until` 和整张 `day` 表都是可选的（`day` 按 `date` upsert），旧文件照常导入；格式名仍是 `hope/1`。
 - `format` 版本号必须校验；`id` 缺失时导入端生成 UUID；`updated_ms` 缺失时取导入时刻。
 - 导入是 upsert（按 `id`，后写的赢），重复导入同一份文件不会产生重复记录。
 - `data.export` 输出完全相同的结构，保证导出 → 导入是无损往返。
@@ -379,6 +380,7 @@ CREATE TABLE day (                                         -- 每天实际的起
   - 两个时间点在 设置 → 作息 里可调，存为本机设置 `wake_button_until_hm`、`sleep_button_from_hm`，与默认起床 / 睡觉时间是四个独立的值。
 - 托盘菜单同样有「起床 / 睡觉」一项，遵守相同的时间窗口。
 - 点击环两端的时间标签可以直接改当天的起床 / 睡觉时间（起晚了事后补、忘按睡觉第二天补）。
+- 凌晨归属：没按「睡觉」时，在「默认睡觉时间与次日默认起床时间的中点」（默认 03:00）之前仍算前一天，之后算新的一天。
 - 跨午夜：`sleep_ms` 允许落在第二天；一"天"的范围是 `wake_ms → sleep_ms`，凌晨的记录归属于还没睡的那一天。若到了第二天默认起床时间仍没有 `sleep_ms`，按默认睡觉时间收尾。
 - 环的范围 = `min(默认起床, 实际起床) → max(默认睡觉, 实际睡觉)`。范围内属于睡眠的部分（晚起的那段、早睡的那段）用 `--activity-purple` 40% 透明度画；按下「睡觉」后，环底部的缺口也变成同样的紫色，中心数字下方的小字改为"已休息"。Overlay 的 Today 卡同步这个状态。
 - 睡眠不是一个 activity，不进入活动统计；但 Today 副标题显示昨晚睡了多久（今天 `wake_ms` − 昨天 `sleep_ms`）。

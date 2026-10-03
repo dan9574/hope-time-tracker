@@ -12,7 +12,7 @@ use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager, Wry};
 
 use crate::db::activity::{self, Activity, ActivityColor};
-use crate::db::{now_ms, session, Db};
+use crate::db::{day, now_ms, session, Db};
 use crate::error::Result;
 use crate::events;
 
@@ -23,6 +23,8 @@ const ID_RESUME: &str = "resume";
 const ID_STOP: &str = "stop";
 const ID_OPEN: &str = "open";
 const ID_QUIT: &str = "quit";
+const ID_WAKE: &str = "day_wake";
+const ID_SLEEP: &str = "day_sleep";
 const START_PREFIX: &str = "start:";
 
 /// Menu labels, supplied by the frontend so every string stays in the i18next locale files.
@@ -36,6 +38,8 @@ pub struct TrayStrings {
     pub unknown_activity: String,
     pub open: String,
     pub quit: String,
+    pub wake: String,
+    pub sleep: String,
 }
 
 impl Default for TrayStrings {
@@ -49,13 +53,33 @@ impl Default for TrayStrings {
             unknown_activity: "Unknown activity".into(),
             open: "Open Hope".into(),
             quit: "Quit Hope".into(),
+            wake: "Wake Up".into(),
+            sleep: "Go to Sleep".into(),
         }
     }
+}
+
+/// Which wake/sleep item the tray offers right now. The page computes it, because the time windows
+/// depend on the local clock and Rust has no time zone database.
+#[derive(Debug, Clone, Deserialize, Type)]
+pub struct DayAction {
+    pub kind: DayActionKind,
+    /// Local date of the day being woken into or slept out of.
+    pub date: String,
+    pub utc_offset_min: i32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum DayActionKind {
+    Wake,
+    Sleep,
 }
 
 #[derive(Default)]
 struct TrayState {
     strings: Mutex<TrayStrings>,
+    day_action: Mutex<Option<DayAction>>,
     running_since: Mutex<Option<i64>>,
     title: Mutex<String>,
 }
@@ -78,6 +102,11 @@ pub fn init(app: &AppHandle) -> Result<()> {
         update_title(&handle);
     });
     Ok(())
+}
+
+pub fn set_day_action(app: &AppHandle, action: Option<DayAction>) {
+    *app.state::<TrayState>().day_action.lock().unwrap() = action;
+    refresh(app);
 }
 
 pub fn set_strings(app: &AppHandle, strings: TrayStrings) {
@@ -207,6 +236,16 @@ pub fn build_menu(app: &AppHandle, for_tray: bool) -> Result<Menu<Wry>> {
         menu.append(&MenuItem::with_id(app, ID_STOP, &strings.stop, true, None::<&str>)?)?;
     }
 
+    let day_action = app.state::<TrayState>().day_action.lock().unwrap().clone();
+    if let Some(action) = day_action {
+        let (id, label) = match action.kind {
+            DayActionKind::Wake => (ID_WAKE, &strings.wake),
+            DayActionKind::Sleep => (ID_SLEEP, &strings.sleep),
+        };
+        menu.append(&PredefinedMenuItem::separator(app)?)?;
+        menu.append(&MenuItem::with_id(app, id, label, true, None::<&str>)?)?;
+    }
+
     if for_tray {
         menu.append(&PredefinedMenuItem::separator(app)?)?;
         menu.append(&MenuItem::with_id(app, ID_OPEN, &strings.open, true, None::<&str>)?)?;
@@ -230,6 +269,14 @@ pub fn handle_menu_event(app: &AppHandle, id: &str) {
             ID_PAUSE => session::pause(&mut conn, device, now).map(drop),
             ID_RESUME => session::resume(&mut conn, device, now).map(drop),
             ID_STOP => session::stop(&mut conn, device, now).map(drop),
+            ID_WAKE | ID_SLEEP => {
+                let action = app.state::<TrayState>().day_action.lock().unwrap().clone();
+                match action {
+                    Some(a) if id == ID_WAKE => day::wake_now(&conn, device, now, &a.date, a.utc_offset_min).map(drop),
+                    Some(a) => day::sleep_now(&mut conn, device, now, &a.date, a.utc_offset_min).map(drop),
+                    None => return,
+                }
+            }
             _ => match id.strip_prefix(START_PREFIX) {
                 // Clicking the running activity again stops it.
                 Some(activity_id) => match session::current(&conn) {

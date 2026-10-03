@@ -125,3 +125,7 @@
   -webkit-user-select: text;
   user-select: text;
 }
+
+.sheet.is-narrow {
+  width: min(340px, calc(100vw - var(--s-12))); /* sheet width, not spacing */
+}

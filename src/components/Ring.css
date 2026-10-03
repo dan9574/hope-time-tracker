@@ -25,8 +25,24 @@
   stroke-opacity: 0.4;
 }
 
+/* Sleep is not an activity; it borrows the palette's purple at the plan opacity (rebuild-plan 10 E). */
+.ring-sleep {
+  stroke: var(--activity-purple);
+  stroke-opacity: 0.4;
+}
+
 .ring-now {
   fill: var(--accent);
+}
+
+.ring-end-label.is-button {
+  cursor: pointer;
+}
+
+.ring-end-label.is-button:hover,
+.ring-end-label.is-button:focus-visible {
+  fill: var(--accent-text);
+  outline: none;
 }
 
 .ring-end-label {

@@ -26,9 +26,11 @@ export function TodayCard({ today, now }: Props) {
         now={now}
         diameter={72}
         stroke={6}
+        sleepSegments={today.sleepSegments}
+        slept={today.slept}
       />
       <div className="overlay-today-list">
-        <p className="overlay-label">{t("overlay.today")}</p>
+        <p className="overlay-label">{today.slept ? t("day.rested") : t("overlay.today")}</p>
         {top.length === 0 ? (
           <p className="overlay-muted">{t("overlay.nothingYet")}</p>
         ) : (

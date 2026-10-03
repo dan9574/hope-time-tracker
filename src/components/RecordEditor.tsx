@@ -5,7 +5,7 @@ import { activityName, indexById } from "../lib/activity";
 import { confirmDelete } from "../lib/confirm";
 import { errorMessage } from "../lib/errors";
 import type { DayEntry } from "../lib/stats";
-import { atClock, dateKey, formatClock, MINUTE } from "../lib/time";
+import { atClock, dateKey, DAY, formatClock, MINUTE } from "../lib/time";
 import { ActivityPicker } from "./ActivityPicker";
 import "./Sheet.css";
 
@@ -71,9 +71,10 @@ export function RecordEditor({ entry, activities, date, onClose }: Props) {
     const inputs: SessionInput[] = [];
     for (const [i, seg] of segments.entries()) {
       const start = atClock(base, seg.start);
-      const end = seg.end === null ? null : atClock(base, seg.end);
+      let end = seg.end === null ? null : atClock(base, seg.end);
       if (start === null || (seg.end !== null && end === null)) return setError(t("record.badTime"));
-      if (end !== null && end < start) return setError(t("plan.endAfterStart"));
+      // An end before the start runs past midnight (e.g. 23:30–00:30).
+      if (end !== null && end < start) end += DAY;
       inputs.push({
         id: seg.id,
         activity_id: activityId,

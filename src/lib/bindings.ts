@@ -76,9 +76,24 @@ export const commands = {
 	session: TableCounts,
 	plan: TableCounts,
 	journal: TableCounts,
+	day: TableCounts,
 } | null, CommandError>(__TAURI_INVOKE("data_import")),
 	/**  Clears all records after saving a JSON backup to the Downloads folder. Returns the backup path. */
 	dataWipe: (confirmation: string, backupName: string) => typedError<string, CommandError>(__TAURI_INVOKE("data_wipe", { confirmation, backupName })),
+	dayList: (range: DateRange) => typedError<Day[], CommandError>(__TAURI_INVOKE("day_list", { range })),
+	/**  Sets both times of a day by hand (editing the ring's end labels, undoing sleep). */
+	daySet: (input: DayInput) => typedError<Day, CommandError>(__TAURI_INVOKE("day_set", { input })),
+	/**  "Wake up": records now. The page decides which local date that is. */
+	dayWakeNow: (date: string, utcOffsetMin: number) => typedError<Day, CommandError>(__TAURI_INVOKE("day_wake_now", { date, utcOffsetMin })),
+	/**  "Go to sleep": records now and stops the running timer. */
+	daySleepNow: (date: string, utcOffsetMin: number) => typedError<Day, CommandError>(__TAURI_INVOKE("day_sleep_now", { date, utcOffsetMin })),
+	/**  The wake/sleep item the tray should offer now (`null` outside both time windows). */
+	traySetDayAction: (action: {
+	kind: DayActionKind,
+	/**  Local date of the day being woken into or slept out of. */
+	date: string,
+	utc_offset_min: number,
+} | null) => __TAURI_INVOKE<void>("tray_set_day_action", { action }),
 	/**  Shows a warning sheet on the window; `true` if the user chose `confirm_label`. */
 	dialogConfirm: (title: string, message: string, confirmLabel: string, cancelLabel: string) => __TAURI_INVOKE<boolean>("dialog_confirm", { title, message, confirmLabel, cancelLabel }),
 	/**  Shows an informational sheet with a single button. */
@@ -149,6 +164,37 @@ export type DateRange = {
 	to: string,
 };
 
+/**  A day is keyed by the local date of its wake-up; `sleep_ms` may fall after midnight. */
+export type Day = {
+	date: string,
+	/**  `None` = fall back to the default wake-up time from Settings. */
+	wake_ms: number | null,
+	/**  `None` = still awake (or fall back to the default bedtime). */
+	sleep_ms: number | null,
+	/**  Minutes east of UTC on that day, so history can show that day's local clock times. */
+	utc_offset_min: number,
+};
+
+/**
+ *  Which wake/sleep item the tray offers right now. The page computes it, because the time windows
+ *  depend on the local clock and Rust has no time zone database.
+ */
+export type DayAction = {
+	kind: DayActionKind,
+	/**  Local date of the day being woken into or slept out of. */
+	date: string,
+	utc_offset_min: number,
+};
+
+export type DayActionKind = "wake" | "sleep";
+
+export type DayInput = {
+	date: string,
+	wake_ms: number | null,
+	sleep_ms: number | null,
+	utc_offset_min: number,
+};
+
 /**  Stable reason the frontend can turn into a localized message. */
 export type ErrorCode = "invalid" | "not_found" | "overlap" | "in_use" | "database" | "file" | "internal";
 
@@ -157,6 +203,7 @@ export type ImportReport = {
 	session: TableCounts,
 	plan: TableCounts,
 	journal: TableCounts,
+	day: TableCounts,
 };
 
 /**  One journal per day. Sync could leave two live rows for a date; reads take the newest. */
@@ -245,6 +292,8 @@ export type TrayStrings = {
 	unknown_activity: string,
 	open: string,
 	quit: string,
+	wake: string,
+	sleep: string,
 };
 
 /* Tauri Specta runtime */

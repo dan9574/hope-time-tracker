@@ -36,9 +36,9 @@
     "language": "语言",
     "languageSystem": "跟随系统",
     "schedule": "作息",
-    "wake": "起床",
-    "sleep": "睡觉",
-    "scheduleHint": "今天页的环从起床时间展开到睡觉时间。",
+    "wake": "默认起床",
+    "sleep": "默认睡觉",
+    "scheduleHint": "今天页的环从起床展开到睡觉。每天的实际时间点按钮记录，或点环两端的时间修改。",
     "appearance": "外观",
     "tint": "材质色温",
     "tint_clear": "无色",
@@ -65,7 +65,9 @@
     "wipeBody": "所有活动、记录、计划和日记都会被删除。清空前会自动导出一份 JSON 备份到「下载」文件夹，之后可以从「导入…」恢复。",
     "wipeType": "输入 {{phrase}} 以确认",
     "wipeConfirm": "清空",
-    "wiped": "已清空。备份保存在 {{path}}"
+    "wiped": "已清空。备份保存在 {{path}}",
+    "wakeButtonUntil": "「起床」按钮显示到",
+    "sleepButtonFrom": "「睡觉」按钮显示从"
   },
   "today": {
     "total": "已记录",
@@ -169,5 +171,17 @@
     "note": "备注",
     "badTime": "请填写完整的时间",
     "confirmDelete": "删除「{{name}}」{{range}} 的记录？此操作无法撤销。"
+  },
+  "day": {
+    "wake": "起床",
+    "sleep": "睡觉",
+    "undoSleep": "撤销睡觉",
+    "rested": "已休息",
+    "sleptLastNight": "昨晚睡了 {{duration}}",
+    "editWake": "今天的起床时间",
+    "editSleep": "今天的睡觉时间",
+    "editWakeHint": "只改这一天；设置里的起床时间是默认值。",
+    "editSleepHint": "早于起床时间会算作第二天凌晨。只改这一天。",
+    "useDefault": "用默认值"
   }
 }

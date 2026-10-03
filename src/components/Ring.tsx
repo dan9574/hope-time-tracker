@@ -24,6 +24,13 @@ interface RingProps {
   /** End labels under the two tips; omitted on small rings. */
   wakeLabel?: string;
   sleepLabel?: string;
+  /** Clicking an end label edits that day's wake-up / bedtime. */
+  onWakeClick?: () => void;
+  onSleepClick?: () => void;
+  /** Parts of the ring spent asleep (late wake-up, early bedtime), drawn purple at 40%. */
+  sleepSegments?: Array<{ startMs: number; endMs: number }>;
+  /** After going to sleep, the gap at the bottom turns purple too. */
+  slept?: boolean;
   /** Shown in the middle of the ring. */
   children?: ReactNode;
 }
@@ -44,6 +51,10 @@ export function Ring({
   stroke = 10,
   wakeLabel,
   sleepLabel,
+  onWakeClick,
+  onSleepClick,
+  sleepSegments = [],
+  slept = false,
   children,
 }: RingProps) {
   const r = diameter / 2;
@@ -82,6 +93,13 @@ export function Ring({
         {/* Track: elapsed part darker than the future part. */}
         <path className="ring-track-future" d={arcPath(0, ARC)} strokeWidth={stroke} />
         {nowDeg > 0 && <path className="ring-track-past" d={arcPath(0, nowDeg)} strokeWidth={stroke} />}
+        {sleepSegments
+          .map((s, i) => ({ key: i, from: deg(s.startMs), to: deg(s.endMs) }))
+          .filter((a) => a.to > a.from)
+          .map((a) => (
+            <path key={`sleep-${a.key}`} className="ring-sleep" d={arcPath(a.from, a.to)} strokeWidth={stroke} />
+          ))}
+        {slept && <path className="ring-sleep" d={arcPath(ARC, 360)} strokeWidth={stroke} />}
         {toArcs(plans).map((a) => (
           <path key={a.key} className="ring-plan" d={arcPath(a.from, a.to)} stroke={activityColorVar(a.color)} strokeWidth={stroke} />
         ))}
@@ -92,14 +110,10 @@ export function Ring({
           <circle className="ring-now" cx={nowPoint.x} cy={nowPoint.y} r={Math.max(stroke * 0.4, 3)} />
         )}
         {wakeLabel !== undefined && (
-          <text className="ring-end-label" x={wakeTip.x} y={wakeTip.y + stroke / 2 + LABEL_GAP} textAnchor="middle">
-            {wakeLabel}
-          </text>
+          <EndLabel x={wakeTip.x} y={wakeTip.y + stroke / 2 + LABEL_GAP} text={wakeLabel} onClick={onWakeClick} />
         )}
         {sleepLabel !== undefined && (
-          <text className="ring-end-label" x={sleepTip.x} y={sleepTip.y + stroke / 2 + LABEL_GAP} textAnchor="middle">
-            {sleepLabel}
-          </text>
+          <EndLabel x={sleepTip.x} y={sleepTip.y + stroke / 2 + LABEL_GAP} text={sleepLabel} onClick={onSleepClick} />
         )}
       </svg>
       {children && (
@@ -108,5 +122,29 @@ export function Ring({
         </div>
       )}
     </div>
+  );
+}
+
+function EndLabel({ x, y, text, onClick }: { x: number; y: number; text: string; onClick?: () => void }) {
+  if (!onClick) {
+    return (
+      <text className="ring-end-label" x={x} y={y} textAnchor="middle">
+        {text}
+      </text>
+    );
+  }
+  return (
+    <text
+      className="ring-end-label is-button"
+      x={x}
+      y={y}
+      textAnchor="middle"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}
+    >
+      {text}
+    </text>
   );
 }

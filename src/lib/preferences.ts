@@ -12,6 +12,8 @@ export const PREF = {
   accent: "theme.accent",
   ring: "theme.ring",
   appearance: "theme.appearance",
+  wakeButtonUntil: "wake_button_until_hm",
+  sleepButtonFrom: "sleep_button_from_hm",
 } as const;
 
 export const APPEARANCES = ["system", "light", "dark"] as const;
@@ -23,6 +25,9 @@ export const RING_WIDTHS = [10, 16] as const;
 
 export const DEFAULT_WAKE = "07:00";
 export const DEFAULT_SLEEP = "23:00";
+/** The wake-up button disappears after this, the sleep button appears after that (rebuild-plan 10 E). */
+export const DEFAULT_WAKE_BUTTON_UNTIL = "08:30";
+export const DEFAULT_SLEEP_BUTTON_FROM = "21:00";
 
 /** Follows the "locale" setting ("system" or unset = detect from the OS). */
 export function useLocalePreference() {

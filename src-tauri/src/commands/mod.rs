@@ -1,6 +1,7 @@
 pub mod activity;
 pub mod app;
 pub mod data;
+pub mod day;
 pub mod dialog;
 pub mod journal;
 pub mod overlay;

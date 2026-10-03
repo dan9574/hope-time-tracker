@@ -3,7 +3,7 @@ import { Segmented } from "../../components/Segmented";
 import { ColorPicker } from "../../components/ColorPicker";
 import { commands, type ActivityColor } from "../../lib/bindings";
 import { run, useSetting } from "../../lib/data";
-import { APPEARANCES, DEFAULT_SLEEP, DEFAULT_WAKE, PREF, RING_WIDTHS, TINTS, type Appearance, type Tint } from "../../lib/preferences";
+import { APPEARANCES, DEFAULT_SLEEP, DEFAULT_SLEEP_BUTTON_FROM, DEFAULT_WAKE, DEFAULT_WAKE_BUTTON_UNTIL, PREF, RING_WIDTHS, TINTS, type Appearance, type Tint } from "../../lib/preferences";
 
 const save = (key: string, value: string) => void run(commands.settingSet(key, value));
 
@@ -32,6 +32,8 @@ export function ScheduleSettings() {
   const { t } = useTranslation();
   const wake = useSetting(PREF.wake) ?? DEFAULT_WAKE;
   const sleep = useSetting(PREF.sleep) ?? DEFAULT_SLEEP;
+  const wakeUntil = useSetting(PREF.wakeButtonUntil) ?? DEFAULT_WAKE_BUTTON_UNTIL;
+  const sleepFrom = useSetting(PREF.sleepButtonFrom) ?? DEFAULT_SLEEP_BUTTON_FROM;
 
   return (
     <section className="settings-group">
@@ -44,6 +46,14 @@ export function ScheduleSettings() {
         <label className="settings-row">
           <span>{t("settings.sleep")}</span>
           <TimeInput value={sleep} onCommit={(v) => save(PREF.sleep, v)} />
+        </label>
+        <label className="settings-row">
+          <span>{t("settings.wakeButtonUntil")}</span>
+          <TimeInput value={wakeUntil} onCommit={(v) => save(PREF.wakeButtonUntil, v)} />
+        </label>
+        <label className="settings-row">
+          <span>{t("settings.sleepButtonFrom")}</span>
+          <TimeInput value={sleepFrom} onCommit={(v) => save(PREF.sleepButtonFrom, v)} />
         </label>
       </div>
       <p className="settings-footnote">{t("settings.scheduleHint")}</p>

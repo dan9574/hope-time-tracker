@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use super::activity::ActivityColor;
+use super::day::{self, DayInput};
 use super::plan::{self, PlanInput};
 use super::{new_id, validate};
 use crate::error::{Error, Result};
@@ -24,6 +25,9 @@ pub struct ExportFile {
     pub plan: Vec<PlanRow>,
     #[serde(default)]
     pub journal: Vec<JournalRow>,
+    /// Added in schema v2; absent in older files.
+    #[serde(default)]
+    pub day: Vec<DayRow>,
 }
 
 // Rows: `id` and `updated_ms` may be missing on import (generated / set to now).
@@ -91,6 +95,18 @@ pub struct JournalRow {
     pub updated_ms: Option<i64>,
 }
 
+/// Keyed by `date` (one row per day), not by a UUID.
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct DayRow {
+    pub date: String,
+    #[serde(default)]
+    pub wake_ms: Option<i64>,
+    #[serde(default)]
+    pub sleep_ms: Option<i64>,
+    pub utc_offset_min: i32,
+    pub updated_ms: Option<i64>,
+}
+
 /// Per-table counts shown to the user after an import.
 #[derive(Debug, Default, Clone, Serialize, Type, PartialEq)]
 pub struct TableCounts {
@@ -106,6 +122,7 @@ pub struct ImportReport {
     pub session: TableCounts,
     pub plan: TableCounts,
     pub journal: TableCounts,
+    pub day: TableCounts,
 }
 
 /// Every live row, in the same shape `import` reads.
@@ -169,7 +186,13 @@ pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
         .prepare("SELECT id, date, text, updated_ms FROM journal WHERE deleted_ms IS NULL ORDER BY date")?
         .query_map([], |r| Ok(JournalRow { id: r.get(0)?, date: r.get(1)?, text: r.get(2)?, updated_ms: r.get(3)? }))?
         .collect::<rusqlite::Result<_>>()?;
-    Ok(ExportFile { format: FORMAT.into(), exported_at: now, activity, session, plan, journal })
+    let day = conn
+        .prepare("SELECT date, wake_ms, sleep_ms, utc_offset_min, updated_ms FROM day WHERE deleted_ms IS NULL ORDER BY date")?
+        .query_map([], |r| {
+            Ok(DayRow { date: r.get(0)?, wake_ms: r.get(1)?, sleep_ms: r.get(2)?, utc_offset_min: r.get(3)?, updated_ms: r.get(4)? })
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(ExportFile { format: FORMAT.into(), exported_at: now, activity, session, plan, journal, day })
 }
 
 pub fn parse(json: &str) -> Result<ExportFile> {
@@ -271,6 +294,29 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
         action.count(&mut report.journal);
     }
 
+    for row in file.day {
+        let ms = row.updated_ms.unwrap_or(now);
+        day::check(&DayInput { date: row.date.clone(), wake_ms: row.wake_ms, sleep_ms: row.sleep_ms, utc_offset_min: row.utc_offset_min })?;
+        let existing: Option<i64> =
+            tx.query_row("SELECT updated_ms FROM day WHERE date = ?1", [&row.date], |r| r.get(0)).optional()?;
+        let action = match existing {
+            None => Action::Insert,
+            Some(old) if ms > old => Action::Update,
+            Some(_) => Action::Skip,
+        };
+        if action != Action::Skip {
+            tx.execute(
+                "INSERT INTO day (date, wake_ms, sleep_ms, utc_offset_min, updated_ms, deleted_ms, device_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)
+                 ON CONFLICT (date) DO UPDATE SET wake_ms = excluded.wake_ms, sleep_ms = excluded.sleep_ms,
+                   utc_offset_min = excluded.utc_offset_min, updated_ms = excluded.updated_ms,
+                   deleted_ms = NULL, device_id = excluded.device_id",
+                params![row.date, row.wake_ms, row.sleep_ms, row.utc_offset_min, ms, device],
+            )?;
+        }
+        action.count(&mut report.day);
+    }
+
     // An imported file may bring its own running session; keep the "one running, globally" rule.
     tx.execute(
         "UPDATE session SET end_ms = MAX(?1, start_ms), updated_ms = ?1, device_id = ?2
@@ -366,6 +412,7 @@ mod tests {
         )
         .unwrap();
         journal::upsert(&conn, "d", 30, "2026-10-02", "hi").unwrap();
+        day::set(&conn, "d", 40, DayInput { date: "2026-10-02".into(), wake_ms: Some(1), sleep_ms: Some(2), utc_offset_min: 480 }).unwrap();
         conn
     }
 
@@ -381,6 +428,7 @@ mod tests {
         assert_eq!(report.session.added, 1);
         assert_eq!(report.plan.added, 1);
         assert_eq!(report.journal.added, 1);
+        assert_eq!(report.day.added, 1);
 
         let again = export(&target, 999).unwrap();
         assert_eq!(serde_json::to_value(&again).unwrap(), serde_json::to_value(&exported).unwrap());
@@ -440,6 +488,7 @@ mod tests {
         wipe(&mut conn, "d", 999).unwrap();
         let out = export(&conn, 0).unwrap();
         assert!(out.activity.is_empty() && out.session.is_empty() && out.plan.is_empty() && out.journal.is_empty());
+        assert!(out.day.is_empty());
     }
 
     #[test]

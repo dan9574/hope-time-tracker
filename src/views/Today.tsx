@@ -14,20 +14,23 @@ import { useRingWidth } from "../lib/preferences";
 import { ringRecords, type DayEntry } from "../lib/stats";
 import { dateKey, formatClock, formatDuration } from "../lib/time";
 import { useNow } from "../lib/useNow";
-import { useToday } from "../lib/useToday";
+import { useToday, utcOffsetMin } from "../lib/useToday";
+import { DayTimeEditor } from "../components/DayTimeEditor";
 import "./Today.css";
 
 /** Which sheet is open. */
 type Editing =
   | { kind: "plan"; plan: Plan | null }
   | { kind: "record"; entry: DayEntry | null }
+  | { kind: "day"; which: "wake" | "sleep" }
   | null;
 
 export function Today() {
   const { t, i18n } = useTranslation();
   const timer = useQuery(() => commands.sessionCurrent(), []);
   const now = useNow(timer?.running ? 1000 : 30_000);
-  const { today, summary, activities, loaded, wakeMs, sleepMs } = useToday(now);
+  const day = useToday(now);
+  const { today, summary, activities, loaded, wakeMs, sleepMs } = day;
   const ringWidth = useRingWidth();
   const [editing, setEditing] = useState<Editing>(null);
 
@@ -42,11 +45,27 @@ export function Today() {
   }));
   const pickable = (activities ?? []).filter((a) => a.archived_at === null);
 
-  const subtitle = new Intl.DateTimeFormat(i18n.language, {
+  const dateText = new Intl.DateTimeFormat(i18n.language, {
     month: "long",
     day: "numeric",
     weekday: "long",
   }).format(today);
+  const subtitle =
+    day.lastNightMs !== null && day.lastNightMs > 0
+      ? `${dateText} · ${t("day.sleptLastNight", { duration: formatDuration(day.lastNightMs) })}`
+      : dateText;
+
+  const pressButton = async () => {
+    const b = day.button;
+    if (!b) return;
+    const res =
+      b.kind === "wake"
+        ? await commands.dayWakeNow(b.date, utcOffsetMin())
+        : b.kind === "sleep"
+          ? await commands.daySleepNow(b.date, utcOffsetMin())
+          : await commands.daySet({ ...b.day, sleep_ms: null });
+    if (res.status === "error") console.error(res.error);
+  };
 
   return (
     <Page title={t("nav.today")} subtitle={subtitle}>
@@ -58,13 +77,25 @@ export function Today() {
           plans={planSegments}
           now={now}
           stroke={ringWidth}
-          wakeLabel={formatClock(wakeMs, i18n.language)}
-          sleepLabel={formatClock(sleepMs, i18n.language)}
+          wakeLabel={formatClock(day.wakeLabelMs, i18n.language)}
+          sleepLabel={formatClock(day.sleepLabelMs, i18n.language)}
+          onWakeClick={() => setEditing({ kind: "day", which: "wake" })}
+          onSleepClick={() => setEditing({ kind: "day", which: "sleep" })}
+          sleepSegments={day.sleepSegments}
+          slept={day.slept}
         >
           <span className="today-total tabular">{formatDuration(summary.totalMs)}</span>
-          <span className="today-total-label">{t("today.total")}</span>
+          <span className="today-total-label">{day.slept ? t("day.rested") : t("today.total")}</span>
         </Ring>
       </section>
+
+      {day.button && (
+        <div className="today-day-button">
+          <button type="button" className="settings-button" onClick={() => void pressButton()}>
+            {day.button.kind === "wake" ? t("day.wake") : day.button.kind === "sleep" ? t("day.sleep") : t("day.undoSleep")}
+          </button>
+        </div>
+      )}
 
       <div className="today-toolbar">
         <button
@@ -102,6 +133,16 @@ export function Today() {
 
       {editing?.kind === "plan" && (
         <PlanEditor plan={editing.plan} date={today} activities={pickable} onClose={() => setEditing(null)} />
+      )}
+      {editing?.kind === "day" && (
+        <DayTimeEditor
+          which={editing.which}
+          date={today}
+          dateKey={day.key}
+          day={day.day}
+          currentMs={editing.which === "wake" ? day.wakeLabelMs : day.sleepLabelMs}
+          onClose={() => setEditing(null)}
+        />
       )}
       {editing?.kind === "record" && (
         <RecordEditor entry={editing.entry} activities={activities ?? []} date={today} onClose={() => setEditing(null)} />

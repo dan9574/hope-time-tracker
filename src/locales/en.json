@@ -36,9 +36,9 @@
     "language": "Language",
     "languageSystem": "System",
     "schedule": "Schedule",
-    "wake": "Wake up",
-    "sleep": "Bedtime",
-    "scheduleHint": "The ring on Today spans from wake-up to bedtime.",
+    "wake": "Default wake-up",
+    "sleep": "Default bedtime",
+    "scheduleHint": "The ring on Today spans wake-up to bedtime. Record each day's actual times with the button, or click the times at the ring's ends.",
     "appearance": "Appearance",
     "tint": "Material tint",
     "tint_clear": "Clear",
@@ -65,7 +65,9 @@
     "wipeBody": "Every activity, record, plan and journal entry will be deleted. A JSON backup is saved to your Downloads folder first; you can restore it with Import….",
     "wipeType": "Type {{phrase}} to confirm",
     "wipeConfirm": "Clear",
-    "wiped": "Cleared. Backup saved to {{path}}"
+    "wiped": "Cleared. Backup saved to {{path}}",
+    "wakeButtonUntil": "Show “Wake Up” until",
+    "sleepButtonFrom": "Show “Go to Sleep” from"
   },
   "today": {
     "total": "Tracked",
@@ -169,5 +171,17 @@
     "note": "Note",
     "badTime": "Fill in both times",
     "confirmDelete": "Delete the {{name}} record from {{range}}? This can't be undone."
+  },
+  "day": {
+    "wake": "Wake Up",
+    "sleep": "Go to Sleep",
+    "undoSleep": "Undo Sleep",
+    "rested": "Rested",
+    "sleptLastNight": "slept {{duration}} last night",
+    "editWake": "Today's Wake-up",
+    "editSleep": "Today's Bedtime",
+    "editWakeHint": "Changes this day only; Settings holds the default.",
+    "editSleepHint": "A time before the wake-up counts as after midnight. Changes this day only.",
+    "useDefault": "Use Default"
   }
 }
