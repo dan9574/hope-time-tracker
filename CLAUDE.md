@@ -34,6 +34,7 @@
 
 ## 当前状态
 
-- 阶段 1、2 已完成（Tauri 骨架、activity/session command、托盘、Today 视图）。
+- 阶段 1–3 已完成（Tauri 骨架、activity/session command、托盘、Today 视图、Overlay 窗口 macOS 版）。
 - 不做旧库直接导入；数据进出口只有 rebuild-plan 3.3 的 JSON 格式。
-- 下一步：阶段 3（Overlay 窗口）。
+- 欠账：Overlay 的 Windows 模糊底板，第 6 阶段打包时在 Windows 上补。
+- 下一步：阶段 4（本周 / 本月）。

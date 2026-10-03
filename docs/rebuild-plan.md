@@ -30,7 +30,7 @@ i18n   i18next + react-i18next，文案在 src/locales/{zh-CN,en}.json
 标识   App identifier `io.github.dan9574.hope`；iOS 用 `.ios` 后缀，Watch 由 Xcode 自动派生
 macOS  开启 macOSPrivateApi（透明材质与 Overlay 需要），放弃 Mac App Store，dmg 分发
 存储   SQLite，单文件，位于 app data 目录
-日期   date-fns（tz 用系统时区，去掉 PST/Beijing 枚举）
+日期   date-fns（tz 用系统时区，去掉 PST/Beijing 枚举）；一周固定从周一开始
 ```
 
 依赖准则：每加一个 npm 包都要说明为什么不能用 50 行代码替代。
@@ -196,14 +196,16 @@ purple  #B08CFF   teal    #5CD0D0   yellow  #F5D56A   gray    #A5A5AC
 ## 5. Overlay 窗口（壁纸层记录）
 
 - 独立 Tauri 窗口 `overlay`：`transparent: true, decorations: false, always_on_bottom: true, skip_taskbar: true, focusable: false`，`set_ignore_cursor_events(true)`。
-- macOS 额外把 NSWindow level 设为 `kCGDesktopIconWindowLevel - 1`，让它位于桌面图标之下、壁纸之上；Windows 用 always-on-bottom 即可。
-- 默认停靠屏幕右侧，宽 320px，距右边 48px，垂直居中；位置在设置里可拖动调整后保存。
-- 内容三块，竖排，每块是独立材质卡（`rgba(255,255,255,0.14)` + blur，1px 白线 15%，圆角 `--r-lg`）：
+- macOS 额外把 NSWindow level 设为 `kCGDesktopIconWindowLevel - 1`，让它位于桌面图标之下、壁纸之上。
+- **模糊是原生的**：透明窗口里 CSS `backdrop-filter` 看不到壁纸。每张卡下面放一块原生 `NSVisualEffectView`（objc2），位置由页面量好后交给 Rust；卡片位置、尺寸、显隐任何变化都要重新量并同步底板。
+- Windows：always-on-bottom + `window-vibrancy` crate 的 Acrylic / Mica 做底板模糊。在第 6 阶段打包时于 Windows 机器或 CI 上验证，之前不盲写。
+- 默认停靠屏幕右侧，宽 320px，距右边 48px，垂直居中；设置里可拖动，「完成」时保存，另有「恢复默认」。
+- 内容三块，竖排，每块是独立材质卡（原生模糊底板 + `rgba(255,255,255,0.14)` 填充，1px 白线 15%，圆角 `--r-lg`）：
   1. **Now**：进行中活动名 + 已持续时间（无进行中则显示"今天 · 总时长"）。
   2. **Today**：细环 + 前 3 个活动与时长。
-  3. **This Week**：7 根细柱 + 本周总时长 + 与上周对比。
+  3. **This Week**：7 根细柱 + 本周总时长 + 与上周**同期**对比（本周一至此刻 vs 上周一至上周同一时刻）。
 - 文字固定白色（85% / 55%），不随系统深浅色切换，因为它永远叠在壁纸上。
-- 设置里可单独开关每一块、调整整体透明度（0.6–1.0）。
+- 设置里可单独开关每一块、调整透明度（0.6–1.0）。**透明度只作用于卡片填充和文字，不作用于模糊底板**——底板一起淡化会透回清晰壁纸，就不像玻璃了。
 
 ## 6. 目录结构
 
