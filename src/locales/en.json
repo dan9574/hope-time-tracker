@@ -54,7 +54,11 @@
     "export": "Export…",
     "exported": "Exported to {{path}}",
     "imported": "Import finished: {{added}} added, {{updated}} updated, {{unchanged}} unchanged.",
-    "dataFailed": "Failed: {{message}}"
+    "dataFailed": "Failed: {{message}}",
+    "appearanceMode": "Mode",
+    "appearance_system": "System",
+    "appearance_light": "Light",
+    "appearance_dark": "Dark"
   },
   "today": {
     "total": "Tracked",

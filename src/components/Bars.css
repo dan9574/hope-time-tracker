@@ -44,8 +44,12 @@
   color: var(--fg-2);
 }
 
-.bars-col.is-highlight .bars-label,
 .bars-col.is-highlight .bars-value {
   color: var(--fg);
+  font-weight: 600;
+}
+
+.bars-col.is-highlight .bars-label {
+  color: var(--accent-text);
   font-weight: 600;
 }

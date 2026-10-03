@@ -1,7 +1,8 @@
 .shell {
-  background: var(--mat-tint);
   display: grid;
   grid-template-columns: 200px 1fr;
+  /* One row that fills the window and may shrink below its content, so children can scroll. */
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
 }
 
@@ -16,9 +17,17 @@
 }
 
 /* Sidebar has no fill: on macOS the native sidebar material shows through. */
+/* Material tint (4.3.1): an inset shadow paints above the element's own background and below its
+   content, so the tint shows on both columns whether the material is native (macOS) or CSS. */
+.sidebar,
+.content {
+  box-shadow: inset 0 0 0 100vmax var(--mat-tint);
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   border-right: 1px solid var(--line);
 }
 
@@ -28,6 +37,7 @@
   padding: 0 var(--s-2);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .sidebar-item {
@@ -55,13 +65,14 @@
 }
 
 .sidebar-item[aria-current="page"] .sidebar-icon {
-  color: var(--fg);
+  color: var(--accent-text);
 }
 
 .content {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   background: var(--mat-window);
 }
 

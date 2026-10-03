@@ -3,7 +3,7 @@ import { Segmented } from "../../components/Segmented";
 import { ColorPicker } from "../../components/ColorPicker";
 import { commands, type ActivityColor } from "../../lib/bindings";
 import { run, useSetting } from "../../lib/data";
-import { DEFAULT_SLEEP, DEFAULT_WAKE, PREF, RING_WIDTHS, TINTS, type Tint } from "../../lib/preferences";
+import { APPEARANCES, DEFAULT_SLEEP, DEFAULT_WAKE, PREF, RING_WIDTHS, TINTS, type Appearance, type Tint } from "../../lib/preferences";
 
 const save = (key: string, value: string) => void run(commands.settingSet(key, value));
 
@@ -68,6 +68,7 @@ export function TimeInput({ value, onCommit }: { value: string; onCommit: (hm: s
 
 export function AppearanceSettings() {
   const { t } = useTranslation();
+  const appearance = (useSetting(PREF.appearance) ?? "system") as Appearance;
   const tint = (useSetting(PREF.tint) ?? "clear") as Tint;
   const accent = (useSetting(PREF.accent) ?? "blue") as ActivityColor;
   const ring = useSetting(PREF.ring) === "16" ? "16" : "10";
@@ -76,6 +77,15 @@ export function AppearanceSettings() {
     <section className="settings-group">
       <h2 className="settings-group-title">{t("settings.appearance")}</h2>
       <div className="settings-rows">
+        <div className="settings-row">
+          <span>{t("settings.appearanceMode")}</span>
+          <Segmented
+            label={t("settings.appearanceMode")}
+            value={appearance}
+            options={APPEARANCES.map((v) => ({ value: v, label: t(`settings.appearance_${v}`) }))}
+            onChange={(v) => save(PREF.appearance, v)}
+          />
+        </div>
         <div className="settings-row">
           <span>{t("settings.tint")}</span>
           <Segmented

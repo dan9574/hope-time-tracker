@@ -54,7 +54,11 @@
     "export": "导出…",
     "exported": "已导出到 {{path}}",
     "imported": "导入完成：新增 {{added}}，更新 {{updated}}，未变 {{unchanged}}。",
-    "dataFailed": "操作失败：{{message}}"
+    "dataFailed": "操作失败：{{message}}",
+    "appearanceMode": "颜色模式",
+    "appearance_system": "跟随系统",
+    "appearance_light": "浅色",
+    "appearance_dark": "深色"
   },
   "today": {
     "total": "已记录",

@@ -166,7 +166,7 @@ purple  #B08CFF   teal    #5CD0D0   yellow  #F5D56A   gray    #A5A5AC
 
 ### 4.3.1 主题（Settings 里的三个选项，仅此三个）
 
-1. 材质色温：Clear（默认，无色）/ Warm（`--mat-window` 叠 4% 的 #F5E6C8）/ Cool（叠 4% 的 #C8D8E6）。
+1. 材质色温：Clear（默认，无色）/ Warm（叠 12% 的 #F5E6C8）/ Cool（叠 12% 的 #C8D8E6），同时作用于侧栏和内容区（见第 10 节 B）。
 2. 强调色：从 4.3 的 8 色里选一个作为 `--accent`（默认 blue），影响按钮、选中态、当前时刻圆点。文字用派生的 `--accent-text`（浅色模式混 40% 黑，深色模式等于 `--accent`），保证低饱和色做文字时可读。
 3. 环线宽：10px / 16px。
 

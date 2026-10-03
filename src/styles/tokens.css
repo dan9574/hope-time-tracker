@@ -50,8 +50,10 @@
   --overlay-fg-2: rgba(255, 255, 255, 0.55);
 }
 
+/* Dark values. Applied when the system is dark (unless Settings forces light) or when Settings forces dark.
+   Plain CSS cannot share one block between a media query and a selector, so the values appear twice. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --mat-window: rgba(28, 28, 30, 0.72);
     --mat-card:   rgba(255, 255, 255, 0.06);
     --mat-hover:  rgba(255, 255, 255, 0.06);
@@ -63,6 +65,22 @@
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mat-window: rgba(28, 28, 30, 0.72);
+  --mat-card:   rgba(255, 255, 255, 0.06);
+  --mat-hover:  rgba(255, 255, 255, 0.06);
+  --line:     rgba(255, 255, 255, 0.10);
+  --fg:   rgba(255, 255, 255, 0.92);
+  --fg-2: rgba(255, 255, 255, 0.58);
+  --fg-3: rgba(255, 255, 255, 0.34);
+  --accent-text: var(--accent);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 /* Theme choices from Settings (4.3.1) */
 :root[data-accent="green"]  { --accent: var(--activity-green); }
 :root[data-accent="orange"] { --accent: var(--activity-orange); }
@@ -72,5 +90,5 @@
 :root[data-accent="yellow"] { --accent: var(--activity-yellow); }
 :root[data-accent="gray"]   { --accent: var(--activity-gray); }
 
-:root[data-tint="warm"] { --mat-tint: rgba(245, 230, 200, 0.04); } /* #F5E6C8 at 4% */
-:root[data-tint="cool"] { --mat-tint: rgba(200, 216, 230, 0.04); } /* #C8D8E6 at 4% */
+:root[data-tint="warm"] { --mat-tint: rgba(245, 230, 200, 0.12); } /* #F5E6C8 at 12% */
+:root[data-tint="cool"] { --mat-tint: rgba(200, 216, 230, 0.12); } /* #C8D8E6 at 12% */

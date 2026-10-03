@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useSetting } from "./data";
 import i18n, { detectLocale, SUPPORTED_LOCALES, type Locale } from "./i18n";
 
@@ -10,7 +11,11 @@ export const PREF = {
   tint: "theme.tint",
   accent: "theme.accent",
   ring: "theme.ring",
+  appearance: "theme.appearance",
 } as const;
+
+export const APPEARANCES = ["system", "light", "dark"] as const;
+export type Appearance = (typeof APPEARANCES)[number];
 
 export const TINTS = ["clear", "warm", "cool"] as const;
 export type Tint = (typeof TINTS)[number];
@@ -29,10 +34,11 @@ export function useLocalePreference() {
   }, [stored]);
 }
 
-/** Applies accent and material tint to the document so tokens.css can switch variables. */
+/** Applies accent, material tint and light/dark to the document so tokens.css can switch variables. */
 export function useThemePreference() {
   const accent = useSetting(PREF.accent);
   const tint = useSetting(PREF.tint);
+  const appearance = useSetting(PREF.appearance);
   useEffect(() => {
     const root = document.documentElement;
     if (accent && accent !== "blue") root.dataset.accent = accent;
@@ -40,6 +46,14 @@ export function useThemePreference() {
     if (tint && tint !== "clear") root.dataset.tint = tint;
     else delete root.dataset.tint;
   }, [accent, tint]);
+  useEffect(() => {
+    if (appearance === undefined) return; // still loading
+    const theme = appearance === "light" || appearance === "dark" ? appearance : null;
+    if (theme) document.documentElement.dataset.theme = theme;
+    else delete document.documentElement.dataset.theme;
+    // The native window appearance drives the vibrancy materials behind the page.
+    void getCurrentWindow().setTheme(theme);
+  }, [appearance]);
 }
 
 export function useRingWidth(): number {

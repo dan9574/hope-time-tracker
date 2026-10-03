@@ -87,6 +87,14 @@ pub fn run() {
             app.manage(database);
 
             if let Some(main) = app.get_webview_window("main") {
+                // Apply a forced light/dark choice before the page loads, so there is no flash.
+                let appearance = db::setting::get(&app.state::<db::Db>().conn(), "theme.appearance")?;
+                let theme = match appearance.as_deref() {
+                    Some("light") => Some(tauri::Theme::Light),
+                    Some("dark") => Some(tauri::Theme::Dark),
+                    _ => None,
+                };
+                main.set_theme(theme)?;
                 vibrancy::install(&main)?;
             }
             tray::init(app.handle())?;
