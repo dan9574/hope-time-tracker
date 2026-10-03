@@ -115,7 +115,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: PlanInput) -> Re
         Some(id) => {
             let changed = conn.execute(
                 "UPDATE plan SET activity_id = ?2, date = ?3, start_hm = ?4, end_hm = ?5, rule = ?6,
-                     auto_log = ?7, until = ?8, updated_ms = ?9, device_id = ?10
+                     auto_log = ?7, until = ?8, updated_ms = MAX(?9, updated_ms + 1), device_id = ?10, dirty = 1
                  WHERE id = ?1 AND deleted_ms IS NULL",
                 params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, input.auto_log, until, now, device],
             )?;
@@ -139,7 +139,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: PlanInput) -> Re
 
 pub fn delete(conn: &Connection, device: &str, now: i64, id: &str) -> Result<()> {
     let changed = conn.execute(
-        "UPDATE plan SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3 WHERE id = ?1 AND deleted_ms IS NULL",
+        "UPDATE plan SET deleted_ms = ?2, updated_ms = MAX(?2, updated_ms + 1), device_id = ?3, dirty = 1 WHERE id = ?1 AND deleted_ms IS NULL",
         params![id, now, device],
     )?;
     if changed == 0 {

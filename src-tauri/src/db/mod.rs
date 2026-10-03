@@ -20,6 +20,7 @@ use crate::error::Result;
 const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_init.sql"),
     include_str!("migrations/0002_subactivities_days_autolog.sql"),
+    include_str!("migrations/0003_sync_dirty.sql"),
 ];
 
 pub struct Db {
@@ -60,6 +61,12 @@ impl Db {
 
     pub fn device_id(&self) -> &str {
         &self.device_id
+    }
+
+    /// A migrated in-memory database with a fixed device id (sync tests run several "devices").
+    #[cfg(test)]
+    pub fn in_memory(device_id: &str) -> Self {
+        Self { conn: Mutex::new(test_conn()), path: PathBuf::new(), device_id: device_id.into() }
     }
 }
 
@@ -134,10 +141,12 @@ mod tests {
         .unwrap();
 
         migrate(&mut conn).unwrap();
-        assert_eq!(schema_version(&conn).unwrap(), 2);
+        assert_eq!(schema_version(&conn).unwrap() as usize, MIGRATIONS.len());
         let (auto_log, until): (i64, Option<String>) =
             conn.query_row("SELECT auto_log, until FROM plan WHERE id = 'p'", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
         assert_eq!((auto_log, until), (1, None), "existing plans default to auto-log, no end date");
+        let dirty: i64 = conn.query_row("SELECT dirty FROM plan WHERE id = 'p'", [], |r| r.get(0)).unwrap();
+        assert_eq!(dirty, 1, "rows from before sync start dirty, so the first sign-in uploads them");
     }
 
     #[test]

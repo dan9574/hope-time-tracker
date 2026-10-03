@@ -221,7 +221,7 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name, color = excluded.color,
                    symbol = excluded.symbol, sort = excluded.sort, archived_at = excluded.archived_at,
                    parent_id = excluded.parent_id,
-                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
+                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
                 params![id, row.name.trim(), row.color, row.symbol, row.sort, row.archived_at, row.parent_id, ms, device],
             )?;
         }
@@ -242,7 +242,7 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
                  ON CONFLICT (id) DO UPDATE SET activity_id = excluded.activity_id, start_ms = excluded.start_ms,
                    end_ms = excluded.end_ms, note = excluded.note, continues_id = excluded.continues_id,
                    plan_id = excluded.plan_id,
-                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
+                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
                 params![id, row.activity_id, row.start_ms, row.end_ms, note, row.continues_id, row.plan_id, ms, device],
             )?;
         }
@@ -270,7 +270,7 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
                  ON CONFLICT (id) DO UPDATE SET activity_id = excluded.activity_id, date = excluded.date,
                    start_hm = excluded.start_hm, end_hm = excluded.end_hm, rule = excluded.rule,
                    auto_log = excluded.auto_log, until = excluded.until,
-                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
+                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
                 params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, row.auto_log, row.until, ms, device],
             )?;
         }
@@ -286,7 +286,7 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
                 "INSERT INTO journal (id, date, text, updated_ms, deleted_ms, device_id)
                  VALUES (?1, ?2, ?3, ?4, NULL, ?5)
                  ON CONFLICT (id) DO UPDATE SET date = excluded.date, text = excluded.text,
-                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
+                   updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
                 params![id, row.date, row.text, ms, device],
             )?;
         }
@@ -309,7 +309,7 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
                  VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)
                  ON CONFLICT (date) DO UPDATE SET wake_ms = excluded.wake_ms, sleep_ms = excluded.sleep_ms,
                    utc_offset_min = excluded.utc_offset_min, updated_ms = excluded.updated_ms,
-                   deleted_ms = NULL, device_id = excluded.device_id",
+                   deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
                 params![row.date, row.wake_ms, row.sleep_ms, row.utc_offset_min, ms, device],
             )?;
         }
@@ -318,7 +318,7 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
 
     // An imported file may bring its own running session; keep the "one running, globally" rule.
     tx.execute(
-        "UPDATE session SET end_ms = MAX(?1, start_ms), updated_ms = ?1, device_id = ?2
+        "UPDATE session SET end_ms = MAX(?1, start_ms), updated_ms = MAX(?1, updated_ms + 1), device_id = ?2, dirty = 1
          WHERE end_ms IS NULL AND deleted_ms IS NULL
            AND id != (SELECT id FROM session WHERE end_ms IS NULL AND deleted_ms IS NULL
                       ORDER BY start_ms DESC LIMIT 1)",
@@ -334,7 +334,7 @@ pub fn wipe(conn: &mut Connection, device: &str, now: i64) -> Result<()> {
     let tx = conn.transaction()?;
     for table in ["activity", "session", "plan", "journal", "day"] {
         tx.execute(
-            &format!("UPDATE {table} SET deleted_ms = ?1, updated_ms = ?1, device_id = ?2 WHERE deleted_ms IS NULL"),
+            &format!("UPDATE {table} SET deleted_ms = ?1, updated_ms = MAX(?1, updated_ms + 1), device_id = ?2, dirty = 1 WHERE deleted_ms IS NULL"),
             params![now, device],
         )?;
     }

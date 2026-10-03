@@ -175,7 +175,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -
             let changed = conn.execute(
                 "UPDATE activity
                  SET name = ?2, color = ?3, symbol = ?4, sort = COALESCE(?5, sort), parent_id = ?6,
-                     updated_ms = ?7, device_id = ?8
+                     updated_ms = MAX(?7, updated_ms + 1), device_id = ?8, dirty = 1
                  WHERE id = ?1 AND deleted_ms IS NULL",
                 params![id, name, color, input.symbol, input.sort, parent_id, now, device],
             )?;
@@ -184,7 +184,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -
             }
             // Keep stored child colors in step (reads already use the parent's).
             conn.execute(
-                "UPDATE activity SET color = ?2, updated_ms = ?3, device_id = ?4
+                "UPDATE activity SET color = ?2, updated_ms = MAX(?3, updated_ms + 1), device_id = ?4, dirty = 1
                  WHERE parent_id = ?1 AND deleted_ms IS NULL AND color != ?2",
                 params![id, color, now, device],
             )?;
@@ -210,7 +210,7 @@ pub fn set_archived(conn: &Connection, device: &str, now: i64, id: &str, archive
     let changed = conn.execute(
         "UPDATE activity
          SET archived_at = CASE WHEN ?2 THEN COALESCE(archived_at, ?3) END,
-             updated_ms = ?3, device_id = ?4
+             updated_ms = MAX(?3, updated_ms + 1), device_id = ?4, dirty = 1
          WHERE id = ?1 AND deleted_ms IS NULL",
         params![id, archived, now, device],
     )?;
@@ -241,13 +241,13 @@ pub fn delete(conn: &mut Connection, device: &str, now: i64, id: &str) -> Result
     }
     let tx = conn.transaction()?;
     tx.execute(
-        "UPDATE plan SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3
+        "UPDATE plan SET deleted_ms = ?2, updated_ms = MAX(?2, updated_ms + 1), device_id = ?3, dirty = 1
          WHERE deleted_ms IS NULL AND activity_id IN
            (SELECT id FROM activity WHERE (id = ?1 OR parent_id = ?1) AND deleted_ms IS NULL)",
         params![id, now, device],
     )?;
     tx.execute(
-        "UPDATE activity SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3
+        "UPDATE activity SET deleted_ms = ?2, updated_ms = MAX(?2, updated_ms + 1), device_id = ?3, dirty = 1
          WHERE (id = ?1 OR parent_id = ?1) AND deleted_ms IS NULL",
         params![id, now, device],
     )?;
@@ -260,7 +260,7 @@ pub fn reorder(conn: &mut Connection, device: &str, now: i64, ids: &[String]) ->
     let tx = conn.transaction()?;
     for (i, id) in ids.iter().enumerate() {
         tx.execute(
-            "UPDATE activity SET sort = ?2, updated_ms = ?3, device_id = ?4 WHERE id = ?1 AND deleted_ms IS NULL",
+            "UPDATE activity SET sort = ?2, updated_ms = MAX(?3, updated_ms + 1), device_id = ?4, dirty = 1 WHERE id = ?1 AND deleted_ms IS NULL",
             params![id, i as i64, now, device],
         )?;
     }

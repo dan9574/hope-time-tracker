@@ -70,7 +70,7 @@ fn running(conn: &Connection) -> Result<Option<Session>> {
 fn end_running(tx: &Transaction<'_>, device: &str, now: i64) -> Result<Option<Session>> {
     let latest = running(tx)?;
     tx.execute(
-        "UPDATE session SET end_ms = MAX(?1, start_ms), updated_ms = ?1, device_id = ?2
+        "UPDATE session SET end_ms = MAX(?1, start_ms), updated_ms = MAX(?1, updated_ms + 1), device_id = ?2, dirty = 1
          WHERE end_ms IS NULL AND deleted_ms IS NULL",
         params![now, device],
     )?;
@@ -186,7 +186,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: SessionInput) ->
             }
             conn.execute(
                 "UPDATE session SET activity_id = ?2, start_ms = ?3, end_ms = ?4, note = ?5,
-                     updated_ms = ?6, device_id = ?7
+                     updated_ms = MAX(?6, updated_ms + 1), device_id = ?7, dirty = 1
                  WHERE id = ?1",
                 params![id, input.activity_id, input.start_ms, input.end_ms, note, now, device],
             )?;
@@ -232,7 +232,7 @@ pub fn delete_many(conn: &mut Connection, device: &str, now: i64, ids: &[String]
 /// Soft delete.
 pub fn delete(conn: &Connection, device: &str, now: i64, id: &str) -> Result<()> {
     let changed = conn.execute(
-        "UPDATE session SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3
+        "UPDATE session SET deleted_ms = ?2, updated_ms = MAX(?2, updated_ms + 1), device_id = ?3, dirty = 1
          WHERE id = ?1 AND deleted_ms IS NULL",
         params![id, now, device],
     )?;

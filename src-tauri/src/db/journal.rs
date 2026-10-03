@@ -56,7 +56,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, date: &str, text: &str)
     match existing {
         Some(j) => {
             conn.execute(
-                "UPDATE journal SET text = ?2, updated_ms = ?3, device_id = ?4 WHERE id = ?1",
+                "UPDATE journal SET text = ?2, updated_ms = MAX(?3, updated_ms + 1), device_id = ?4, dirty = 1 WHERE id = ?1",
                 params![j.id, text, now, device],
             )?;
         }
@@ -72,7 +72,7 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, date: &str, text: &str)
 
 pub fn delete(conn: &Connection, device: &str, now: i64, id: &str) -> Result<()> {
     let changed = conn.execute(
-        "UPDATE journal SET deleted_ms = ?2, updated_ms = ?2, device_id = ?3 WHERE id = ?1 AND deleted_ms IS NULL",
+        "UPDATE journal SET deleted_ms = ?2, updated_ms = MAX(?2, updated_ms + 1), device_id = ?3, dirty = 1 WHERE id = ?1 AND deleted_ms IS NULL",
         params![id, now, device],
     )?;
     if changed == 0 {

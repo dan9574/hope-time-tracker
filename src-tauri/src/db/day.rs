@@ -78,8 +78,8 @@ pub fn set(conn: &Connection, device: &str, now: i64, input: DayInput) -> Result
         "INSERT INTO day (date, wake_ms, sleep_ms, utc_offset_min, updated_ms, deleted_ms, device_id)
          VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)
          ON CONFLICT (date) DO UPDATE SET wake_ms = excluded.wake_ms, sleep_ms = excluded.sleep_ms,
-           utc_offset_min = excluded.utc_offset_min, updated_ms = excluded.updated_ms,
-           deleted_ms = NULL, device_id = excluded.device_id",
+           utc_offset_min = excluded.utc_offset_min, updated_ms = MAX(excluded.updated_ms, day.updated_ms + 1),
+           deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
         params![input.date, input.wake_ms, input.sleep_ms, input.utc_offset_min, now, device],
     )?;
     get(conn, &input.date)?.ok_or(Error::NotFound("day"))
