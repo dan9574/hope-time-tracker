@@ -1,0 +1,4 @@
+// Copy to Local.xcconfig (git-ignored) and put your Apple team ID here.
+// Find it in Xcode → Settings → Accounts, or in your "Apple Development" certificate:
+//   security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject   (the OU= field)
+DEVELOPMENT_TEAM = ABCDE12345

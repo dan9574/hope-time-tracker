@@ -1,0 +1,14 @@
+// Shared build settings for both app targets (see apple/README.md).
+//
+// Two optional, git-ignored files are layered on top:
+//   Local.xcconfig               DEVELOPMENT_TEAM for signing (copy Local.xcconfig.example)
+//   Supabase.generated.xcconfig  SUPABASE_URL / SUPABASE_ANON_KEY, written by scripts/configure-supabase.sh
+//                                from the repository's root .env
+// Without them the apps still build; without Supabase values they run local-only.
+
+SUPABASE_URL =
+SUPABASE_ANON_KEY =
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
+#include? "Supabase.generated.xcconfig"
