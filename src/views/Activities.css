@@ -51,6 +51,41 @@
   color: var(--fg-3);
 }
 
+.activity-icon-button {
+  display: grid;
+  place-items: center;
+  width: var(--s-6);
+  height: var(--s-6);
+  border-radius: var(--r-sm);
+  color: var(--fg-3);
+}
+
+.activity-icon-button:hover {
+  background: var(--mat-hover);
+  color: var(--fg);
+}
+
+.activity-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sub-activities are indented past the parent's grip and glyph. */
+.activity-row.is-child {
+  padding-left: var(--s-8);
+  font-size: var(--text-sm);
+}
+
+.activity-editing.is-child {
+  padding-left: var(--s-8);
+}
+
+.activity-editor-note {
+  font-size: var(--text-sm);
+  color: var(--fg-2);
+}
+
 .activity-add {
   display: flex;
   align-items: center;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Activity, type Plan } from "../lib/bindings";
 import { makeRule, ruleDays } from "../lib/plans";
+import { ActivityPicker } from "./ActivityPicker";
 import { dateKey, weekDays } from "../lib/time";
 import "./PlanEditor.css";
 
@@ -62,16 +63,10 @@ export function PlanEditor({ plan, date, activities, onClose }: Props) {
       >
         <h2 className="sheet-title">{plan ? t("plan.edit") : t("plan.new")}</h2>
 
-        <label className="sheet-row">
+        <div className="sheet-row">
           <span>{t("plan.activity")}</span>
-          <select className="settings-select" value={activityId} onChange={(e) => setActivityId(e.target.value)}>
-            {activities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <ActivityPicker activities={activities} value={activityId} onChange={setActivityId} />
+        </div>
         <div className="sheet-row">
           <span>{t("plan.time")}</span>
           <span className="sheet-inline">

@@ -94,7 +94,8 @@
     "thisMonth": "This Month",
     "byActivity": "By Activity",
     "total": "Total",
-    "empty": "Nothing tracked in this period"
+    "empty": "Nothing tracked in this period",
+    "unspecified": "Other"
   },
   "activities": {
     "add": "New Activity",
@@ -104,7 +105,13 @@
     "nameRequired": "Enter a name",
     "namePlaceholder": "Activity name",
     "color": "Color",
-    "symbol": "Icon"
+    "symbol": "Icon",
+    "addSub": "Add a sub-activity to {{name}}",
+    "showSub": "Show sub-activities",
+    "subNamePlaceholder": "Sub-activity of {{name}}",
+    "parent": "Parent",
+    "topLevel": "None (top level)",
+    "colorFollows": "Same as {{name}}"
   },
   "common": {
     "cancel": "Cancel",

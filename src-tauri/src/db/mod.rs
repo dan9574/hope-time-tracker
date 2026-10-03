@@ -15,7 +15,10 @@ use rusqlite::Connection;
 use crate::error::Result;
 
 /// Ordered list of migrations; index + 1 is the resulting `user_version`.
-const MIGRATIONS: &[&str] = &[include_str!("migrations/0001_init.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("migrations/0001_init.sql"),
+    include_str!("migrations/0002_subactivities_days_autolog.sql"),
+];
 
 pub struct Db {
     conn: Mutex<Connection>,
@@ -108,10 +111,31 @@ mod tests {
             .unwrap()
             .collect::<std::result::Result<_, _>>()
             .unwrap();
-        assert_eq!(tables, ["activity", "journal", "plan", "session", "setting"]);
+        assert_eq!(tables, ["activity", "day", "journal", "plan", "session", "setting"]);
 
         // Running again is a no-op.
         migrate(&mut conn).unwrap();
+    }
+
+    #[test]
+    fn v1_databases_upgrade_in_place() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        let tx = conn.transaction().unwrap();
+        tx.execute_batch(MIGRATIONS[0]).unwrap();
+        tx.pragma_update(None, "user_version", 1).unwrap();
+        tx.commit().unwrap();
+        conn.execute(
+            "INSERT INTO plan (id, activity_id, date, start_hm, end_hm, updated_ms, device_id)
+             VALUES ('p', 'a', '2026-10-01', '09:00', '10:00', 0, 'd')",
+            [],
+        )
+        .unwrap();
+
+        migrate(&mut conn).unwrap();
+        assert_eq!(schema_version(&conn).unwrap(), 2);
+        let (auto_log, until): (i64, Option<String>) =
+            conn.query_row("SELECT auto_log, until FROM plan WHERE id = 'p'", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!((auto_log, until), (1, None), "existing plans default to auto-log, no end date");
     }
 
     #[test]

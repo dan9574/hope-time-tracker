@@ -1,4 +1,5 @@
 import type { Activity, Plan } from "./bindings";
+import { parentOf } from "./activity";
 import { atClock, dateKey } from "./time";
 
 /** A plan placed on a specific day. */
@@ -6,6 +7,7 @@ export interface PlanOccurrence {
   key: string;
   plan: Plan;
   activity: Activity | undefined;
+  parent: Activity | undefined;
   startMs: number;
   endMs: number;
 }
@@ -42,6 +44,7 @@ export function occurrencesOn(plans: Plan[], activities: Activity[], date: Date)
       key: `${p.id}@${dateKey(date)}`,
       plan: p,
       activity: byId.get(p.activity_id),
+      parent: parentOf(byId.get(p.activity_id), byId),
       startMs: atClock(date, p.start_hm)!,
       endMs: atClock(date, p.end_hm)!,
     }))

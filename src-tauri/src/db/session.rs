@@ -213,7 +213,7 @@ mod tests {
             conn,
             "d",
             0,
-            ActivityInput { id: None, name: name.into(), color: ActivityColor::Blue, symbol: None, sort: None },
+            ActivityInput { id: None, name: name.into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None },
         )
         .unwrap()
         .id

@@ -26,12 +26,41 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
+  width: 100%;
   padding: var(--s-3) 0;
+  text-align: left;
   font-size: var(--text-sm);
 }
 
-.summary-row + .summary-row {
+.summary-list > li + li {
   border-top: 1px solid var(--line);
+}
+
+.summary-chevron {
+  flex-shrink: 0;
+  margin-right: calc(var(--s-2) * -1);
+  color: var(--fg-3);
+  transition: transform 150ms ease;
+}
+
+.summary-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.summary-chevron.is-hidden {
+  visibility: hidden;
+}
+
+.summary-children {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--s-2);
+}
+
+/* Indented under the parent's name (chevron + dot + gaps). */
+.summary-row.is-child {
+  padding: var(--s-1) 0 var(--s-1) calc(var(--s-6) + var(--s-3));
+  color: var(--fg-2);
 }
 
 .summary-name {

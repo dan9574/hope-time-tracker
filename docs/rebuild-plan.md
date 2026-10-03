@@ -88,14 +88,15 @@ overlay.show / hide / set_position
 {
   "format": "hope/1",
   "exported_at": 1760000000000,
-  "activity": [{ "id": "…", "name": "Study", "color": "blue", "symbol": "book", "sort": 0, "archived_at": null, "updated_ms": 0 }],
-  "session":  [{ "id": "…", "activity_id": "…", "start_ms": 0, "end_ms": 0, "note": "", "continues_id": null, "updated_ms": 0 }],
-  "plan":     [{ "id": "…", "activity_id": "…", "date": "2026-10-02", "start_hm": "09:00", "end_hm": "11:00", "rule": null, "updated_ms": 0 }],
+  "activity": [{ "id": "…", "name": "Study", "color": "blue", "symbol": "book", "sort": 0, "archived_at": null, "parent_id": null, "updated_ms": 0 }],
+  "session":  [{ "id": "…", "activity_id": "…", "start_ms": 0, "end_ms": 0, "note": "", "continues_id": null, "plan_id": null, "updated_ms": 0 }],
+  "plan":     [{ "id": "…", "activity_id": "…", "date": "2026-10-02", "start_hm": "09:00", "end_hm": "11:00", "rule": null, "auto_log": true, "until": null, "updated_ms": 0 }],
   "journal":  [{ "id": "…", "date": "2026-10-02", "text": "", "updated_ms": 0 }]
 }
 ```
 
 规则：
+- 第 6.5 阶段新增的 `parent_id`、`plan_id`、`auto_log`（缺省为 true）、`until` 都是可选字段，旧文件照常导入；格式名仍是 `hope/1`。
 - `format` 版本号必须校验；`id` 缺失时导入端生成 UUID；`updated_ms` 缺失时取导入时刻。
 - 导入是 upsert（按 `id`，后写的赢），重复导入同一份文件不会产生重复记录。
 - `data.export` 输出完全相同的结构，保证导出 → 导入是无损往返。

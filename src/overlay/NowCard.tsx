@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { ActivityDot } from "../components/ActivityDot";
-import { activityName } from "../lib/activity";
+import { activityName, indexById, parentOf } from "../lib/activity";
 import type { Activity, TimerState } from "../lib/bindings";
 import { formatDuration, formatElapsed } from "../lib/time";
 
@@ -15,7 +15,8 @@ interface Props {
 export function NowCard({ timer, activities, todayMs, now }: Props) {
   const { t } = useTranslation();
   const current = timer?.running ?? timer?.paused;
-  const activity = current ? activities?.find((a) => a.id === current.activity_id) : undefined;
+  const byId = indexById(activities);
+  const activity = current ? byId.get(current.activity_id) : undefined;
 
   return (
     <section className="overlay-card">
@@ -23,7 +24,7 @@ export function NowCard({ timer, activities, todayMs, now }: Props) {
         <>
           <p className="overlay-label">
             <ActivityDot color={activity?.color} />
-            <span className="overlay-ellipsis">{activityName(activity, t)}</span>
+            <span className="overlay-ellipsis">{activityName(activity, t, parentOf(activity, byId))}</span>
             {timer?.paused && <span className="overlay-muted">· {t("timer.paused")}</span>}
           </p>
           <p className="overlay-big tabular">

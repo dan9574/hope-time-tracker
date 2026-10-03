@@ -1,5 +1,6 @@
 import type { Activity, Session, TimeRange } from "./bindings";
 import type { RingSegment } from "../components/Ring";
+import { parentOf } from "./activity";
 import { dateKey, dayRange } from "./time";
 
 /** One timeline row: a pause/resume chain shown as a single entry. */
@@ -8,6 +9,8 @@ export interface DayEntry {
   activityId: string;
   /** Undefined when the activity is unknown (no foreign keys; sync may deliver it later). */
   activity: Activity | undefined;
+  /** Set when `activity` is a sub-activity whose parent is known. */
+  parent: Activity | undefined;
   startMs: number;
   /** Null while the last segment is running. */
   endMs: number | null;
@@ -71,6 +74,7 @@ export function summarizeDay(
       key,
       activityId: first.activity_id,
       activity: activityById.get(first.activity_id),
+      parent: parentOf(activityById.get(first.activity_id), activityById),
       startMs: first.start_ms,
       endMs: last.end_ms,
       durationMs,
@@ -82,21 +86,48 @@ export function summarizeDay(
   return { totalMs, entries };
 }
 
+/** Time per top-level activity; sub-activities roll up into their parent. */
 export interface ActivityTotal {
   activityId: string;
   activity: Activity | undefined;
   ms: number;
+  /**
+   * Breakdown by sub-activity, largest first. Time logged on the parent itself appears as an entry
+   * whose `activityId` is the parent's. Empty when no sub-activity has time.
+   */
+  children: ActivityTotal[];
 }
 
-/** Per-activity totals, largest first. */
+function addTo(map: Map<string, ActivityTotal>, id: string, activity: Activity | undefined, ms: number) {
+  const t = map.get(id);
+  if (t) t.ms += ms;
+  else map.set(id, { activityId: id, activity, ms, children: [] });
+  return map.get(id)!;
+}
+
+function finish(map: Map<string, ActivityTotal>, childMaps: Map<string, Map<string, ActivityTotal>>): ActivityTotal[] {
+  return [...map.values()]
+    .filter((t) => t.ms > 0)
+    .map((t) => {
+      const kids = [...(childMaps.get(t.activityId)?.values() ?? [])].filter((c) => c.ms > 0);
+      const hasSub = kids.some((c) => c.activityId !== t.activityId);
+      return { ...t, children: hasSub ? kids.sort((a, b) => b.ms - a.ms) : [] };
+    })
+    .sort((a, b) => b.ms - a.ms);
+}
+
+/** Totals per top-level activity, largest first, with a per-sub-activity breakdown. */
 export function totalsByActivity(entries: DayEntry[]): ActivityTotal[] {
   const totals = new Map<string, ActivityTotal>();
+  const childMaps = new Map<string, Map<string, ActivityTotal>>();
   for (const e of entries) {
-    const t = totals.get(e.activityId);
-    if (t) t.ms += e.durationMs;
-    else totals.set(e.activityId, { activityId: e.activityId, activity: e.activity, ms: e.durationMs });
+    const root = e.parent ?? e.activity;
+    const rootId = e.parent?.id ?? e.activityId;
+    addTo(totals, rootId, root, e.durationMs);
+    if (!childMaps.has(rootId)) childMaps.set(rootId, new Map());
+    addTo(childMaps.get(rootId)!, e.activityId, e.activity, e.durationMs);
   }
-  return [...totals.values()].filter((t) => t.ms > 0).sort((a, b) => b.ms - a.ms);
+  return finish(totals, childMaps);
 }
 
 /** Day entries flattened into ring segments. */
@@ -121,15 +152,17 @@ export function summarizeDays(sessions: Session[], activities: Activity[], days:
   });
 }
 
-/** Per-activity totals across several days, largest first. */
+/** Per-activity totals across several days, largest first, keeping the sub-activity breakdown. */
 export function mergeTotals(days: DayTotals[]): ActivityTotal[] {
   const merged = new Map<string, ActivityTotal>();
+  const childMaps = new Map<string, Map<string, ActivityTotal>>();
   for (const d of days) {
     for (const p of d.parts) {
-      const m = merged.get(p.activityId);
-      if (m) m.ms += p.ms;
-      else merged.set(p.activityId, { ...p });
+      addTo(merged, p.activityId, p.activity, p.ms);
+      if (!childMaps.has(p.activityId)) childMaps.set(p.activityId, new Map());
+      const kids = p.children.length > 0 ? p.children : [{ ...p, children: [] }];
+      for (const c of kids) addTo(childMaps.get(p.activityId)!, c.activityId, c.activity, c.ms);
     }
   }
-  return [...merged.values()].sort((a, b) => b.ms - a.ms);
+  return finish(merged, childMaps);
 }

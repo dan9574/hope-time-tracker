@@ -94,7 +94,8 @@
     "thisMonth": "回到本月",
     "byActivity": "按活动",
     "total": "合计",
-    "empty": "这段时间没有记录"
+    "empty": "这段时间没有记录",
+    "unspecified": "未细分"
   },
   "activities": {
     "add": "新建活动",
@@ -104,7 +105,13 @@
     "nameRequired": "请输入名称",
     "namePlaceholder": "活动名称",
     "color": "颜色",
-    "symbol": "图标"
+    "symbol": "图标",
+    "addSub": "给「{{name}}」添加子活动",
+    "showSub": "显示子活动",
+    "subNamePlaceholder": "「{{name}}」下的子活动名称",
+    "parent": "上级",
+    "topLevel": "无（顶层活动）",
+    "colorFollows": "跟随「{{name}}」"
   },
   "common": {
     "cancel": "取消",

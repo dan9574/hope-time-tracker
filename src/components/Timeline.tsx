@@ -38,7 +38,7 @@ export function Timeline({ entries, plans, onPlanClick }: Props) {
             </span>
             <span className="timeline-main">
               <span className={row.entry.activity ? "timeline-name" : "timeline-name is-unknown"}>
-                {activityName(row.entry.activity, t)}
+                {activityName(row.entry.activity, t, row.entry.parent)}
               </span>
               {row.entry.note && <span className="timeline-note">{row.entry.note}</span>}
             </span>
@@ -57,7 +57,7 @@ export function Timeline({ entries, plans, onPlanClick }: Props) {
               </span>
               <span className="timeline-main">
                 <span className="timeline-name">
-                  {activityName(row.plan.activity, t)}
+                  {activityName(row.plan.activity, t, row.plan.parent)}
                   {row.plan.plan.rule && <Repeat className="timeline-repeat" size={12} aria-label={t("plan.repeats")} />}
                 </span>
               </span>

@@ -1,0 +1,86 @@
+/* The menu opens inline under the row (the row wraps), so a scrolling sheet can never clip it.
+   `display: contents` lets the button and the menu take part in the row's flex layout directly. */
+.picker {
+  display: contents;
+}
+
+.picker-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  max-width: 240px;
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-sm);
+  background: var(--mat-hover);
+  font-size: var(--text-sm);
+  color: var(--fg);
+}
+
+.picker-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-menu {
+  flex-basis: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--mat-card);
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+}
+
+.picker-option {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border-radius: calc(var(--r-md) - var(--s-1));
+  text-align: left;
+  font-size: var(--text-sm);
+}
+
+.picker-option:hover,
+.picker-expand:hover {
+  background: var(--mat-hover);
+}
+
+.picker-option[aria-selected="true"] {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+/* Sub-activities line up with the parent's name. */
+.picker-option.is-child {
+  width: 100%;
+  padding-left: calc(var(--s-2) + var(--s-2) + var(--s-2));
+}
+
+.picker-expand {
+  display: grid;
+  place-items: center;
+  width: var(--s-6);
+  height: var(--s-6);
+  border-radius: calc(var(--r-md) - var(--s-1));
+  color: var(--fg-3);
+}
+
+.picker-expand svg {
+  transition: transform 150ms ease;
+}
+
+.picker-expand svg.is-open {
+  transform: rotate(90deg);
+}

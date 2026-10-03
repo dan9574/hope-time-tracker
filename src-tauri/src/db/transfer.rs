@@ -39,6 +39,9 @@ pub struct ActivityRow {
     pub sort: i64,
     #[serde(default)]
     pub archived_at: Option<i64>,
+    /// Added in schema v2; absent in older files.
+    #[serde(default)]
+    pub parent_id: Option<String>,
     pub updated_ms: Option<i64>,
 }
 
@@ -52,6 +55,9 @@ pub struct SessionRow {
     pub note: Option<String>,
     #[serde(default)]
     pub continues_id: Option<String>,
+    /// Added in schema v2; absent in older files.
+    #[serde(default)]
+    pub plan_id: Option<String>,
     pub updated_ms: Option<i64>,
 }
 
@@ -64,7 +70,17 @@ pub struct PlanRow {
     pub end_hm: String,
     #[serde(default)]
     pub rule: Option<String>,
+    /// Added in schema v2; older files mean "on".
+    #[serde(default = "default_true")]
+    pub auto_log: bool,
+    /// Added in schema v2; absent in older files.
+    #[serde(default)]
+    pub until: Option<String>,
     pub updated_ms: Option<i64>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -96,7 +112,7 @@ pub struct ImportReport {
 pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
     let activity = conn
         .prepare(
-            "SELECT id, name, color, symbol, sort, archived_at, updated_ms FROM activity
+            "SELECT id, name, color, symbol, sort, archived_at, parent_id, updated_ms FROM activity
              WHERE deleted_ms IS NULL ORDER BY sort, name",
         )?
         .query_map([], |r| {
@@ -107,13 +123,14 @@ pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
                 symbol: r.get(3)?,
                 sort: r.get(4)?,
                 archived_at: r.get(5)?,
-                updated_ms: r.get(6)?,
+                parent_id: r.get(6)?,
+                updated_ms: r.get(7)?,
             })
         })?
         .collect::<rusqlite::Result<_>>()?;
     let session = conn
         .prepare(
-            "SELECT id, activity_id, start_ms, end_ms, note, continues_id, updated_ms FROM session
+            "SELECT id, activity_id, start_ms, end_ms, note, continues_id, plan_id, updated_ms FROM session
              WHERE deleted_ms IS NULL ORDER BY start_ms",
         )?
         .query_map([], |r| {
@@ -124,13 +141,14 @@ pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
                 end_ms: r.get(3)?,
                 note: r.get(4)?,
                 continues_id: r.get(5)?,
-                updated_ms: r.get(6)?,
+                plan_id: r.get(6)?,
+                updated_ms: r.get(7)?,
             })
         })?
         .collect::<rusqlite::Result<_>>()?;
     let plan = conn
         .prepare(
-            "SELECT id, activity_id, date, start_hm, end_hm, rule, updated_ms FROM plan
+            "SELECT id, activity_id, date, start_hm, end_hm, rule, auto_log, until, updated_ms FROM plan
              WHERE deleted_ms IS NULL ORDER BY date, start_hm",
         )?
         .query_map([], |r| {
@@ -141,7 +159,9 @@ pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
                 start_hm: r.get(3)?,
                 end_hm: r.get(4)?,
                 rule: r.get(5)?,
-                updated_ms: r.get(6)?,
+                auto_log: r.get(6)?,
+                until: r.get(7)?,
+                updated_ms: r.get(8)?,
             })
         })?
         .collect::<rusqlite::Result<_>>()?;
@@ -173,12 +193,13 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
         let action = decide(&tx, "activity", &id, ms)?;
         if action != Action::Skip {
             tx.execute(
-                "INSERT INTO activity (id, name, color, symbol, sort, archived_at, updated_ms, deleted_ms, device_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULL, ?8)
+                "INSERT INTO activity (id, name, color, symbol, sort, archived_at, parent_id, updated_ms, deleted_ms, device_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, ?9)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name, color = excluded.color,
                    symbol = excluded.symbol, sort = excluded.sort, archived_at = excluded.archived_at,
+                   parent_id = excluded.parent_id,
                    updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
-                params![id, row.name.trim(), row.color, row.symbol, row.sort, row.archived_at, ms, device],
+                params![id, row.name.trim(), row.color, row.symbol, row.sort, row.archived_at, row.parent_id, ms, device],
             )?;
         }
         action.count(&mut report.activity);
@@ -193,12 +214,13 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
         if action != Action::Skip {
             let note = row.note.as_deref().map(str::trim).filter(|n| !n.is_empty());
             tx.execute(
-                "INSERT INTO session (id, activity_id, start_ms, end_ms, note, continues_id, updated_ms, deleted_ms, device_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULL, ?8)
+                "INSERT INTO session (id, activity_id, start_ms, end_ms, note, continues_id, plan_id, updated_ms, deleted_ms, device_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, ?9)
                  ON CONFLICT (id) DO UPDATE SET activity_id = excluded.activity_id, start_ms = excluded.start_ms,
                    end_ms = excluded.end_ms, note = excluded.note, continues_id = excluded.continues_id,
+                   plan_id = excluded.plan_id,
                    updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
-                params![id, row.activity_id, row.start_ms, row.end_ms, note, row.continues_id, ms, device],
+                params![id, row.activity_id, row.start_ms, row.end_ms, note, row.continues_id, row.plan_id, ms, device],
             )?;
         }
         action.count(&mut report.session);
@@ -214,16 +236,20 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
             rule: row.rule,
         };
         let rule = plan::check(&input)?;
+        if let Some(until) = &row.until {
+            validate::date(until)?;
+        }
         let (id, ms) = (row.id.unwrap_or_else(new_id), row.updated_ms.unwrap_or(now));
         let action = decide(&tx, "plan", &id, ms)?;
         if action != Action::Skip {
             tx.execute(
-                "INSERT INTO plan (id, activity_id, date, start_hm, end_hm, rule, updated_ms, deleted_ms, device_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULL, ?8)
+                "INSERT INTO plan (id, activity_id, date, start_hm, end_hm, rule, auto_log, until, updated_ms, deleted_ms, device_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10)
                  ON CONFLICT (id) DO UPDATE SET activity_id = excluded.activity_id, date = excluded.date,
                    start_hm = excluded.start_hm, end_hm = excluded.end_hm, rule = excluded.rule,
+                   auto_log = excluded.auto_log, until = excluded.until,
                    updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id",
-                params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, ms, device],
+                params![id, input.activity_id, input.date, input.start_hm, input.end_hm, rule, row.auto_log, row.until, ms, device],
             )?;
         }
         action.count(&mut report.plan);
@@ -299,10 +325,17 @@ mod tests {
             &conn,
             "d",
             10,
-            ActivityInput { id: None, name: "Read".into(), color: ActivityColor::Green, symbol: Some("book".into()), sort: None },
+            ActivityInput { id: None, name: "Read".into(), color: ActivityColor::Green, symbol: Some("book".into()), sort: None, parent_id: None },
         )
         .unwrap();
-        session::start(&mut conn, "d", 100, &a.id).unwrap();
+        let linalg = activity::upsert(
+            &conn,
+            "d",
+            11,
+            ActivityInput { id: None, name: "Linear algebra".into(), color: ActivityColor::Green, symbol: None, sort: None, parent_id: Some(a.id.clone()) },
+        )
+        .unwrap();
+        session::start(&mut conn, "d", 100, &linalg.id).unwrap();
         session::stop(&mut conn, "d", 200).unwrap();
         plan::upsert(
             &conn,
@@ -330,7 +363,7 @@ mod tests {
 
         let mut target = test_conn();
         let report = import(&mut target, "other", 1000, parse(&json).unwrap()).unwrap();
-        assert_eq!(report.activity.added, 1);
+        assert_eq!(report.activity.added, 2);
         assert_eq!(report.session.added, 1);
         assert_eq!(report.plan.added, 1);
         assert_eq!(report.journal.added, 1);
@@ -346,7 +379,7 @@ mod tests {
     #[test]
     fn newer_rows_win_and_missing_ids_are_generated() {
         let mut conn = seeded();
-        let id = export(&conn, 0).unwrap().activity[0].id.clone();
+        let id = export(&conn, 0).unwrap().activity.into_iter().find(|a| a.parent_id.is_none()).unwrap().id;
         let json = format!(
             r#"{{"format":"hope/1","activity":[
                 {{"id":{id:?},"name":"Reading","color":"blue","updated_ms":50}},
@@ -372,6 +405,19 @@ mod tests {
             "plan":[{"activity_id":"x","date":"2026-10-02","start_hm":"10:00","end_hm":"09:00"}]}"#;
         assert!(import(&mut conn, "d", 1, parse(json).unwrap()).is_err());
         assert!(activity::list(&conn, true).unwrap().is_empty(), "failed import must not leave partial data");
+    }
+
+    #[test]
+    fn v1_files_without_new_fields_import_with_defaults() {
+        let mut conn = test_conn();
+        let json = r#"{"format":"hope/1",
+            "activity":[{"id":"a","name":"Study","color":"blue","updated_ms":1}],
+            "plan":[{"id":"p","activity_id":"a","date":"2026-10-01","start_hm":"09:00","end_hm":"10:00","rule":"weekly:1","updated_ms":1}]}"#;
+        import(&mut conn, "d", 5, parse(json).unwrap()).unwrap();
+        let out = export(&conn, 0).unwrap();
+        assert_eq!(out.activity[0].parent_id, None);
+        assert!(out.plan[0].auto_log, "plans from older files auto-log by default");
+        assert_eq!(out.plan[0].until, None);
     }
 
     #[test]

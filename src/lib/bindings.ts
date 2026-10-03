@@ -86,18 +86,24 @@ export type Activity = {
 	symbol: string | null,
 	sort: number,
 	archived_at: number | null,
+	/**  `None` = top level. Sub-activities are one level deep and always take their parent's color. */
+	parent_id: string | null,
 };
 
 /**  The fixed activity palette (rebuild-plan 4.3). Stored by name; hex lives in tokens.css. */
 export type ActivityColor = "blue" | "green" | "orange" | "pink" | "purple" | "teal" | "yellow" | "gray";
 
-/**  Create (`id: None`) or update an activity. `sort: None` appends on create and keeps the current value on update. */
+/**
+ *  Create (`id: None`) or update an activity. `sort: None` appends on create and keeps the current value
+ *  on update. For a sub-activity, `color` is ignored: it is copied from the parent.
+ */
 export type ActivityInput = {
 	id: string | null,
 	name: string,
 	color: ActivityColor,
 	symbol: string | null,
 	sort: number | null,
+	parent_id: string | null,
 };
 
 export type AppInfo = {

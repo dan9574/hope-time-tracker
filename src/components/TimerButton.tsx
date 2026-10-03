@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Pause, Play } from "lucide-react";
 import { commands } from "../lib/bindings";
-import { activityName } from "../lib/activity";
+import { activityName, indexById, parentOf } from "../lib/activity";
 import { run, useQuery } from "../lib/data";
 import { formatElapsed } from "../lib/time";
 import { useNow } from "../lib/useNow";
@@ -18,7 +18,9 @@ export function TimerButton() {
   const now = useNow(timer?.running ? 1000 : 60_000);
 
   const current = timer?.running ?? timer?.paused ?? null;
-  const activity = current ? activities?.find((a) => a.id === current.activity_id) : undefined;
+  const byId = indexById(activities);
+  const activity = current ? byId.get(current.activity_id) : undefined;
+  const label = activityName(activity, t, parentOf(activity, byId));
 
   const openMenu = () => {
     const rect = ref.current?.getBoundingClientRect();
@@ -31,13 +33,13 @@ export function TimerButton() {
       {timer?.running ? (
         <>
           <ActivityDot color={activity?.color} />
-          <span className="timer-button-name">{activityName(activity, t)}</span>
+          <span className="timer-button-name">{label}</span>
           <span className="tabular">{formatElapsed(now - timer.running.start_ms)}</span>
         </>
       ) : timer?.paused ? (
         <>
           <Pause size={14} strokeWidth={2} aria-hidden />
-          <span className="timer-button-name">{activityName(activity, t)}</span>
+          <span className="timer-button-name">{label}</span>
           <span className="timer-button-muted">{t("timer.paused")}</span>
         </>
       ) : (

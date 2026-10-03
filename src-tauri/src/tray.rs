@@ -7,11 +7,11 @@ use std::time::Duration;
 use serde::Deserialize;
 use specta::Type;
 use tauri::image::Image;
-use tauri::menu::{IconMenuItem, Menu, MenuItem, PredefinedMenuItem};
+use tauri::menu::{IconMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager, Wry};
 
-use crate::db::activity::{self, ActivityColor};
+use crate::db::activity::{self, Activity, ActivityColor};
 use crate::db::{now_ms, session, Db};
 use crate::error::Result;
 use crate::events;
@@ -127,30 +127,46 @@ fn format_elapsed(ms: i64) -> String {
     format!("{}:{:02}", minutes / 60, minutes % 60)
 }
 
+/// "Parent · Child" for sub-activities, the plain name otherwise.
+pub fn activity_label(conn: &rusqlite::Connection, a: &Activity) -> Result<String> {
+    Ok(match a.parent_id.as_deref().map(|p| activity::get(conn, p)).transpose()?.flatten() {
+        Some(parent) => format!("{} · {}", parent.name, a.name),
+        None => a.name.clone(),
+    })
+}
+
 /// `for_tray` adds the window/quit items, which make no sense in the in-window popup.
+/// Activities with sub-activities become native submenus: the parent itself first, then its children.
 pub fn build_menu(app: &AppHandle, for_tray: bool) -> Result<Menu<Wry>> {
-    let (state, activities, running_activity) = {
+    let (state, activities, running_label, paused_label) = {
         let db = app.state::<Db>();
         let conn = db.conn();
         let state = session::current(&conn)?;
         let activities = activity::list(&conn, false)?;
-        let running_activity = match &state.running {
-            Some(s) => Some(activity::get(&conn, &s.activity_id)?),
+        let label_of = |id: &str| -> Result<Option<(String, ActivityColor)>> {
+            Ok(match activity::get(&conn, id)? {
+                Some(a) => Some((activity_label(&conn, &a)?, a.color)),
+                None => None,
+            })
+        };
+        let running_label = match &state.running {
+            Some(s) => Some(label_of(&s.activity_id)?),
             None => None,
         };
-        (state, activities, running_activity)
+        let paused_label = match &state.paused {
+            Some(s) => label_of(&s.activity_id)?.map(|(name, _)| name),
+            None => None,
+        };
+        (state, activities, running_label, paused_label)
     };
     let strings = app.state::<TrayState>().strings.lock().unwrap().clone();
     let running_id = state.running.as_ref().map(|s| s.activity_id.as_str());
     let menu = Menu::new(app)?;
 
     // A running activity that is archived or unknown (no foreign keys) still needs a way to stop it.
-    if let (Some(id), Some(found)) = (running_id, &running_activity) {
+    if let (Some(id), Some(found)) = (running_id, &running_label) {
         if !activities.iter().any(|a| a.id == id) {
-            let (name, color) = match found {
-                Some(a) => (a.name.clone(), a.color),
-                None => (strings.unknown_activity.clone(), ActivityColor::Gray),
-            };
+            let (name, color) = found.clone().unwrap_or((strings.unknown_activity.clone(), ActivityColor::Gray));
             menu.append(&IconMenuItem::with_id(app, ID_STOP, name, true, Some(dot_icon(color, true)), None::<&str>)?)?;
         }
     }
@@ -158,23 +174,34 @@ pub fn build_menu(app: &AppHandle, for_tray: bool) -> Result<Menu<Wry>> {
     if activities.is_empty() && running_id.is_none() {
         menu.append(&MenuItem::new(app, &strings.no_activities, false, None::<&str>)?)?;
     }
-    for a in &activities {
+    let is_root = |a: &Activity| a.parent_id.as_deref().map_or(true, |p| !activities.iter().any(|x| x.id == p));
+    let item = |a: &Activity| -> Result<IconMenuItem<Wry>> {
         let running = Some(a.id.as_str()) == running_id;
-        let item_id = format!("{START_PREFIX}{}", a.id);
-        menu.append(&IconMenuItem::with_id(app, item_id, &a.name, true, Some(dot_icon(a.color, running)), None::<&str>)?)?;
+        let id = format!("{START_PREFIX}{}", a.id);
+        Ok(IconMenuItem::with_id(app, id, &a.name, true, Some(dot_icon(a.color, running)), None::<&str>)?)
+    };
+    for root in activities.iter().filter(|a| is_root(a)) {
+        let children: Vec<&Activity> = activities.iter().filter(|a| a.parent_id.as_deref() == Some(&root.id)).collect();
+        if children.is_empty() {
+            menu.append(&item(root)?)?;
+            continue;
+        }
+        let group_running = running_id == Some(&root.id) || children.iter().any(|c| running_id == Some(&c.id));
+        let sub = Submenu::new_with_icon(app, &root.name, true, Some(dot_icon(root.color, group_running)))?;
+        sub.append(&item(root)?)?;
+        sub.append(&PredefinedMenuItem::separator(app)?)?;
+        for child in children {
+            sub.append(&item(child)?)?;
+        }
+        menu.append(&sub)?;
     }
 
     if state.running.is_some() {
         menu.append(&PredefinedMenuItem::separator(app)?)?;
         menu.append(&MenuItem::with_id(app, ID_PAUSE, &strings.pause, true, None::<&str>)?)?;
         menu.append(&MenuItem::with_id(app, ID_STOP, &strings.stop, true, None::<&str>)?)?;
-    } else if let Some(paused) = &state.paused {
-        let name = {
-            let db = app.state::<Db>();
-            let conn = db.conn();
-            activity::get(&conn, &paused.activity_id)?.map(|a| a.name)
-        }
-        .unwrap_or_else(|| strings.unknown_activity.clone());
+    } else if state.paused.is_some() {
+        let name = paused_label.unwrap_or_else(|| strings.unknown_activity.clone());
         menu.append(&PredefinedMenuItem::separator(app)?)?;
         menu.append(&MenuItem::with_id(app, ID_RESUME, strings.resume.replace("{name}", &name), true, None::<&str>)?)?;
         menu.append(&MenuItem::with_id(app, ID_STOP, &strings.stop, true, None::<&str>)?)?;

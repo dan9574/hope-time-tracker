@@ -86,9 +86,12 @@ pub struct Activity {
     pub sort: i64,
     #[specta(type = Option<specta_typescript::Number>)]
     pub archived_at: Option<i64>,
+    /// `None` = top level. Sub-activities are one level deep and always take their parent's color.
+    pub parent_id: Option<String>,
 }
 
-/// Create (`id: None`) or update an activity. `sort: None` appends on create and keeps the current value on update.
+/// Create (`id: None`) or update an activity. `sort: None` appends on create and keeps the current value
+/// on update. For a sub-activity, `color` is ignored: it is copied from the parent.
 #[derive(Debug, Clone, Deserialize, Type)]
 pub struct ActivityInput {
     pub id: Option<String>,
@@ -97,9 +100,13 @@ pub struct ActivityInput {
     pub symbol: Option<String>,
     #[specta(type = Option<specta_typescript::Number>)]
     pub sort: Option<i64>,
+    pub parent_id: Option<String>,
 }
 
-const COLUMNS: &str = "id, name, color, symbol, sort, archived_at";
+// Reads take the color from a live parent, so a child can never drift from it.
+// A child whose parent is missing (sync may deliver it later) reads as a top-level activity.
+const SELECT: &str = "SELECT a.id, a.name, COALESCE(p.color, a.color), a.symbol, a.sort, a.archived_at, a.parent_id
+     FROM activity a LEFT JOIN activity p ON p.id = a.parent_id AND p.deleted_ms IS NULL";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<Activity> {
     Ok(Activity {
@@ -109,14 +116,17 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<Activity> {
         symbol: r.get(3)?,
         sort: r.get(4)?,
         archived_at: r.get(5)?,
+        parent_id: r.get(6)?,
     })
 }
 
+/// Live activities ordered by `sort`. Without archived ones, children of an archived parent are hidden too.
 pub fn list(conn: &Connection, include_archived: bool) -> Result<Vec<Activity>> {
     let sql = format!(
-        "SELECT {COLUMNS} FROM activity
-         WHERE deleted_ms IS NULL AND (?1 OR archived_at IS NULL)
-         ORDER BY sort, name"
+        "{SELECT}
+         WHERE a.deleted_ms IS NULL
+           AND (?1 OR (a.archived_at IS NULL AND (p.id IS NULL OR p.archived_at IS NULL)))
+         ORDER BY a.sort, a.name"
     );
     let rows = conn
         .prepare(&sql)?
@@ -126,8 +136,31 @@ pub fn list(conn: &Connection, include_archived: bool) -> Result<Vec<Activity>> 
 }
 
 pub fn get(conn: &Connection, id: &str) -> Result<Option<Activity>> {
-    let sql = format!("SELECT {COLUMNS} FROM activity WHERE id = ?1 AND deleted_ms IS NULL");
+    let sql = format!("{SELECT} WHERE a.id = ?1 AND a.deleted_ms IS NULL");
     Ok(conn.query_row(&sql, [id], from_row).optional()?)
+}
+
+/// Enforces the one-level rule and returns the color the activity must be stored with.
+fn check_parent(conn: &Connection, id: Option<&str>, parent_id: Option<&str>, color: ActivityColor) -> Result<ActivityColor> {
+    let Some(parent_id) = parent_id else { return Ok(color) };
+    if Some(parent_id) == id {
+        return Err(Error::Invalid("an activity cannot be its own parent".into()));
+    }
+    let parent = get(conn, parent_id)?.ok_or(Error::NotFound("parent activity"))?;
+    if parent.parent_id.is_some() {
+        return Err(Error::Invalid("sub-activities cannot have sub-activities".into()));
+    }
+    if let Some(id) = id {
+        let children: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM activity WHERE parent_id = ?1 AND deleted_ms IS NULL",
+            [id],
+            |r| r.get(0),
+        )?;
+        if children > 0 {
+            return Err(Error::Invalid("an activity with sub-activities cannot become one".into()));
+        }
+    }
+    Ok(parent.color)
 }
 
 pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -> Result<Activity> {
@@ -135,28 +168,37 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -
     if name.is_empty() {
         return Err(Error::Invalid("activity name is empty".into()));
     }
+    let parent_id = input.parent_id.as_deref();
+    let color = check_parent(conn, input.id.as_deref(), parent_id, input.color)?;
     let id = match input.id {
         Some(id) => {
             let changed = conn.execute(
                 "UPDATE activity
-                 SET name = ?2, color = ?3, symbol = ?4, sort = COALESCE(?5, sort),
-                     updated_ms = ?6, device_id = ?7
+                 SET name = ?2, color = ?3, symbol = ?4, sort = COALESCE(?5, sort), parent_id = ?6,
+                     updated_ms = ?7, device_id = ?8
                  WHERE id = ?1 AND deleted_ms IS NULL",
-                params![id, name, input.color, input.symbol, input.sort, now, device],
+                params![id, name, color, input.symbol, input.sort, parent_id, now, device],
             )?;
             if changed == 0 {
                 return Err(Error::NotFound("activity"));
             }
+            // Keep stored child colors in step (reads already use the parent's).
+            conn.execute(
+                "UPDATE activity SET color = ?2, updated_ms = ?3, device_id = ?4
+                 WHERE parent_id = ?1 AND deleted_ms IS NULL AND color != ?2",
+                params![id, color, now, device],
+            )?;
             id
         }
         None => {
             let id = new_id();
             conn.execute(
-                "INSERT INTO activity (id, name, color, symbol, sort, updated_ms, device_id)
+                "INSERT INTO activity (id, name, color, symbol, sort, parent_id, updated_ms, device_id)
                  VALUES (?1, ?2, ?3, ?4,
-                         COALESCE(?5, (SELECT COALESCE(MAX(sort), -1) + 1 FROM activity)),
-                         ?6, ?7)",
-                params![id, name, input.color, input.symbol, input.sort, now, device],
+                         COALESCE(?5, (SELECT COALESCE(MAX(sort), -1) + 1 FROM activity
+                                       WHERE parent_id IS ?6 AND deleted_ms IS NULL)),
+                         ?6, ?7, ?8)",
+                params![id, name, color, input.symbol, input.sort, parent_id, now, device],
             )?;
             id
         }
@@ -209,7 +251,7 @@ pub fn seed_samples_if_empty(conn: &Connection, device: &str, now: i64) -> Resul
             conn,
             device,
             now,
-            ActivityInput { id: None, name: name.into(), color, symbol: None, sort: None },
+            ActivityInput { id: None, name: name.into(), color, symbol: None, sort: None, parent_id: None },
         )?;
     }
     Ok(())
@@ -221,7 +263,56 @@ mod tests {
     use crate::db::test_conn;
 
     fn input(name: &str) -> ActivityInput {
-        ActivityInput { id: None, name: name.into(), color: ActivityColor::Teal, symbol: None, sort: None }
+        ActivityInput { id: None, name: name.into(), color: ActivityColor::Teal, symbol: None, sort: None, parent_id: None }
+    }
+
+    fn child(name: &str, parent: &str) -> ActivityInput {
+        ActivityInput { parent_id: Some(parent.into()), color: ActivityColor::Pink, ..input(name) }
+    }
+
+    #[test]
+    fn children_follow_parent_color_and_sort_among_siblings() {
+        let conn = test_conn();
+        let study = upsert(&conn, "d", 1, input("Study")).unwrap();
+        upsert(&conn, "d", 1, input("Read")).unwrap();
+        let linalg = upsert(&conn, "d", 1, child("Linear algebra", &study.id)).unwrap();
+        let calc = upsert(&conn, "d", 1, child("Calculus", &study.id)).unwrap();
+        assert_eq!(linalg.color, ActivityColor::Teal, "pink ignored, parent's teal used");
+        assert_eq!((linalg.sort, calc.sort), (0, 1), "children are numbered among siblings");
+
+        upsert(&conn, "d", 2, ActivityInput { id: Some(study.id.clone()), color: ActivityColor::Orange, ..input("Study") }).unwrap();
+        assert_eq!(get(&conn, &calc.id).unwrap().unwrap().color, ActivityColor::Orange);
+        let stored: String = conn.query_row("SELECT color FROM activity WHERE id = ?1", [&calc.id], |r| r.get(0)).unwrap();
+        assert_eq!(stored, "orange", "stored child color is kept in step");
+    }
+
+    #[test]
+    fn only_one_level() {
+        let conn = test_conn();
+        let study = upsert(&conn, "d", 1, input("Study")).unwrap();
+        let read = upsert(&conn, "d", 1, input("Read")).unwrap();
+        let linalg = upsert(&conn, "d", 1, child("Linear algebra", &study.id)).unwrap();
+
+        assert!(matches!(upsert(&conn, "d", 2, child("Deeper", &linalg.id)), Err(Error::Invalid(_))));
+        let study_under_read = ActivityInput { id: Some(study.id.clone()), ..child("Study", &read.id) };
+        assert!(matches!(upsert(&conn, "d", 2, study_under_read), Err(Error::Invalid(_))), "has children");
+        let own_parent = ActivityInput { id: Some(read.id.clone()), ..child("Read", &read.id) };
+        assert!(matches!(upsert(&conn, "d", 2, own_parent), Err(Error::Invalid(_))));
+        assert!(matches!(upsert(&conn, "d", 2, child("X", "missing")), Err(Error::NotFound(_))));
+
+        // Moving a child to another parent is allowed.
+        let moved = upsert(&conn, "d", 3, ActivityInput { id: Some(linalg.id.clone()), ..child("Linear algebra", &read.id) }).unwrap();
+        assert_eq!(moved.parent_id.as_deref(), Some(read.id.as_str()));
+    }
+
+    #[test]
+    fn archiving_a_parent_hides_its_children() {
+        let conn = test_conn();
+        let study = upsert(&conn, "d", 1, input("Study")).unwrap();
+        upsert(&conn, "d", 1, child("Linear algebra", &study.id)).unwrap();
+        set_archived(&conn, "d", 2, &study.id, true).unwrap();
+        assert!(list(&conn, false).unwrap().is_empty());
+        assert_eq!(list(&conn, true).unwrap().len(), 2);
     }
 
     #[test]
