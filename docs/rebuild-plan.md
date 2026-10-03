@@ -243,6 +243,10 @@ hope/
 4. **本周 / 本月**。
 5. **活动管理、计划、日记、设置**（含 4.3.1 主题、3.3 的导入/导出）。
 6. **打包**：macOS dmg（arm64 + x64）、Windows nsis；GitHub Actions 出包。
+   - 推 `v*` tag → `.github/workflows/release.yml` 先跑类型检查与 Rust 测试，再并行出三个包，放进草稿 Release；手动触发只上传 artifact。
+   - 暂不签名（ad-hoc），macOS 首次打开需右键 → 打开；CI 里已预留 Developer ID 签名 + 公证的环境变量，补 Secrets 后取消注释即可。
+   - macOS 最低 13.0。Windows 安装为当前用户（无需管理员）。
+   - 欠账：Windows 上 Overlay 的逐卡模糊（需拆成每卡一窗），等有 Windows 真机再做；目前是 CSS 半透明底。
 7. **同步层**：Supabase 建表 + 桌面端 push/pull + 实时订阅（手表开始计时后 Overlay 卡片实时变化）。
 8. **iPhone**：原生 Swift 工程，SwiftData 本地库 + 同步，Live Activity 显示进行中计时。
 9. **Apple Watch**：watchOS target，表盘复杂功能 + 开始/暂停/结束。

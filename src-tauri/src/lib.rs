@@ -6,9 +6,10 @@ mod overlay;
 mod tray;
 mod vibrancy;
 
-use tauri::{Manager, RunEvent, WindowEvent};
+use tauri::{Manager, WindowEvent};
 use tauri_specta::{collect_commands, collect_events, Builder};
 
+#[cfg(any(debug_assertions, test))]
 const BINDINGS_PATH: &str = "../src/lib/bindings.ts";
 
 fn specta_builder() -> Builder<tauri::Wry> {
@@ -48,6 +49,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
         .events(collect_events![events::DataChanged, events::SettingChanged, overlay::OverlayEditing])
 }
 
+#[cfg(any(debug_assertions, test))]
 fn export_bindings(builder: &Builder<tauri::Wry>) {
     builder
         .export(specta_typescript::Typescript::default(), BINDINGS_PATH)
@@ -96,7 +98,7 @@ pub fn run() {
         .run(|app, event| {
             // Clicking the Dock icon brings the hidden window back.
             #[cfg(target_os = "macos")]
-            if let RunEvent::Reopen { .. } = event {
+            if let tauri::RunEvent::Reopen { .. } = event {
                 tray::show_main_window(app);
             }
             let _ = (app, event);
