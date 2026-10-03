@@ -37,12 +37,12 @@
 
 ## 当前状态
 
-- 阶段 1–6 已完成：桌面端功能齐全（Today / 本周 / 本月 / 活动 / 计划 / 日记 / 设置 / Overlay / JSON 导入导出），macOS dmg 与 Windows nsis 由 `.github/workflows/release.yml` 出包。
+- 阶段 1–6、6.5、6.6 已完成：桌面端功能齐全（Today / 本周 / 本月 / 日程 / 活动与子活动 / 记录编辑 / 起床睡觉 / 日记 / 设置与主题 / Overlay / JSON 导入导出），macOS dmg 与 Windows nsis 由 `.github/workflows/release.yml` 出包。
 - 不做旧库直接导入；数据进出口只有 rebuild-plan 3.3 的 JSON 格式。
 - 欠账：
   - Windows 版只在 CI 上编译通过，没在真机上运行过；Overlay 在 Windows 上没有逐卡模糊（CSS 半透明底）。
   - 安装包未签名、未公证（需要 Apple Developer ID）。
   - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
-- 下一步：**阶段 6.5（rebuild-plan 第 10 节，A → F 顺序）**。它改表结构，必须在同步层之前做完。
-- 然后：**阶段 6.6（第 11 节）**：时长格式、悬停联动、环上短记录。纯前端。
-- 之后：阶段 7（同步层，Supabase）。开工前需要用户提供 Supabase 项目。
+  - 本机 `tauri build` 生成 dmg 那一步报错（`bundle_dmg.sh`），`.app` 正常；原因未查。CI 上的 dmg 之前是成功的。
+- 下一步：**阶段 7（同步层，Supabase）**。手表和手机都靠它拿数据，所以它排在手表之前。开工前需要用户提供 Supabase 项目。
+- 之后：阶段 8（iPhone）与阶段 9（Apple Watch）在同一个 Xcode 工程里。如果用户想先看到手表，可以把阶段 8 压缩成一个只负责登录和承载 Watch app 的最小 iPhone app，先做阶段 9。
