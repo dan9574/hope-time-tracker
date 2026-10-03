@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { events } from "./bindings";
+import { commands, events } from "./bindings";
 
 type Result<T> = { status: "ok"; data: T } | { status: "error"; error: string };
 
@@ -49,4 +49,25 @@ export async function run<T>(promise: Promise<Result<T>>): Promise<T | undefined
   if (res.status === "ok") return res.data;
   console.error(res.error);
   return undefined;
+}
+
+/** A local setting that re-reads whenever it is written from any window. */
+export function useSetting(key: string): string | null | undefined {
+  const [value, setValue] = useState<string | null>();
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      commands.settingGet(key).then((res) => {
+        if (!cancelled && res.status === "ok") setValue(res.data);
+      });
+    void load();
+    const unlisten = events.settingChanged.listen((e) => {
+      if (e.payload.key === key) void load();
+    });
+    return () => {
+      cancelled = true;
+      void unlisten.then((f) => f());
+    };
+  }, [key]);
+  return value;
 }

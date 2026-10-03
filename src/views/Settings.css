@@ -39,3 +39,49 @@
   -webkit-user-select: text;
   user-select: text;
 }
+
+.settings-group + .settings-group {
+  margin-top: var(--s-8);
+}
+
+.settings-row {
+  align-items: center;
+}
+
+.settings-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.settings-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.settings-value {
+  min-width: var(--s-8);
+  text-align: right;
+  color: var(--fg-2);
+}
+
+.settings-row input {
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+.settings-button {
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--mat-hover);
+  font-size: var(--text-sm);
+}
+
+.settings-button:disabled {
+  color: var(--fg-3);
+}
+
+.settings-button[aria-pressed="true"] {
+  color: var(--accent);
+}

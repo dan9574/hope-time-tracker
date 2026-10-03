@@ -1,7 +1,9 @@
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_specta::Event;
 
 use super::CmdResult;
 use crate::db::{setting, Db};
+use crate::events::SettingChanged;
 
 #[tauri::command]
 #[specta::specta]
@@ -11,6 +13,8 @@ pub fn setting_get(db: State<'_, Db>, key: String) -> CmdResult<Option<String>> 
 
 #[tauri::command]
 #[specta::specta]
-pub fn setting_set(db: State<'_, Db>, key: String, value: String) -> CmdResult<()> {
-    Ok(setting::set(&db.conn(), &key, &value)?)
+pub fn setting_set(app: AppHandle, db: State<'_, Db>, key: String, value: String) -> CmdResult<()> {
+    setting::set(&db.conn(), &key, &value)?;
+    let _ = SettingChanged { key }.emit(&app);
+    Ok(())
 }

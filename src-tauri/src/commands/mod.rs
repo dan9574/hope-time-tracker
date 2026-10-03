@@ -1,5 +1,6 @@
 pub mod activity;
 pub mod app;
+pub mod overlay;
 pub mod session;
 pub mod setting;
 pub mod tray;

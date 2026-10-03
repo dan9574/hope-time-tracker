@@ -2,6 +2,7 @@ mod commands;
 mod db;
 mod error;
 mod events;
+mod overlay;
 mod tray;
 mod vibrancy;
 
@@ -29,8 +30,13 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::session::session_delete,
             commands::tray::tray_set_strings,
             commands::tray::timer_menu_popup,
+            commands::overlay::overlay_show,
+            commands::overlay::overlay_hide,
+            commands::overlay::overlay_set_editing,
+            commands::overlay::overlay_reset_position,
+            commands::overlay::overlay_layout,
         ])
-        .events(collect_events![events::DataChanged])
+        .events(collect_events![events::DataChanged, events::SettingChanged, overlay::OverlayEditing])
 }
 
 fn export_bindings(builder: &Builder<tauri::Wry>) {
@@ -72,6 +78,7 @@ pub fn run() {
                 vibrancy::install(&main)?;
             }
             tray::init(app.handle())?;
+            overlay::init(app.handle())?;
             Ok(())
         })
         .build(tauri::generate_context!())

@@ -1,0 +1,165 @@
+/* The overlay always sits on the wallpaper: fixed white text, no light/dark switching. */
+html,
+body {
+  background: transparent;
+}
+
+.overlay {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  color: var(--overlay-fg);
+}
+
+.overlay-stack {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  border-radius: var(--r-xl);
+}
+
+.overlay-stack.is-editing {
+  outline: 1px dashed var(--overlay-fg-2);
+  outline-offset: var(--s-2);
+}
+
+.overlay-drag {
+  position: fixed;
+  inset: 0;
+}
+
+/* The blur comes from a native view Rust places underneath (see src-tauri/src/overlay.rs). */
+.overlay-card {
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--overlay-card);
+  border: 1px solid var(--overlay-line);
+  font-size: var(--text-sm);
+}
+
+.overlay-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--overlay-fg-2);
+  min-width: 0;
+}
+
+.overlay-spread {
+  justify-content: space-between;
+}
+
+.overlay-value {
+  color: var(--overlay-fg);
+}
+
+.overlay-big {
+  margin-top: var(--s-1);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.overlay-muted {
+  color: var(--overlay-fg-2);
+}
+
+.overlay-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.overlay-label .overlay-ellipsis {
+  color: var(--overlay-fg);
+}
+
+/* Today */
+.overlay-today {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.overlay-today-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.overlay-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.overlay-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.overlay-row-value {
+  margin-left: auto;
+  color: var(--overlay-fg-2);
+}
+
+.overlay .ring-track-future {
+  stroke: var(--overlay-line);
+}
+
+.overlay .ring-track-past {
+  stroke: var(--overlay-fg-2);
+}
+
+.overlay .ring-now {
+  fill: var(--overlay-fg);
+}
+
+/* Week */
+.overlay-bars {
+  margin-top: var(--s-3);
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: end;
+  justify-items: center;
+}
+
+.overlay-bar {
+  width: 6px;
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--overlay-line);
+}
+
+.overlay-bar-labels {
+  margin: var(--s-1) 0 var(--s-2);
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  justify-items: center;
+  font-size: var(--text-xs);
+  color: var(--overlay-fg-2);
+}
+
+.overlay-bar-labels .is-today {
+  color: var(--overlay-fg);
+  font-weight: 600;
+}
+
+.overlay-hint {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--overlay-fg-2);
+}

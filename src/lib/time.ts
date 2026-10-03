@@ -11,6 +11,25 @@ export function dayRange(date: Date): TimeRange {
   return { from_ms: from.getTime(), to_ms: to.getTime() };
 }
 
+/** Weeks start on Monday everywhere in Hope. */
+export function weekStart(date: Date): Date {
+  const offset = (date.getDay() + 6) % 7;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - offset);
+}
+
+/** The seven local days of the week containing `date`, Monday first. */
+export function weekDays(date: Date): Date[] {
+  const start = weekStart(date);
+  return Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+}
+
+/** Same wall-clock moment `days` days away (calendar math, so DST-safe). */
+export function shiftDays(ms: number, days: number): number {
+  const d = new Date(ms);
+  d.setDate(d.getDate() + days);
+  return d.getTime();
+}
+
 /** 'YYYY-MM-DD' in the system time zone. */
 export function dateKey(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, "0");

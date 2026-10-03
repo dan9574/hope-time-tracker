@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Page } from "../components/Page";
 import { commands, type AppInfo } from "../lib/bindings";
+import { OverlaySettings } from "./OverlaySettings";
 import "./Settings.css";
 
 export function Settings() {
@@ -18,6 +19,7 @@ export function Settings() {
 
   return (
     <Page title={t("nav.settings")} subtitle={t("views.settings.subtitle")}>
+      <OverlaySettings />
       <section className="settings-group">
         <h2 className="settings-group-title">{t("settings.about")}</h2>
         {error && <p className="page-placeholder">{t("settings.loadFailed", { message: error })}</p>}

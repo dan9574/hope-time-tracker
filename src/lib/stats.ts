@@ -1,4 +1,5 @@
 import type { Activity, Session, TimeRange } from "./bindings";
+import type { RingSegment } from "../components/Ring";
 
 /** One timeline row: a pause/resume chain shown as a single entry. */
 export interface DayEntry {
@@ -78,4 +79,28 @@ export function summarizeDay(
   }
   entries.sort((a, b) => a.startMs - b.startMs);
   return { totalMs, entries };
+}
+
+export interface ActivityTotal {
+  activityId: string;
+  activity: Activity | undefined;
+  ms: number;
+}
+
+/** Per-activity totals, largest first. */
+export function totalsByActivity(entries: DayEntry[]): ActivityTotal[] {
+  const totals = new Map<string, ActivityTotal>();
+  for (const e of entries) {
+    const t = totals.get(e.activityId);
+    if (t) t.ms += e.durationMs;
+    else totals.set(e.activityId, { activityId: e.activityId, activity: e.activity, ms: e.durationMs });
+  }
+  return [...totals.values()].filter((t) => t.ms > 0).sort((a, b) => b.ms - a.ms);
+}
+
+/** Day entries flattened into ring segments. */
+export function ringRecords(entries: DayEntry[]): RingSegment[] {
+  return entries.flatMap((e) =>
+    e.segments.map((seg) => ({ key: `${e.key}-${seg.startMs}`, ...seg, color: e.activity?.color })),
+  );
 }

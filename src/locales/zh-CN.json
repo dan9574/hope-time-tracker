@@ -26,7 +26,18 @@
     "version": "版本",
     "database": "数据库",
     "schema": "数据结构版本",
-    "loadFailed": "无法读取应用信息：{{message}}"
+    "loadFailed": "无法读取应用信息：{{message}}",
+    "overlay": "桌面卡片",
+    "overlayShow": "在桌面显示",
+    "overlayCards": "显示的卡片",
+    "cardNow": "当前",
+    "cardToday": "今天",
+    "cardWeek": "本周",
+    "overlayOpacity": "不透明度",
+    "overlayPosition": "位置",
+    "adjustPosition": "调整位置",
+    "done": "完成",
+    "resetPosition": "恢复默认"
   },
   "today": {
     "total": "已记录",
@@ -47,5 +58,12 @@
     "noActivities": "还没有活动",
     "open": "打开 Hope",
     "quit": "退出 Hope"
+  },
+  "overlay": {
+    "today": "今天",
+    "thisWeek": "本周",
+    "nothingYet": "还没有记录",
+    "vsLastWeek": "比上周同期 {{delta}}",
+    "dragHint": "拖动调整位置，完成后回到设置点「完成」"
   }
 }

@@ -37,6 +37,12 @@
   --activity-teal:   #5CD0D0;
   --activity-yellow: #F5D56A;
   --activity-gray:   #A5A5AC;
+
+  /* Overlay (rebuild-plan 5) — always over the wallpaper, so fixed white, no dark-mode variant */
+  --overlay-card: rgba(255, 255, 255, 0.14);
+  --overlay-line: rgba(255, 255, 255, 0.15);
+  --overlay-fg:   rgba(255, 255, 255, 0.85);
+  --overlay-fg-2: rgba(255, 255, 255, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -39,11 +39,20 @@ export const commands = {
 	traySetStrings: (strings: TrayStrings) => __TAURI_INVOKE<void>("tray_set_strings", { strings }),
 	/**  Shows the tray's timer menu below the main window's timer button (logical px). */
 	timerMenuPopup: (x: number, y: number) => typedError<null, CommandError>(__TAURI_INVOKE("timer_menu_popup", { x, y })),
+	overlayShow: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_show")),
+	overlayHide: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_hide")),
+	/**  `true` lifts the overlay so it can be dragged; `false` saves the position and sinks it back. */
+	overlaySetEditing: (editing: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("overlay_set_editing", { editing })),
+	overlayResetPosition: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_reset_position")),
+	/**  Called by the overlay page whenever its cards move or resize. */
+	overlayLayout: (cards: CardFrame[]) => typedError<null, CommandError>(__TAURI_INVOKE("overlay_layout", { cards })),
 };
 
 /** Events */
 export const events = {
 	dataChanged: makeEvent<DataChanged>("data-changed"),
+	overlayEditing: makeEvent<OverlayEditing>("overlay-editing"),
+	settingChanged: makeEvent<SettingChanged>("setting-changed"),
 };
 
 /* Types */
@@ -74,11 +83,22 @@ export type AppInfo = {
 	db_path: string,
 };
 
+/**  A card's frame inside the overlay window, in logical px from the top-left. */
+export type CardFrame = {
+	x: number | null,
+	y: number | null,
+	width: number | null,
+	height: number | null,
+};
+
 /**  Error returned to the frontend as a plain message string. */
 export type CommandError = string;
 
 /**  Activities or sessions changed; views should refetch. */
 export type DataChanged = null;
+
+/**  The overlay entered or left position-editing mode. */
+export type OverlayEditing = boolean;
 
 export type Session = {
 	id: string,
@@ -97,6 +117,11 @@ export type SessionInput = {
 	start_ms: number,
 	end_ms: number | null,
 	note: string | null,
+};
+
+/**  A local setting was written; windows that depend on it should re-read. */
+export type SettingChanged = {
+	key: string,
 };
 
 /**  Half-open `[from_ms, to_ms)`. The frontend computes day/week bounds in the system time zone. */

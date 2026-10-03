@@ -26,7 +26,18 @@
     "version": "Version",
     "database": "Database",
     "schema": "Schema version",
-    "loadFailed": "Couldn't load app info: {{message}}"
+    "loadFailed": "Couldn't load app info: {{message}}",
+    "overlay": "Desktop Cards",
+    "overlayShow": "Show on desktop",
+    "overlayCards": "Cards",
+    "cardNow": "Now",
+    "cardToday": "Today",
+    "cardWeek": "This Week",
+    "overlayOpacity": "Opacity",
+    "overlayPosition": "Position",
+    "adjustPosition": "Adjust Position",
+    "done": "Done",
+    "resetPosition": "Reset"
   },
   "today": {
     "total": "Tracked",
@@ -47,5 +58,12 @@
     "noActivities": "No activities yet",
     "open": "Open Hope",
     "quit": "Quit Hope"
+  },
+  "overlay": {
+    "today": "Today",
+    "thisWeek": "This Week",
+    "nothingYet": "Nothing yet",
+    "vsLastWeek": "{{delta}} vs. last week",
+    "dragHint": "Drag to move, then click Done in Settings"
   }
 }

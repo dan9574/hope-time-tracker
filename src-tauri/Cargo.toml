@@ -28,6 +28,7 @@ objc2-foundation = { version = "0.3", default-features = false, features = ["std
 objc2-app-kit = { version = "0.3", default-features = false, features = [
   "std",
   "objc2-core-foundation",
+  "NSAppearance",
   "NSResponder",
   "NSView",
   "NSVisualEffectView",
