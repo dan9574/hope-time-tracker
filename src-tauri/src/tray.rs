@@ -150,10 +150,11 @@ fn update_title(app: &AppHandle) {
     *last = text;
 }
 
-/// `H:MM`, the same format the main window uses for durations.
+/// The running-timer format shared with the window (rebuild-plan 11.1): `MM:SS`, `H:MM:SS` from one hour.
 fn format_elapsed(ms: i64) -> String {
-    let minutes = ms.max(0) / 60_000;
-    format!("{}:{:02}", minutes / 60, minutes % 60)
+    let seconds = ms.max(0) / 1000;
+    let (h, m, s) = (seconds / 3600, seconds / 60 % 60, seconds % 60);
+    if h > 0 { format!("{h}:{m:02}:{s:02}") } else { format!("{m:02}:{s:02}") }
 }
 
 /// "Parent · Child" for sub-activities, the plain name otherwise.
@@ -353,10 +354,10 @@ mod tests {
     use super::format_elapsed;
 
     #[test]
-    fn formats_elapsed_as_hours_minutes() {
-        assert_eq!(format_elapsed(0), "0:00");
-        assert_eq!(format_elapsed(59_999), "0:00");
-        assert_eq!(format_elapsed(61 * 60_000), "1:01");
-        assert_eq!(format_elapsed(-5), "0:00");
+    fn formats_running_timer() {
+        assert_eq!(format_elapsed(0), "00:00");
+        assert_eq!(format_elapsed(59_999), "00:59");
+        assert_eq!(format_elapsed(61 * 60_000 + 5_000), "1:01:05");
+        assert_eq!(format_elapsed(-5), "00:00");
     }
 }

@@ -26,6 +26,9 @@
   --fg-2: rgba(0, 0, 0, 0.55);
   --fg-3: rgba(0, 0, 0, 0.32);
 
+  /* Inside of the hollow "now" marker on the Today ring (rebuild-plan 11.3) */
+  --now-fill: #FFFFFF;
+
   /* Accent comes from the activity palette (4.3.1); default blue. Text uses the darker --accent-text. */
   --accent: var(--activity-blue);
   --accent-text: color-mix(in srgb, var(--accent) 60%, black);
@@ -61,6 +64,7 @@
     --fg:   rgba(255, 255, 255, 0.92);
     --fg-2: rgba(255, 255, 255, 0.58);
     --fg-3: rgba(255, 255, 255, 0.34);
+    --now-fill: #1C1C1E;
     --accent-text: var(--accent);
   }
 }
@@ -74,6 +78,7 @@
   --fg:   rgba(255, 255, 255, 0.92);
   --fg-2: rgba(255, 255, 255, 0.58);
   --fg-3: rgba(255, 255, 255, 0.34);
+  --now-fill: #1C1C1E;
   --accent-text: var(--accent);
 }
 

@@ -5,6 +5,8 @@ import type { Plan } from "../lib/bindings";
 import type { PlanOccurrence } from "../lib/plans";
 import type { DayEntry } from "../lib/stats";
 import { formatClock, formatDuration } from "../lib/time";
+import { hoverProps, hoverStateOf } from "../lib/useHover";
+import { useUi } from "../stores/ui";
 import "./Timeline.css";
 
 interface Props {
@@ -19,6 +21,8 @@ type Row = { kind: "entry"; startMs: number; entry: DayEntry } | { kind: "plan";
 /** Logged time (solid bar) and plans (dashed bar), in time order. */
 export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
   const { t, i18n } = useTranslation();
+  const hoverKey = useUi((s) => s.hoverKey);
+  const hoverAlso = useUi((s) => s.hoverAlso);
   const clock = (ms: number) => formatClock(ms, i18n.language);
   const rows: Row[] = [
     ...entries.map((e): Row => ({ kind: "entry", startMs: e.startMs, entry: e })),
@@ -34,6 +38,8 @@ export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
               type="button"
               className="timeline-row is-entry"
               style={{ borderLeftColor: activityColorVar(row.entry.activity?.color) }}
+              data-hover={hoverStateOf(hoverKey, hoverAlso, [row.entry.key])}
+              {...hoverProps(row.entry.key)}
               onClick={() => onEntryClick(row.entry)}
             >
             <span className="timeline-time tabular">
@@ -55,6 +61,8 @@ export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
               type="button"
               className="timeline-row is-plan"
               style={{ borderLeftColor: activityColorVar(row.plan.activity?.color) }}
+              data-hover={hoverStateOf(hoverKey, hoverAlso, [row.plan.key])}
+              {...hoverProps(row.plan.key)}
               onClick={() => onPlanClick(row.plan.plan)}
             >
               <span className="timeline-time tabular">

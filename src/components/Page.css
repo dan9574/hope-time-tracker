@@ -30,6 +30,15 @@
   color: var(--fg-2);
 }
 
+.period-total {
+  margin-bottom: var(--s-8);
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
 .page-placeholder {
   font-size: var(--text-sm);
   color: var(--fg-3);

@@ -106,7 +106,6 @@
     "thisWeek": "This Week",
     "thisMonth": "This Month",
     "byActivity": "By Activity",
-    "total": "Total",
     "empty": "Nothing tracked in this period",
     "unspecified": "Other"
   },
@@ -196,5 +195,9 @@
   },
   "schedule": {
     "empty": "No weekly routine yet. Click any slot above to add one, like a class."
+  },
+  "units": {
+    "h": "h",
+    "min": "min"
   }
 }

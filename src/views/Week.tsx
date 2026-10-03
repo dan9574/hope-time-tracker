@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ActivitySummary } from "../components/ActivitySummary";
 import { Bars } from "../components/Bars";
+import { Duration } from "../components/Duration";
 import { Page } from "../components/Page";
 import { PeriodNav } from "../components/PeriodNav";
 import { usePeriod } from "../lib/usePeriod";
@@ -14,6 +15,7 @@ export function Week() {
 
   const days = weekDays(addWeeks(new Date(), offset));
   const { perDay, totals, todayKey } = usePeriod(days);
+  const totalMs = totals.reduce((sum, a) => sum + a.ms, 0);
 
   const range = new Intl.DateTimeFormat(i18n.language, { month: "long", day: "numeric" }).formatRange(
     days[0]!,
@@ -27,6 +29,9 @@ export function Week() {
       subtitle={range}
       accessory={<PeriodNav offset={offset} onChange={setOffset} currentLabel={t("period.thisWeek")} />}
     >
+      <p className="period-total">
+        <Duration ms={totalMs} />
+      </p>
       <Bars days={perDay} label={(d) => weekday.format(d)} highlightKey={todayKey} />
       <ActivitySummary totals={totals} />
     </Page>

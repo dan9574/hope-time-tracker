@@ -1,6 +1,9 @@
-import { activityColorVar } from "../lib/activity";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { activityColorVar, activityName } from "../lib/activity";
 import type { DayTotals } from "../lib/stats";
 import { formatDuration } from "../lib/time";
+import { useUi } from "../stores/ui";
 import "./Bars.css";
 
 interface Props {
@@ -11,32 +14,59 @@ interface Props {
 }
 
 const MAX_HEIGHT = 160;
+// rebuild-plan 11.3: every piece at least 2px tall, 1px apart.
+const MIN_PIECE_PX = 2;
 
-/** Stacked daily bars (rebuild-plan 4.5): 24px wide, 16px apart, total on top. */
+/**
+ * Stacked daily bars (rebuild-plan 4.5): 24px wide, 16px apart, total on top. Hovering a piece lights up
+ * that activity in every bar and in the summary below (11.2).
+ */
 export function Bars({ days, label, highlightKey }: Props) {
+  const { t } = useTranslation();
+  const hoverKey = useUi((s) => s.hoverKey);
+  const setHoverKey = useUi((s) => s.setHoverKey);
+  const [tooltip, setTooltip] = useState<{ day: string; text: string } | null>(null);
   const peak = Math.max(...days.map((d) => d.totalMs), 1);
 
   return (
     <div className="bars">
-      {days.map((d) => {
-        const height = (d.totalMs / peak) * MAX_HEIGHT;
-        return (
-          <div key={d.key} className={d.key === highlightKey ? "bars-col is-highlight" : "bars-col"}>
-            <span className="bars-value tabular">{d.totalMs > 0 ? formatDuration(d.totalMs) : ""}</span>
-            <div className="bars-track" style={{ height: MAX_HEIGHT }}>
-              <div className="bars-stack" style={{ height }}>
-                {d.parts.map((p) => (
+      {days.map((d) => (
+        <div key={d.key} className={d.key === highlightKey ? "bars-col is-highlight" : "bars-col"}>
+          <span className="bars-value tabular">{d.totalMs > 0 ? formatDuration(d.totalMs) : ""}</span>
+          <div className="bars-track" style={{ height: MAX_HEIGHT }}>
+            <div className="bars-stack">
+              {d.parts.map((p) => {
+                const show = () => {
+                  setHoverKey(p.activityId);
+                  setTooltip({ day: d.key, text: `${activityName(p.activity, t)} · ${formatDuration(p.ms)}` });
+                };
+                const hide = () => {
+                  setHoverKey(null);
+                  setTooltip(null);
+                };
+                return (
                   <span
                     key={p.activityId}
-                    style={{ flexGrow: p.ms, background: activityColorVar(p.activity?.color) }}
+                    className="bars-piece"
+                    data-hover={hoverKey === null ? undefined : hoverKey === p.activityId ? "on" : "off"}
+                    tabIndex={0}
+                    style={{
+                      height: Math.max((p.ms / peak) * MAX_HEIGHT, MIN_PIECE_PX),
+                      background: activityColorVar(p.activity?.color),
+                    }}
+                    onMouseEnter={show}
+                    onMouseLeave={hide}
+                    onFocus={show}
+                    onBlur={hide}
                   />
-                ))}
-              </div>
+                );
+              })}
             </div>
-            <span className="bars-label">{label(d.date)}</span>
+            {tooltip?.day === d.key && <span className="chart-tooltip bars-tooltip">{tooltip.text}</span>}
           </div>
-        );
-      })}
+          <span className="bars-label">{label(d.date)}</span>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { History, Plus } from "lucide-react";
+import { Duration } from "../components/Duration";
 import { Journal } from "../components/Journal";
 import { Page } from "../components/Page";
 import { PlanEditor } from "../components/PlanEditor";
@@ -9,6 +10,7 @@ import { Ring, type RingSegment } from "../components/Ring";
 import { Timeline } from "../components/Timeline";
 import { commands, type Plan } from "../lib/bindings";
 import { useQuery } from "../lib/data";
+import { activityName } from "../lib/activity";
 import { autoLogs, occurrencesOn } from "../lib/plans";
 import { useRingWidth } from "../lib/preferences";
 import { ringRecords, type DayEntry } from "../lib/stats";
@@ -40,12 +42,17 @@ export function Today() {
   const occurrences = occurrencesOn(plans ?? [], activities ?? [], today).filter(
     (o) => !(autoLogs(o.plan) && o.endMs <= now),
   );
+  const clock = (ms: number) => formatClock(ms, i18n.language);
   const planSegments: RingSegment[] = occurrences.map((o) => ({
     key: o.key,
+    group: o.key,
     startMs: o.startMs,
     endMs: o.endMs,
     color: o.activity?.color,
+    tooltip: `${activityName(o.activity, t, o.parent)} · ${clock(o.startMs)}–${clock(o.endMs)} · ${formatDuration(o.endMs - o.startMs)}`,
   }));
+  const describe = (e: DayEntry) =>
+    `${activityName(e.activity, t, e.parent)} · ${clock(e.startMs)}–${e.endMs === null ? t("today.now") : clock(e.endMs)} · ${formatDuration(e.durationMs)}`;
   const pickable = (activities ?? []).filter((a) => a.archived_at === null);
 
   const dateText = new Intl.DateTimeFormat(i18n.language, {
@@ -76,7 +83,8 @@ export function Today() {
         <Ring
           wakeMs={wakeMs}
           sleepMs={sleepMs}
-          records={ringRecords(summary.entries)}
+          records={ringRecords(summary.entries, describe)}
+          interactive
           plans={planSegments}
           now={now}
           stroke={ringWidth}
@@ -87,7 +95,9 @@ export function Today() {
           sleepSegments={day.sleepSegments}
           slept={day.slept}
         >
-          <span className="today-total tabular">{formatDuration(summary.totalMs)}</span>
+          <span className="today-total">
+            <Duration ms={summary.totalMs} />
+          </span>
           <span className="today-total-label">{day.slept ? t("day.rested") : t("today.total")}</span>
         </Ring>
       </section>

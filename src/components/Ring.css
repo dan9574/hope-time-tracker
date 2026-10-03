@@ -9,7 +9,59 @@
 
 .ring path {
   fill: none;
+}
+
+/* rebuild-plan 11.3: a thin round-capped track; records sit on it as round-capped capsules or dots. */
+.ring-track-future,
+.ring-track-past,
+.ring-segment,
+.ring-sleep-shape,
+.ring-hit-shape {
   stroke-linecap: round;
+}
+
+/* The purple bottom gap after sleep joins the two track tips, so its ends stay flat. */
+.ring-sleep-gap {
+  stroke-linecap: butt;
+}
+
+.ring-segment {
+  transition: stroke-width 120ms ease, opacity 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-segment {
+    transition: none;
+  }
+}
+
+.ring-plan .ring-segment {
+  stroke-opacity: 0.4;
+  fill-opacity: 0.4;
+}
+
+/* While something is hovered, everything else fades to 60%. */
+[data-hover="off"] .ring-segment {
+  opacity: 0.6;
+}
+
+.ring-hit {
+  cursor: default;
+  outline: none;
+}
+
+/* Invisible but hit-testable: arcs by their stroke, dots by their disc. */
+.ring-hit-shape {
+  fill: transparent;
+  stroke: transparent;
+}
+
+path.ring-hit-shape {
+  pointer-events: stroke;
+}
+
+circle.ring-hit-shape {
+  pointer-events: fill;
 }
 
 .ring-track-future {
@@ -21,18 +73,28 @@
   stroke-opacity: 0.4;
 }
 
-.ring-plan {
-  stroke-opacity: 0.4;
-}
-
 /* Sleep is not an activity; it borrows the palette's purple at the plan opacity (rebuild-plan 10 E). */
-.ring-sleep {
+.ring-sleep-shape,
+.ring-sleep-gap {
   stroke: var(--activity-purple);
   stroke-opacity: 0.4;
 }
 
+circle.ring-sleep-shape {
+  fill: var(--activity-purple);
+  fill-opacity: 0.4;
+  stroke: none;
+}
+
+/* Hollow "now" marker above every record; never the accent colour, so it can't pass for a blue record. */
 .ring-now {
-  fill: var(--accent);
+  fill: var(--now-fill);
+  stroke: var(--fg);
+}
+
+/* Merged capsules list each record on its own line. */
+.ring-tooltip {
+  white-space: pre;
 }
 
 .ring-end-label.is-button {

@@ -136,10 +136,17 @@ export function totalsByActivity(entries: DayEntry[]): ActivityTotal[] {
   return finish(totals, childMaps);
 }
 
-/** Day entries flattened into ring segments. */
-export function ringRecords(entries: DayEntry[]): RingSegment[] {
+/** Day entries flattened into ring segments; segments of one record share its hover group. */
+export function ringRecords(entries: DayEntry[], describe?: (e: DayEntry) => string): RingSegment[] {
   return entries.flatMap((e) =>
-    e.segments.map((seg) => ({ key: `${e.key}-${seg.startMs}`, ...seg, color: e.activity?.color })),
+    e.segments.map((seg) => ({
+      key: `${e.key}-${seg.startMs}`,
+      group: e.key,
+      mergeKey: e.parent?.id ?? e.activity?.parent_id ?? e.activityId,
+      ...seg,
+      color: e.activity?.color,
+      tooltip: describe?.(e),
+    })),
   );
 }
 

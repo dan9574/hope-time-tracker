@@ -1,3 +1,4 @@
+import i18n from "./i18n";
 import type { TimeRange } from "./bindings";
 
 export const MINUTE = 60_000;
@@ -61,17 +62,39 @@ export function atClock(day: Date, hm: string): number | null {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m).getTime();
 }
 
-/** `H:MM` — durations everywhere in the app. */
-export function formatDuration(ms: number): string {
-  const minutes = Math.floor(Math.max(0, ms) / MINUTE);
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+/** Narrow no-break space between a number and its unit. */
+export const UNIT_SPACE = "\u202F";
+
+export interface DurationPart {
+  value: number;
+  unit: string;
 }
 
-/** `H:MM:SS` — only for a live, running timer. */
+/** `[2 h][15 min]`, `[3 h]` or `[45 min]` (rebuild-plan 11.1); units come from the locale. */
+export function durationParts(ms: number): DurationPart[] {
+  const minutes = Math.floor(Math.max(0, ms) / MINUTE);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const parts: DurationPart[] = [];
+  if (h > 0) parts.push({ value: h, unit: i18n.t("units.h") });
+  if (m > 0 || h === 0) parts.push({ value: m, unit: i18n.t("units.min") });
+  return parts;
+}
+
+/** The one way durations are written: `45 min`, `2 h 15 min`, `3 h`. */
+export function formatDuration(ms: number): string {
+  return durationParts(ms)
+    .map((p) => `${p.value}${UNIT_SPACE}${p.unit}`)
+    .join(" ");
+}
+
+/** Only for a timer that is running: `MM:SS`, or `H:MM:SS` from one hour on. */
 export function formatElapsed(ms: number): string {
   const seconds = Math.floor(Math.max(0, ms) / 1000);
-  const s = String(seconds % 60).padStart(2, "0");
-  return `${formatDuration(seconds * 1000)}:${s}`;
+  const h = Math.floor(seconds / 3600);
+  const mm = String(Math.floor(seconds / 60) % 60).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
 const clockFormats = new Map<string, Intl.DateTimeFormat>();

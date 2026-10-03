@@ -106,7 +106,6 @@
     "thisWeek": "回到本周",
     "thisMonth": "回到本月",
     "byActivity": "按活动",
-    "total": "合计",
     "empty": "这段时间没有记录",
     "unspecified": "未细分"
   },
@@ -196,5 +195,9 @@
   },
   "schedule": {
     "empty": "还没有每周重复的安排。点上方任意时间格添加，比如一节课。"
+  },
+  "units": {
+    "h": "小时",
+    "min": "分钟"
   }
 }

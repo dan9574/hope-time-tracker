@@ -122,7 +122,7 @@ body {
 }
 
 .overlay .ring-now {
-  fill: var(--overlay-fg);
+  stroke: var(--overlay-fg);
 }
 
 /* Week */

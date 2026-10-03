@@ -5,12 +5,15 @@ import { activityName } from "../lib/activity";
 import type { ActivityTotal } from "../lib/stats";
 import { formatDuration } from "../lib/time";
 import { ActivityDot } from "./ActivityDot";
+import { hoverProps } from "../lib/useHover";
+import { useUi } from "../stores/ui";
 import "./ActivitySummary.css";
 
 /** Totals per top-level activity with each one's share; rows with sub-activities expand. */
 export function ActivitySummary({ totals }: { totals: ActivityTotal[] }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const hoverKey = useUi((s) => s.hoverKey);
   const sum = totals.reduce((s, a) => s + a.ms, 0);
   const share = (ms: number) => `${Math.round((ms / sum) * 100)}%`;
   const toggle = (id: string) =>
@@ -25,9 +28,6 @@ export function ActivitySummary({ totals }: { totals: ActivityTotal[] }) {
     <section className="summary">
       <header className="summary-header">
         <h2>{t("period.byActivity")}</h2>
-        <span className="tabular">
-          {t("period.total")} {formatDuration(sum)}
-        </span>
       </header>
       {totals.length === 0 ? (
         <p className="summary-empty">{t("period.empty")}</p>
@@ -41,9 +41,11 @@ export function ActivitySummary({ totals }: { totals: ActivityTotal[] }) {
                 <button
                   type="button"
                   className="summary-row"
-                  disabled={!expandable}
+                  data-hover={hoverKey === null ? undefined : hoverKey === a.activityId ? "on" : "off"}
+                  {...hoverProps(a.activityId)}
+                  aria-disabled={!expandable}
                   aria-expanded={expandable ? expanded : undefined}
-                  onClick={() => toggle(a.activityId)}
+                  onClick={() => expandable && toggle(a.activityId)}
                 >
                   <ChevronRight
                     size={12}

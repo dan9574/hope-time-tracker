@@ -26,8 +26,21 @@
   text-align: left;
 }
 
-.timeline-row.is-entry:hover {
+.timeline-row.is-entry,
+.timeline-row.is-plan {
+  transition: background-color 120ms ease;
+}
+
+/* Linked with the ring (rebuild-plan 11.2). */
+.timeline-row[data-hover="on"] {
   background: var(--mat-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-row.is-entry,
+  .timeline-row.is-plan {
+    transition: none;
+  }
 }
 
 /* Plans: dashed bar, quieter text. */
@@ -36,10 +49,6 @@
   text-align: left;
   border-left-style: dashed;
   color: var(--fg-2);
-}
-
-.timeline-row.is-plan:hover {
-  background: var(--mat-hover);
 }
 
 .timeline-row.is-plan .timeline-name,

@@ -1,0 +1,11 @@
+.duration-unit {
+  font-size: var(--text-md);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--fg-2);
+}
+
+/* On the wallpaper the overlay's own grey applies. */
+.overlay .duration-unit {
+  color: var(--overlay-fg-2);
+}

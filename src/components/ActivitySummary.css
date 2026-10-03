@@ -36,6 +36,22 @@
   border-top: 1px solid var(--line);
 }
 
+button.summary-row {
+  border-radius: var(--r-sm);
+  transition: background-color 120ms ease;
+}
+
+/* Linked with the bars above (rebuild-plan 11.2). */
+.summary-row[data-hover="on"] {
+  background: var(--mat-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.summary-row {
+    transition: none;
+  }
+}
+
 .summary-chevron {
   flex-shrink: 0;
   margin-right: calc(var(--s-2) * -1);

@@ -12,6 +12,7 @@
 }
 
 .calendar-day {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
@@ -49,14 +50,47 @@
   height: var(--s-1);
   border-radius: var(--r-sm);
   background: var(--line);
-  overflow: hidden;
 }
 
+/* Pieces 1px apart, at least 2px wide; only the bar's ends are rounded (rebuild-plan 11.3). */
 .calendar-bar-fill {
   display: flex;
+  gap: 1px;
   height: 100%;
 }
 
-.calendar-bar-fill span {
+.calendar-piece {
   flex-basis: 0;
+  min-width: 2px;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.calendar-tooltip {
+  left: 50%;
+  bottom: var(--s-4);
+  transform: translateX(-50%);
+}
+
+.calendar-piece:first-child {
+  border-top-left-radius: var(--r-sm);
+  border-bottom-left-radius: var(--r-sm);
+}
+
+.calendar-piece:last-child {
+  border-top-right-radius: var(--r-sm);
+  border-bottom-right-radius: var(--r-sm);
+}
+
+.calendar-piece[data-hover="on"] {
+  transform: scaleY(2);
+}
+
+.calendar-piece[data-hover="off"] {
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-piece {
+    transition: none;
+  }
 }
