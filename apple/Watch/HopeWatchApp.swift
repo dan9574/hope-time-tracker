@@ -2,21 +2,20 @@ import HopeCore
 import SwiftUI
 
 @main
-struct HopeApp: App {
+struct HopeWatchApp: App {
     @State private var model = AppModel()
-    @State private var watch = PhoneLink()
+    @State private var link = WatchLink()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
-            TodayView()
+            WatchRootView()
                 .environment(model)
-                .environment(watch)
                 // The interface is colourless; colour belongs to activities (rebuild-plan 4.1).
                 .tint(.primary)
+                .task { link.attach(model.sync) }
         }
         .onChange(of: scenePhase) { _, phase in
-            // A full round whenever the app comes to the front (rebuild-plan 12.3).
             if phase == .active { model.sync.syncNow() }
         }
     }

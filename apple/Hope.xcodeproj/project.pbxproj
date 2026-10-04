@@ -8,19 +8,48 @@
 
 /* Begin PBXBuildFile section */
 		AA0000000000000000000101 /* HopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000601 /* HopeCore */; };
+		AA0000000000000000000102 /* HopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000602 /* HopeCore */; };
+		AA0000000000000000000103 /* HopeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000202 /* HopeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA0000000000000000000111 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000000000000000000402;
+			remoteInfo = HopeWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA0000000000000000000121 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				AA0000000000000000000103 /* HopeWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		AA0000000000000000000201 /* Hope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hope.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000000000000000000202 /* HopeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HopeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000211 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		AA0000000000000000000212 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		AA0000000000000000000213 /* iOS-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "iOS-Info.plist"; sourceTree = "<group>"; };
+		AA0000000000000000000214 /* Watch-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Watch-Info.plist"; sourceTree = "<group>"; };
 		AA0000000000000000000215 /* HopeCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = HopeCore; sourceTree = "<group>"; };
 		AA0000000000000000000216 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA0000000000000000000301 /* iOS */ = {isa = PBXFileSystemSynchronizedRootGroup; path = iOS; sourceTree = "<group>"; };
+		AA0000000000000000000302 /* Watch */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Watch; sourceTree = "<group>"; };
 		AA0000000000000000000303 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -30,6 +59,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000000000000000000101 /* HopeCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000000132 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000000102 /* HopeCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +80,7 @@
 				AA0000000000000000000215 /* HopeCore */,
 				AA0000000000000000000303 /* Shared */,
 				AA0000000000000000000301 /* iOS */,
+				AA0000000000000000000302 /* Watch */,
 				AA0000000000000000000012 /* Config */,
 				AA0000000000000000000013 /* Products */,
 			);
@@ -54,6 +92,7 @@
 				AA0000000000000000000211 /* Base.xcconfig */,
 				AA0000000000000000000212 /* Local.xcconfig.example */,
 				AA0000000000000000000213 /* iOS-Info.plist */,
+				AA0000000000000000000214 /* Watch-Info.plist */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -62,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000000000000000000201 /* Hope.app */,
+				AA0000000000000000000202 /* HopeWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,10 +117,12 @@
 				AA0000000000000000000141 /* Sources */,
 				AA0000000000000000000131 /* Frameworks */,
 				AA0000000000000000000161 /* Resources */,
+				AA0000000000000000000121 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AA0000000000000000000171 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AA0000000000000000000301 /* iOS */,
@@ -94,6 +136,31 @@
 			productReference = AA0000000000000000000201 /* Hope.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AA0000000000000000000402 /* HopeWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000713 /* Build configuration list for PBXNativeTarget "HopeWatch" */;
+			buildPhases = (
+				AA0000000000000000000152 /* Check Supabase config */,
+				AA0000000000000000000142 /* Sources */,
+				AA0000000000000000000132 /* Frameworks */,
+				AA0000000000000000000162 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA0000000000000000000302 /* Watch */,
+				AA0000000000000000000303 /* Shared */,
+			);
+			name = HopeWatch;
+			packageProductDependencies = (
+				AA0000000000000000000602 /* HopeCore */,
+			);
+			productName = HopeWatch;
+			productReference = AA0000000000000000000202 /* HopeWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -105,6 +172,9 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					AA0000000000000000000401 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					AA0000000000000000000402 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -128,12 +198,20 @@
 			projectRoot = "";
 			targets = (
 				AA0000000000000000000401 /* Hope */,
+				AA0000000000000000000402 /* HopeWatch */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AA0000000000000000000161 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000000162 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -163,6 +241,26 @@
 			shellScript = "\"$SRCROOT/scripts/configure-supabase.sh\" --check\n";
 			showEnvVarsInLog = 0;
 		};
+		AA0000000000000000000152 /* Check Supabase config */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check Supabase config";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/scripts/configure-supabase.sh\" --check\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -173,7 +271,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA0000000000000000000142 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0000000000000000000171 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA0000000000000000000402 /* HopeWatch */;
+			targetProxy = AA0000000000000000000111 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AA0000000000000000000801 /* Debug */ = {
@@ -286,6 +399,50 @@
 			};
 			name = Release;
 		};
+		AA0000000000000000000821 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Watch-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Hope;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = io.github.dan9574.hope.ios;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.dan9574.hope.ios.watchkitapp;
+				PRODUCT_NAME = HopeWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		AA0000000000000000000822 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Watch-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Hope;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = io.github.dan9574.hope.ios;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.dan9574.hope.ios.watchkitapp;
+				PRODUCT_NAME = HopeWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -307,6 +464,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AA0000000000000000000713 /* Build configuration list for PBXNativeTarget "HopeWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000821 /* Debug */,
+				AA0000000000000000000822 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -318,6 +484,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		AA0000000000000000000601 /* HopeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HopeCore;
+		};
+		AA0000000000000000000602 /* HopeCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HopeCore;
 		};

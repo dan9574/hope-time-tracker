@@ -16,7 +16,14 @@ struct ActivityRows: View {
                 }
             } else {
                 NavigationLink(value: ActivityNodeRoute(id: node.activity.id)) {
-                    ActivityLabel(name: node.activity.name, color: node.activity.palette)
+                    HStack {
+                        ActivityLabel(name: node.activity.name, color: node.activity.palette)
+                        #if os(watchOS)
+                        // watchOS draws no disclosure indicator; without it a parent looks like a start button.
+                        Spacer(minLength: 4)
+                        Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.secondary)
+                        #endif
+                    }
                 }
             }
         }
@@ -83,7 +90,10 @@ struct NewActivityView: View {
                 .padding(.vertical, 4)
             }
         }
+        #if os(iOS)
+        // On the watch the title has no room between Cancel and Add.
         .navigationTitle("New Activity")
+        #endif
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
