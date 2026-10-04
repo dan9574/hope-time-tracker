@@ -43,7 +43,7 @@
   - Windows 版只在 CI 上编译通过，没在真机上运行过；Overlay 在 Windows 上没有逐卡模糊（CSS 半透明底）。
   - 安装包未签名、未公证（需要 Apple Developer ID）。
   - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
-  - 本机 `tauri build` 生成 dmg 那一步报错（`bundle_dmg.sh`），`.app` 正常；原因未查。CI 上的 dmg 之前是成功的。
+  - 本机 dmg：2026-10-03 复查，`npm run tauri build -- --target aarch64-apple-darwin` 连跑两次 dmg 都成功，问题不在仓库配置。之前那次失败留下的 `bundle/macos/rw.39387.Hope_0.1.0_aarch64.dmg` 显示脚本已走完 Finder AppleScript 和 SetFile，卡在最后的 `hdiutil detach`（卷被占用 EBUSY，重试 3 次后退出 16，镜像一直挂着到 20:06 才被卸下）——是偶发的环境问题（Finder / Spotlight / 安全扫描仍占着刚生成的卷）。再遇到时：关掉 Finder 里打开的 `dmg.*` 窗口，`hdiutil info` 查残留镜像并 `hdiutil detach`，删掉 `bundle/macos/rw.*.dmg` 后重跑。注意别单独用 `--bundles dmg`：它构建完会删掉 `bundle/macos/Hope.app`。
 - 阶段 7（同步层，rebuild-plan 第 12 节）：桌面端代码已完成并提交，但**尚未对真实 Supabase 项目验证**——只通过了内存假服务端的单元测试，`supabase/schema.sql` 从未在 Postgres 上执行过，登录 / 钥匙串 / PostgREST 请求也没有真实跑过。开启步骤见 `supabase/README.md`。
 - 阶段 8、9（`apple/`，说明见 `apple/README.md`）：一个 Xcode 工程 `Hope.xcodeproj`（iOS 18+ / watchOS 11+）+ 本地 Swift 包 `HopeCore`（SwiftData 存储、计时规则、同步协议的 Swift 移植，`swift test` 37 个测试）。
   - iPhone 是最小版：今天总时长 + 今日记录 + 开始/暂停/继续/结束 + 两级活动选择 + 账号；承载 Watch app，并通过 WatchConnectivity 把**另一个独立的登录会话**交给手表（refresh token 会轮换，不能共用）。
