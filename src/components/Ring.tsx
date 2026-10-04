@@ -11,8 +11,8 @@ export interface RingSegment {
   /** Hover group: every segment with the same group lights up together (a record with pauses). */
   group: string;
   /**
-   * Top-level activity. Neighbouring records with the same merge key that sit closer than one
-   * stroke width on screen are drawn as one capsule (rebuild-plan 11.3). Omitted = never merged.
+   * Top-level activity. Neighbouring records with the same merge key at most two minutes apart in
+   * time are drawn as one capsule (rebuild-plan 11.3). Omitted = never merged.
    */
   mergeKey?: string;
   startMs: number;
@@ -167,8 +167,8 @@ export function Ring({
     );
   };
 
-  const recordShapes = layoutSegments(records, toPx, arcPx, stroke, true);
-  const planShapes = layoutSegments(plans, toPx, arcPx, stroke, false);
+  const recordShapes = layoutSegments(records, toPx, arcPx, true);
+  const planShapes = layoutSegments(plans, toPx, arcPx, false);
 
   const nowPx = toPx(now);
   const nowDeg = nowPx * degPerPx;

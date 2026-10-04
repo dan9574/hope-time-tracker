@@ -7,6 +7,9 @@ import type { RingSegment } from "../components/Ring";
 /** Visible gap between neighbouring beads. */
 const SEGMENT_GAP_PX = 2;
 
+/** Records of one top-level activity at most this far apart in time are drawn as one capsule. */
+export const MERGE_GAP_MS = 2 * 60_000;
+
 /**
  * A drawn shape, in px measured along the centre line from the wake tip.
  * `capsule`: a path from `from` to `to` whose round caps add half a stroke at each end.
@@ -39,25 +42,26 @@ export interface DrawnSegment {
 }
 
 /**
- * Segments in px, clipped to the arc. With `merge`, consecutive segments sharing a merge key whose
- * on-screen gap is below one stroke width become one capsule; the data itself is untouched.
+ * Segments in px, clipped to the arc. With `merge`, consecutive segments sharing a merge key that are
+ * at most `MERGE_GAP_MS` apart in time become one capsule, however close they look on screen (a pixel
+ * rule would hide real breaks of several minutes); the data itself is untouched.
  */
 export function layoutSegments(
   segments: RingSegment[],
   toPx: (ms: number) => number,
   arcPx: number,
-  width: number,
   merge: boolean,
 ): DrawnSegment[] {
-  const out: Array<DrawnSegment & { mergeKey?: string; tips: string[] }> = [];
+  const out: Array<DrawnSegment & { mergeKey?: string; endMs: number; tips: string[] }> = [];
   const sorted = [...segments].sort((a, b) => a.startMs - b.startMs);
   for (const s of sorted) {
     const startPx = toPx(s.startMs);
     const endPx = toPx(s.endMs);
     if (endPx <= 0 || startPx >= arcPx || endPx <= startPx) continue;
     const last = out[out.length - 1];
-    if (merge && last && s.mergeKey !== undefined && last.mergeKey === s.mergeKey && startPx - last.endPx < width) {
+    if (merge && last && s.mergeKey !== undefined && last.mergeKey === s.mergeKey && s.startMs - last.endMs <= MERGE_GAP_MS) {
       last.endPx = Math.max(last.endPx, endPx);
+      last.endMs = Math.max(last.endMs, s.endMs);
       if (!last.groups.includes(s.group)) last.groups.push(s.group);
       if (s.tooltip && !last.tips.includes(s.tooltip)) last.tips.push(s.tooltip);
       continue;
@@ -68,9 +72,10 @@ export function layoutSegments(
       mergeKey: s.mergeKey,
       startPx,
       endPx,
+      endMs: s.endMs,
       color: s.color,
       tips: s.tooltip ? [s.tooltip] : [],
     });
   }
-  return out.map(({ tips, mergeKey: _mergeKey, ...d }) => ({ ...d, tooltip: tips.length > 0 ? tips.join("\n") : undefined }));
+  return out.map(({ tips, mergeKey: _mergeKey, endMs: _endMs, ...d }) => ({ ...d, tooltip: tips.length > 0 ? tips.join("\n") : undefined }));
 }
