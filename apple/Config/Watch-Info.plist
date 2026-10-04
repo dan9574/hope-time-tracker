@@ -7,5 +7,8 @@
 	<string>$(SUPABASE_URL)</string>
 	<key>HopeSupabaseAnonKey</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
+	<!-- The App Group the complication snapshot is written to; empty in the launcher-only build. -->
+	<key>HopeAppGroup</key>
+	<string>$(HOPE_APP_GROUP)</string>
 </dict>
 </plist>

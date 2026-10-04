@@ -4,16 +4,20 @@ Stages 8–9 of `docs/rebuild-plan.md`. One Xcode project, two apps, one shared 
 
 ```
 apple/
-  Hope.xcodeproj      targets: Hope (iOS 18+), HopeWatch (watchOS 11+, embedded in Hope)
+  Hope.xcodeproj      targets: Hope (iOS 18+), HopeWatch (watchOS 11+, embedded in Hope),
+                      HopeWidget (the watch-face complication, embedded in HopeWatch)
   HopeCore/           Swift package: records (SwiftData), timer rules, sync engine — no UI; `swift test`
   Shared/             SwiftUI used by both apps, and Localizable.xcstrings (English + 简体中文)
   iOS/                iPhone app: Today, start/pause/resume/stop, account, hands the sign-in to the watch
-  Watch/              Watch app: activity list, running screen
+  Watch/              Watch app: activity list, running screen, writes the complication snapshot
+  WatchWidget/        WidgetKit extension: the complication (circular, rectangular, inline, corner)
   Config/             Base.xcconfig, per-target Info.plist additions, Local.xcconfig.example
   scripts/            configure-supabase.sh
 ```
 
-Bundle IDs: `io.github.dan9574.hope.ios` and `io.github.dan9574.hope.ios.watchkitapp`.
+Bundle IDs: `io.github.dan9574.hope.ios`, `io.github.dan9574.hope.ios.watchkitapp` and
+`io.github.dan9574.hope.ios.watchkitapp.widgets`. App icons (`iOS/Assets.xcassets`, `Watch/Assets.xcassets`)
+are the desktop icon's ring cropped full-bleed from `src-tauri/icons/icon.icns` with `sips`.
 
 ## Tests
 
@@ -25,7 +29,7 @@ swift test
 Runs on macOS, no simulator needed. Covers the sync engine against an in-memory fake server (a port of
 `src-tauri/src/sync/fake.rs`: two devices converge, offline edits, delete vs edit, one running session,
 idempotent pull, pagination, the 50-sequence overlap), the GoTrue/PostgREST request shapes, token refresh,
-the timer rules and the duration formats.
+the timer rules, the duration formats and the complication snapshot.
 
 ## Signing (once per machine)
 
@@ -35,9 +39,10 @@ the timer rules and the duration formats.
 2. In Xcode → Settings → Accounts, sign in with that Apple ID. Command-line builds with
    `-allowProvisioningUpdates` use this account to create the development profiles.
 
-The project uses automatic signing and no capabilities that need a paid account (no push, no App Groups,
-no iCloud). With a free personal team, apps installed on a device expire after 7 days and must be
-re-installed from Xcode.
+The project uses automatic signing. The only capability is an App Group (`group.io.github.dan9574.hope`)
+shared by the watch app and its complication; a free personal team provisions it (verified). No push, no
+iCloud. With a free personal team, apps installed on a device expire after 7 days and must be re-installed
+from Xcode.
 
 ## Supabase config
 
@@ -103,6 +108,37 @@ xcrun devicectl device process launch --device <iPhone id> io.github.dan9574.hop
 
 First launch on the iPhone: Settings → General → VPN & Device Management → trust the developer certificate.
 Developer Mode must be on (Settings → Privacy & Security → Developer Mode) on both iPhone and watch.
+
+## Watch-face complication
+
+`WatchWidget/` is a WidgetKit extension inside the watch app with four families:
+
+| | Running | Paused | Idle |
+|---|---|---|---|
+| Circular | ring in the activity colour, ticking time | dimmed ring, pause symbol, frozen time | Hope ring, today's total (`2 h` / `15 min`) |
+| Rectangular | dot + `Parent · Child` (or just the child), large ticking time | same, frozen and grey, "Paused" | Hope ring + "Hope", today's total, "Tracked today" |
+| Inline | `Child 12:34` | pause symbol + `Child 12:34` | `Hope · 2 h 15 min` |
+| Corner | timer symbol in the activity colour, time on the curve | pause symbol, frozen time | Hope ring, today's total on the curve |
+
+Running time is the whole pause/resume chain without pauses, drawn with a system timer text
+(`Text(timerInterval:)`), so the face ticks without timeline reloads. Colour comes only from the activity
+palette in full-colour faces; tinted faces use the system tint through `widgetAccentable`. Tapping it opens
+the watch app.
+
+Data: the extension never opens the SwiftData store. The watch app (`Watch/ComplicationPublisher.swift`)
+writes `widget-snapshot.json` (`HopeCore/WidgetSnapshot.swift`) into the App Group container after every
+committed store change (timer actions, pulls that changed data) and when it becomes active, and calls
+`WidgetCenter.shared.reloadAllTimelines()` when the face would look different. The idle timeline has a
+second entry at local midnight so today's total resets. The SwiftData store itself stays in the app's own
+container (`groupContainer: .none`).
+
+One switch, `HOPE_COMPLICATION_LIVE_DATA` in `Config/Base.xcconfig` (override in `Local.xcconfig`): `YES`
+(default) adds the App Group entitlement to both watch targets; `NO` builds a launcher-only complication
+(Hope ring, opens the app, no live data) with no capability at all.
+
+To add it: on the iPhone, Watch app → Face Gallery or My Faces → pick a face → Complications → Hope; or on
+the watch, long-press the face → Edit → swipe to Complications → tap a slot → Hope. Open the watch app once
+after installing so it writes the first snapshot.
 
 ## How the watch gets signed in
 

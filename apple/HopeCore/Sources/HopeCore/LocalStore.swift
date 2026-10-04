@@ -27,7 +27,11 @@ public final class LocalStore {
     ///   - inMemory: for tests and previews.
     ///   - deviceId: fixed id for tests; otherwise read from (or created in) the local settings.
     public init(inMemory: Bool = false, deviceId: String? = nil) throws {
-        let config = ModelConfiguration("Hope", schema: Self.schema, isStoredInMemoryOnly: inMemory)
+        // `groupContainer: .none`: with an App Group entitlement (the watch app has one for its complication)
+        // SwiftData would otherwise move the store into the shared container, and existing data would look
+        // lost. The store stays private to the app; the widget reads only its snapshot.
+        let config = ModelConfiguration(
+            "Hope", schema: Self.schema, isStoredInMemoryOnly: inMemory, groupContainer: .none)
         container = try ModelContainer(for: Self.schema, configurations: config)
         context = ModelContext(container)
         context.autosaveEnabled = false

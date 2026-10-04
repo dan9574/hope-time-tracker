@@ -223,7 +223,7 @@ extension LocalStore {
     }
 
     /// Local midnight to the next local midnight around `date`.
-    public static func dayRange(of date: Date, calendar: Calendar = .current) -> (from: Int64, to: Int64) {
+    nonisolated public static func dayRange(of date: Date, calendar: Calendar = .current) -> (from: Int64, to: Int64) {
         let start = calendar.startOfDay(for: date)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
         return (Int64(start.timeIntervalSince1970 * 1000), Int64(end.timeIntervalSince1970 * 1000))

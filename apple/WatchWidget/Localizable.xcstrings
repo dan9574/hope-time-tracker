@@ -1,0 +1,91 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Opens Hope.": {
+      "comment": "Complication description in a build without live data",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Hope。"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
+          }
+        }
+      }
+    },
+    "Reading": {
+      "comment": "Sample activity name shown in the watch-face gallery",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "阅读"
+          }
+        }
+      }
+    },
+    "The running timer, or what you tracked today.": {
+      "comment": "Complication description",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在进行的计时，或今天已记录的时长。"
+          }
+        }
+      }
+    },
+    "Tracked today": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天已记录"
+          }
+        }
+      }
+    },
+    "Unknown activity": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知活动"
+          }
+        }
+      }
+    },
+    "h": {
+      "comment": "Hours unit, as in “2 h 15 min”",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小时"
+          }
+        }
+      }
+    },
+    "min": {
+      "comment": "Minutes unit, as in “2 h 15 min”",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分钟"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

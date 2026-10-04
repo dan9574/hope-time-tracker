@@ -10,5 +10,18 @@ SUPABASE_URL =
 SUPABASE_ANON_KEY =
 DEVELOPMENT_TEAM =
 
+// The watch-face complication (apple/README.md). YES: the watch app writes a small snapshot to an App Group
+// container that its widget extension reads, so the face shows the running timer and today's total. NO: a
+// launcher-only complication (opens the app, no live data) that needs no capability at all. This is the
+// only switch; override it in Local.xcconfig if your team cannot provision App Groups.
+HOPE_COMPLICATION_LIVE_DATA = YES
+HOPE_APP_GROUP_ID = group.io.github.dan9574.hope
+HOPE_APP_GROUP_YES = $(HOPE_APP_GROUP_ID)
+HOPE_APP_GROUP_NO =
+HOPE_APP_GROUP = $(HOPE_APP_GROUP_$(HOPE_COMPLICATION_LIVE_DATA))
+HOPE_WATCH_ENTITLEMENTS_YES = Config/Watch.entitlements
+HOPE_WATCH_ENTITLEMENTS_NO =
+HOPE_WATCH_ENTITLEMENTS = $(HOPE_WATCH_ENTITLEMENTS_$(HOPE_COMPLICATION_LIVE_DATA))
+
 #include? "Local.xcconfig"
 #include? "Supabase.generated.xcconfig"
