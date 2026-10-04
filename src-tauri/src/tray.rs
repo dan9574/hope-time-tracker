@@ -125,10 +125,10 @@ pub fn refresh(app: &AppHandle) {
         }
         Err(e) => eprintln!("failed to build tray menu: {e}"),
     }
+    // Shift the start back by the earlier segments so the title shows the whole pause/resume chain.
     let running_since = session::current(&app.state::<Db>().conn())
         .ok()
-        .and_then(|s| s.running)
-        .map(|s| s.start_ms);
+        .and_then(|t| t.running.map(|s| s.start_ms - t.prior_ms));
     *app.state::<TrayState>().running_since.lock().unwrap() = running_since;
     update_title(app);
 }

@@ -32,11 +32,15 @@ pub struct SessionInput {
     pub note: Option<String>,
 }
 
-/// At most one of the two is set.
+/// At most one of `running` / `paused` is set.
 #[derive(Debug, Clone, Default, Serialize, Type)]
 pub struct TimerState {
     pub running: Option<Session>,
     pub paused: Option<Session>,
+    /// Time in the earlier segments of the pause/resume chain that ends with the running (or paused)
+    /// session, pauses excluded. The timer shows `prior_ms` plus the current segment, like the Apple apps.
+    #[specta(type = specta_typescript::Number)]
+    pub prior_ms: i64,
 }
 
 const COLUMNS: &str = "id, activity_id, start_ms, end_ms, note, continues_id, plan_id";
@@ -140,7 +144,30 @@ fn paused(conn: &Connection) -> Result<Option<Session>> {
 pub fn current(conn: &Connection) -> Result<TimerState> {
     let running = running(conn)?;
     let paused = if running.is_some() { None } else { paused(conn)? };
-    Ok(TimerState { running, paused })
+    let prior_ms = match running.as_ref().or(paused.as_ref()) {
+        Some(s) => prior_ms(conn, s)?,
+        None => 0,
+    };
+    Ok(TimerState { running, paused, prior_ms })
+}
+
+/// Sum of the finished segments before `session` in its chain, following `continues_id` back through
+/// live sessions from any device (synced ones included). Mirrors `chainDuration` in HopeCore.
+fn prior_ms(conn: &Connection, session: &Session) -> Result<i64> {
+    let mut total = 0;
+    let mut seen = std::collections::HashSet::from([session.id.clone()]);
+    let mut next = session.continues_id.clone();
+    while let Some(id) = next {
+        if !seen.insert(id.clone()) || seen.len() > 1000 {
+            break;
+        }
+        let Some(s) = get(conn, &id)? else { break };
+        // An earlier segment is normally finished; if a sync left it open, it counts up to the next one.
+        let end = s.end_ms.unwrap_or(session.start_ms);
+        total += (end - s.start_ms).max(0);
+        next = s.continues_id;
+    }
+    Ok(total)
 }
 
 /// Sessions overlapping `[from_ms, to_ms)`, including a running one.
@@ -288,6 +315,48 @@ mod tests {
         assert_eq!(resumed.continues_id.as_deref(), Some(first.id.as_str()));
         assert_eq!(resumed.activity_id, a);
         assert!(current(&conn).unwrap().paused.is_none());
+    }
+
+    #[test]
+    fn timer_counts_the_whole_chain_without_pauses() {
+        let mut conn = test_conn();
+        let a = activity(&conn, "A");
+        start(&mut conn, "d", 100, &a).unwrap();
+        assert_eq!(current(&conn).unwrap().prior_ms, 0);
+        pause(&mut conn, "d", 150).unwrap();
+        // While paused, the paused segment itself is not part of `prior_ms`.
+        assert_eq!(current(&conn).unwrap().prior_ms, 0);
+        resume(&mut conn, "d", 300).unwrap();
+        pause(&mut conn, "d", 320).unwrap();
+        assert_eq!(current(&conn).unwrap().prior_ms, 50);
+        resume(&mut conn, "d", 1000).unwrap();
+        let state = current(&conn).unwrap();
+        assert_eq!(state.prior_ms, 70);
+        assert_eq!(state.running.unwrap().start_ms, 1000);
+
+        // A fresh start begins a new chain.
+        start(&mut conn, "d", 2000, &a).unwrap();
+        assert_eq!(current(&conn).unwrap().prior_ms, 0);
+    }
+
+    #[test]
+    fn chain_follows_segments_from_other_devices() {
+        let conn = test_conn();
+        let a = activity(&conn, "A");
+        // Segments written by another device (as a pull would), resumed here; a deleted link ends the walk.
+        conn.execute_batch(&format!(
+            "INSERT INTO session (id, activity_id, start_ms, end_ms, updated_ms, device_id, deleted_ms)
+                 VALUES ('s0', '{a}', 0, 40, 1, 'w', 5);
+             INSERT INTO session (id, activity_id, start_ms, end_ms, continues_id, updated_ms, device_id)
+                 VALUES ('s1', '{a}', 100, 160, 's0', 1, 'watch'),
+                        ('s2', '{a}', 200, 230, 's1', 1, 'phone');
+             INSERT INTO session (id, activity_id, start_ms, continues_id, updated_ms, device_id)
+                 VALUES ('s3', '{a}', 400, 's2', 1, 'd');"
+        ))
+        .unwrap();
+        let state = current(&conn).unwrap();
+        assert_eq!(state.running.unwrap().id, "s3");
+        assert_eq!(state.prior_ms, 90);
     }
 
     #[test]

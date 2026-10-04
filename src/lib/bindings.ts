@@ -360,10 +360,15 @@ export type TimeRange = {
 	to_ms: number,
 };
 
-/**  At most one of the two is set. */
+/**  At most one of `running` / `paused` is set. */
 export type TimerState = {
 	running: Session | null,
 	paused: Session | null,
+	/**
+	 *  Time in the earlier segments of the pause/resume chain that ends with the running (or paused)
+	 *  session, pauses excluded. The timer shows `prior_ms` plus the current segment, like the Apple apps.
+	 */
+	prior_ms: number,
 };
 
 /**

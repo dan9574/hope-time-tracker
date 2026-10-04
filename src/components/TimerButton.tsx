@@ -4,7 +4,7 @@ import { Pause, Play } from "lucide-react";
 import { commands } from "../lib/bindings";
 import { activityName, indexById, parentOf } from "../lib/activity";
 import { run, useQuery } from "../lib/data";
-import { formatElapsed } from "../lib/time";
+import { formatElapsed, timerElapsed } from "../lib/time";
 import { useNow } from "../lib/useNow";
 import { ActivityDot } from "./ActivityDot";
 import "./TimerButton.css";
@@ -34,7 +34,7 @@ export function TimerButton() {
         <>
           <ActivityDot color={activity?.color} />
           <span className="timer-button-name">{label}</span>
-          <span className="tabular">{formatElapsed(now - timer.running.start_ms)}</span>
+          <span className="tabular">{formatElapsed(timerElapsed(timer, now))}</span>
         </>
       ) : timer?.paused ? (
         <>

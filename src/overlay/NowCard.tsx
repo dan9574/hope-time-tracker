@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ActivityDot } from "../components/ActivityDot";
 import { activityName, indexById, parentOf } from "../lib/activity";
 import type { Activity, TimerState } from "../lib/bindings";
-import { formatElapsed } from "../lib/time";
+import { formatElapsed, timerElapsed } from "../lib/time";
 import { Duration } from "../components/Duration";
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
 export function NowCard({ timer, activities, todayMs, now }: Props) {
   const { t } = useTranslation();
   const current = timer?.running ?? timer?.paused;
+  const elapsed = timer ? timerElapsed(timer, now) : 0;
   const byId = indexById(activities);
   const activity = current ? byId.get(current.activity_id) : undefined;
 
@@ -29,7 +30,7 @@ export function NowCard({ timer, activities, todayMs, now }: Props) {
             {timer?.paused && <span className="overlay-muted">· {t("timer.paused")}</span>}
           </p>
           <p className="overlay-big tabular">
-            {timer?.running ? formatElapsed(now - timer.running.start_ms) : <Duration ms={current.end_ms! - current.start_ms} />}
+            {timer?.running ? formatElapsed(elapsed) : <Duration ms={elapsed} />}
           </p>
         </>
       ) : (

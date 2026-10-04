@@ -1,5 +1,5 @@
 import i18n from "./i18n";
-import type { TimeRange } from "./bindings";
+import type { TimeRange, TimerState } from "./bindings";
 
 export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
@@ -95,6 +95,16 @@ export function formatElapsed(ms: number): string {
   const mm = String(Math.floor(seconds / 60) % 60).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+/**
+ * Time on the timer: the whole pause/resume chain, pauses excluded (the Apple apps show the same).
+ * A running segment counts up to `now`; a paused one up to its end.
+ */
+export function timerElapsed(timer: TimerState, now: number): number {
+  const current = timer.running ?? timer.paused;
+  if (!current) return 0;
+  return timer.prior_ms + Math.max(0, (current.end_ms ?? now) - current.start_ms);
 }
 
 const clockFormats = new Map<string, Intl.DateTimeFormat>();
