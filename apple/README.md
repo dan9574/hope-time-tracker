@@ -42,7 +42,10 @@ the timer rules, the duration formats and the complication snapshot.
 The project uses automatic signing. The only capability is an App Group (`group.io.github.dan9574.hope`)
 shared by the watch app and its complication; a free personal team provisions it (verified). No push, no
 iCloud. With a free personal team, apps installed on a device expire after 7 days and must be re-installed
-from Xcode.
+from Xcode. With the paid Developer Program the profiles last a year (the team has been on the paid program
+since 2026-10-12). If Xcode keeps reusing an old 7-day profile after upgrading, delete the cached
+`io.github.dan9574.hope*` profiles under `~/Library/Developer/Xcode/UserData/Provisioning Profiles/` and
+rebuild with `-allowProvisioningUpdates`; check `embedded.mobileprovision` for `ExpirationDate`.
 
 ## Supabase config
 
