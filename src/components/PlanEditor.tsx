@@ -56,6 +56,8 @@ export function PlanEditor({ plan, date, activities, preset, onClose }: Props) {
       rule: makeRule(days),
       auto_log: autoLog,
       until: days.length > 0 && until ? until : null,
+      // Kept unchanged; only recurring plans have skip dates.
+      skip_dates: days.length > 0 ? (plan?.skip_dates ?? []) : [],
     });
     if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
@@ -127,6 +129,10 @@ export function PlanEditor({ plan, date, activities, preset, onClose }: Props) {
               <input type="checkbox" className="sheet-check" checked={autoLog} onChange={(e) => setAutoLog(e.target.checked)} />
             </label>
           </>
+        )}
+        {/* No UI to edit these; they are kept as they are on save (rebuild-plan 13.1). */}
+        {plan && plan.skip_dates.length > 0 && (
+          <p className="sheet-note">{t("plan.skipDates", { count: plan.skip_dates.length })}</p>
         )}
         <p className="sheet-note">
           {days.length === 0 ? t("plan.onceHint") : autoLog ? t("plan.autoLogHint") : t("plan.seriesHint")}

@@ -521,3 +521,86 @@ CREATE TABLE day (                                         -- 每天实际的起
 - 目录 `apple/`，一个 Xcode 工程：iOS app（先做最小版：登录 + 今日概览 + 承载 Watch app）与 watchOS app。Bundle ID `io.github.dan9574.hope.ios`。
 - 两端各自实现 12.3 的协议（URLSession），本地存储用 SwiftData。
 - 手表的登录态由 iPhone 通过 WatchConnectivity 传过去；手表之后直接连 Supabase。
+
+## 13. 阶段 10：课表导入与课表时间的区分
+
+动机：Today / 本周 / 本月的总时长应当是**自己决定投入的时间**（额外学习），而不是被安排的上课时间。课表从 `.ics` 文件导入（只做文件导入，不接系统日历），进入一个专门的"课表组"，统计时默认排除。
+
+### 13.1 表结构改动（迁移 0004）
+
+```sql
+ALTER TABLE activity ADD COLUMN kind TEXT;        -- NULL = 普通；'schedule' = 课表组（只能是顶层活动）
+ALTER TABLE plan     ADD COLUMN skip_dates TEXT;  -- 跳过的日期 'YYYY-MM-DD,YYYY-MM-DD'（如假期），NULL = 不跳过
+```
+
+- 两列都可空，旧数据不动。`supabase/schema.sql` 加同样两列（`add column if not exists`），Rust `sync/tables.rs` 与 Swift `SyncTable` 的列表同步加上。
+- `activity.kind` 只允许 `NULL` 或 `'schedule'`；带 `kind` 的活动必须是顶层。本机**最多一个存活的课表组**（upsert 校验）；同步可能带来第二个，UI 和统计把所有 `kind = 'schedule'` 的组都当课表，`activity_schedule_ensure` 取 `sort` 最小的那个。
+- `plan.skip_dates`：库里和云端存逗号分隔、排序去重的日期文本；Rust command 和 JSON `hope/1` 里是 `string[]`（`skip_dates`，缺省空数组）。只对周期计划有意义，单次计划存 `NULL`。
+- `occursOn`（前端）和 `autolog::log`（Rust）都要跳过 `skip_dates` 里的日期：前端不生成那天的 occurrence，Rust 收到也不计入。
+- 计划编辑器不提供编辑跳过日期的 UI，但编辑时必须原样传回 `skip_dates`，不能把它清掉；有跳过日时在编辑器里显示一行"跳过 N 天（来自导入）"。
+- "重复计划没有单次例外"这条决定仍然成立：`skip_dates` 只是导入时写入的假期，没有"改某一次"。
+- JSON 导入导出：`activity.kind`、`plan.skip_dates` 都是可选字段，格式名仍是 `hope/1`。
+
+### 13.2 ICS 解析（前端 `src/lib/ics.ts`，不加依赖）
+
+解析放前端，因为需要时区换算（`Intl`），Rust 侧没有时区库（与 10 F 的分工一致）。Rust 只负责选文件、读文本：`ics_pick() -> Option<String>`（dialog 过滤 `ics`）。
+
+支持的子集：
+- 折行（CRLF 后跟空格 / Tab）、属性参数（`DTSTART;TZID=…:…`）、转义（`\,` `\;` `\n` `\\`）。
+- `VEVENT` 的 `UID`、`SUMMARY`、`DTSTART`、`DTEND`（或 `DURATION`，支持 `PnDTnHnMnS`）、`RRULE`、`EXDATE`（可多行、可逗号分隔）。
+- `RRULE` 只支持 `FREQ=WEEKLY`，`BYDAY`（`MO…SU` 映射到 ISO 1–7）、`UNTIL`（UTC 或本地）、`COUNT`（展开后取最后一次的日期作为 `until`）。`INTERVAL` 缺省或 1；其他 `FREQ`、`INTERVAL ≥ 2`、全天事件（`VALUE=DATE`）、`RECURRENCE-ID` 的事件**跳过并在预览里说明原因**。
+- 时间换算：floating 时间原样取钟点；`Z` 结尾按 UTC 转本地；`TZID` 与本机时区（`Intl.DateTimeFormat().resolvedOptions().timeZone`）相同时原样取钟点，不同时把该瞬间换算成本地钟点，并在预览里提示一行"文件时区 X，已换算为本地时间"。`UNTIL` 为 UTC 时先换算到事件自己的时区再取日期（例：`20261205T075959Z` 在 `America/Los_Angeles` 是 12-04）。
+- 周期计划的 `date` = `DTSTART` 当天或之后第一个落在 `BYDAY` 里的日期；`until` 来自 `UNTIL` / `COUNT`，没有则 `null`；`skip_dates` 来自 `EXDATE`（只保留落在 `date…until` 内且星期匹配的）。
+- 没有 `RRULE` 的事件：同名、同起止钟点的单次事件 ≥ 3 条，且每个出现过的星期至少出现 2 次，就合并成一条周期计划：`date` = 最早、`until` = 最晚、`skip_dates` = 这个星期模式在区间内应出现却没出现的日期。其余单次事件各自成为一条单次计划。
+- 每一行的 `source_key` = `UID`（合并出来的周期计划用 `UID` 排序后以 `|` 连接），Rust 用它算确定性 id（下文），重复导入同一份文件是更新不是重复。
+- 建议的活动名（可改）：去掉结尾的 section 代码和考试后缀。规则：`/\s*-\s*[A-Z]{2}\d?$/`（`CSE 100-LE` → `CSE 100`）、`/\s*(期末考试|期中考试|Final(?: Exam)?|Midterm)$/i`（`CSE 101 期末考试` → `CSE 101`）。同名的行归到同一个子活动。
+
+### 13.3 导入界面与写入
+
+- 入口：日程页标题右侧 `accessory` 一个「导入 .ics…」按钮。
+- 预览 Sheet（沿用 `Sheet.css`）：
+  - 标题「导入课表」，副标题：日历名（`X-WR-CALNAME`，没有就用文件名）与条数。
+  - 「开始」：`按文件 / 今天 / 自定义`（日期框）；「结束」：`按文件 / 不设结束 / 自定义`。只作用于周期计划（改 `date` / `until`，并丢掉落在新区间外的 `skip_dates`）；单次计划（如期末考试）不受开始 / 结束影响，但落在区间之外的默认不勾选。文件里没有 `UNTIL` 时「按文件」等于「不设结束」。默认都是「按文件」。
+  - 课程列表：每行 = 复选框 + 可编辑的活动名 + 说明（周期：`一三五 09:00–09:50 · 9/25–12/4 · 跳过 2 天`；单次：`12/7 11:30–14:29`）。不支持的行灰显、不可勾选、显示原因。
+  - 脚注：会放进课表组「课程」（粉色）下；按设置排除 / 计入统计。
+  - 操作：取消 / 「导入 N 项」。导入完成后用 `dialog_alert` 报告（新建了几个活动、几条计划新增 / 更新），与 JSON 导入一致。
+- Rust command `schedule_import(input) -> report`，一个事务：
+  - `input = { group_name, courses: [{ name, plans: [{ source_key, date, start_hm, end_hm, rule, auto_log, until, skip_dates }] }] }`。
+  - 课表组：`kind = 'schedule'` 的存活顶层活动；没有就新建（名字来自前端 i18n `schedule.group`，颜色 `pink`，图标 `graduationcap`）。另有 `activity_schedule_ensure(name) -> Activity` 供设置页用。
+  - 子活动：在课表组下按名字（trim 后精确匹配）复用存活的子活动，没有就新建；颜色随父。
+  - 计划 id：UUID v5，命名空间 `9c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f`，名字 `hope-ics/{source_key}`。存在就更新（按 id upsert），不存在就插入；`auto_log` 默认开。
+  - 报告：`{ activities_created, plans_added, plans_updated }`。
+- 自动计入沿用 10 F 的规则：计划 `updated_ms` 之前结束的那些次不补记，所以导入上学期开始的课表不会把过去几周补成记录；之后到点才计入。
+
+### 13.3.1 补记已过去的课
+
+10 F 的规则是"新建计划不补出过去的记录"。导入课表是例外：课表里的课默认都去了，所以只要导入的开始日期早于今天，预览 Sheet 里多一行开关「补记已过去的课（视为全部参加）」，默认开，后面显示会补记多少节；开始日期不早于今天时这一行不出现。
+
+- 前端按本地时区算出每条周期计划从 `date` 到今天、已经结束、且不在 `skip_dates` 里的每一次（`{ date, start_ms, end_ms }`），放进 `PlanImportInput.past`（开关关着时为空数组）。单次计划不补记。
+- Rust 在 `schedule_import` 的同一个事务里，计划写入后调用 `autolog::log` 的"允许过去"模式记录这些次：跳过 `end_ms <= plan.updated_ms` 的那条规则不生效，其余不变（确定性 id、已有手动记录只补没覆盖的部分、被删过的不再生成、未来的不记）。报告增加 `sessions_logged`。
+- 这是唯一会补记过去的入口；`plan_autolog` 命令和 `useAutoLog` 的 30 天回补行为不变。
+- 之后再导入同一份文件且开关开着，补记是幂等的，不会重复。
+
+### 13.4 课表组与统计
+
+- 设置「日程」区新增开关「总时长计入课表」（本机设置 `stats.include_schedule`，`"1"` / 缺省 `"0"`），默认**不计入**。脚注说明：课表组下的记录不进总时长，仍在时间线上显示。
+- 活动编辑器：顶层活动多一个开关「作为课表组」（已有子活动或没有都行；已存在另一个课表组时报错）。活动列表里课表组名字旁一个小标签「课表」。
+- 判定：一条记录的活动本身或其父活动 `kind = 'schedule'` 即为课表时间。`DayEntry` 加 `scheduled: boolean`；`summarizeDay` 接收 `includeSchedule`，返回 `totalMs`（按设置）和 `scheduleMs`（课表时间，始终计算）。`totalsByActivity` / `summarizeDays` / `mergeTotals` 在不计入时把课表记录排除在 `parts` / `totals` 之外。开关的值由 `useToday` / `usePeriod` 读取并传入，所以 Today、本周、本月、Overlay 三张卡全部跟着变，不需要各自处理。
+- Today：不计入时，课表记录在环上照画但 40% 不透明度（`RingSegment.dim`），时间线上那一行同样 40% 不透明度、仍可点击编辑；环下方新增一行小字（`--fg-3`）"上课 2 h 30 min"（`today.schedule`），`scheduleMs = 0` 时不显示。
+- 本周 / 本月：条形图和活动汇总都不含课表；活动汇总列表末尾加一行灰显的"课程 · X h"（不参与百分比），`scheduleMs = 0` 时不显示。
+- 计入时：与现在完全一样，没有任何标记。
+- Apple 端：`ActivityRecord.kind`、`PlanRecord.skipDates` 入模型与同步列表；今日总时长（iOS 首页、Watch 列表、表盘快照）排除课表组，暂不做开关（与桌面的默认一致）。`swift test` 必须继续通过。
+
+### 13.5 实施顺序
+
+1. Rust：迁移 0004、`kind` / `skip_dates` 贯穿 db / command / transfer / sync / autolog、`ics_pick`、`schedule_import`、`activity_schedule_ensure`、`supabase/schema.sql`、单元测试、重新导出 bindings。
+2. 前端：`ics.ts` 解析、导入 Sheet、日程页入口、`occursOn` 跳过、编辑器保留 `skip_dates`、设置开关、统计过滤与 Today / 周 / 月 / Overlay 的显示、活动编辑器开关、zh-CN 与 en 文案。
+3. Apple：两列入模型、同步列表、今日总时长排除课表。
+4. 用 `fall2026.ics` 实测：7 条周期 + 4 条单次导入，日程页显示，11/11、11/26、11/27 不出现，Today 的课被排除。
+
+### 13.6 实现时定下的细节
+
+- 课表组被归档后再导入：`schedule_ensure` 自动取消归档（导入就是想再看到它）；有多个组时优先未归档、`sort` 最小的。
+- 文件时区与本机不同时，整条周期计划按首次换算后的本地钟点和星期平移（例：洛杉矶周一三五 09:00 在上海是周二四六 00:00），夏令时切换后的偏差不单独处理。
+- `PlanInput.skip_dates` 在 TS 里是必填，编辑器不可能漏传而把假期清掉；周期计划改成单次时清空。
+- 导入时课名相同的行合并为一个子活动；一门课的讲座、讨论、期末考试默认都归到课程代码（`CSE 100`）下。

@@ -35,7 +35,8 @@
   }
 }
 
-.ring-plan .ring-segment {
+.ring-plan .ring-segment,
+.ring-record.is-dim .ring-segment {
   stroke-opacity: 0.4;
   fill-opacity: 0.4;
 }

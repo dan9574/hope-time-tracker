@@ -1,0 +1,83 @@
+/* The .ics import preview (rebuild-plan 13.3); builds on Sheet.css. */
+.sheet.is-wide {
+  width: min(520px, calc(100vw - var(--s-12))); /* sheet width, not spacing */
+}
+
+.import-header .sheet-title {
+  margin-bottom: var(--s-1);
+}
+
+.import-subtitle {
+  font-size: var(--text-sm);
+  color: var(--fg-2);
+}
+
+.import-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.import-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Line the checkbox up with the name field's text. */
+.import-row .sheet-check {
+  margin-top: var(--s-1);
+}
+
+.import-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.import-name {
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: var(--s-1);
+  margin-left: calc(var(--s-1) * -1);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.import-name:hover,
+.import-name:focus {
+  background: var(--mat-hover);
+  outline: none;
+}
+
+.import-skipped-name {
+  padding: var(--s-1) 0;
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-detail {
+  font-size: var(--text-xs);
+  color: var(--fg-2);
+}
+
+.import-row.is-disabled .import-name,
+.import-row.is-disabled .import-skipped-name,
+.import-row.is-disabled .import-detail {
+  color: var(--fg-3);
+}
+
+.import-row.is-disabled .import-name:hover {
+  background: transparent;
+}

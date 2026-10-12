@@ -52,4 +52,5 @@
   - 已验证：`swift test`；对已注册的 iPhone 签名编译成功（含 Watch app 与复杂功能扩展，App Group 已进描述文件）；iOS 与 watchOS 模拟器上开始 / 暂停 / 继续 / 结束 / 切换活动、中文界面；watchOS 27 模拟器上快照文件内容正确，复杂功能各视图在 app 内渲染截图正常。
   - **未验证**：真机安装（Xcode 已登录、已能签名，但还没装）；复杂功能真正放到表盘上的样子（模拟器无法驱动表盘编辑）及着色表盘下的效果；对真实 Supabase 的登录、同步、手机→手表交接（模拟器上没有建账号）；手表上文本输入（模拟器无法驱动）。
   - 偏离文档：没有 Live Activity、底部 Tab；"今天"按自然日而不是起床/睡觉日；Apple 端不生成计划自动计入的记录；暂停状态只在本机（与桌面一致）。
+- 阶段 10（课表导入与课表时间区分，rebuild-plan 第 13 节）：已完成桌面端与 Apple 模型层。迁移 0004 加了 `activity.kind`（`'schedule'` = 课表组）和 `plan.skip_dates`（假期）；日程页「导入 .ics…」→ 预览 Sheet（开始 / 结束范围、可改课名）→ `schedule_import`（UUID v5 确定性 id，重复导入即更新；开始日期早于今天时可勾选「补记已过去的课」，走 autolog 的允许过去模式，幂等）；设置「总时长计入课表」默认关，Today / 本周 / 本月 / Overlay / Apple 今日总时长都排除课表组。ICS 解析器 `src/lib/ics.ts` 无依赖，`npm run test:ics` 用 Node 自带 test runner；`src-tauri/src/db/fixtures/fall2026-import.json` 是用它解析真实课表得到的导入输入，Rust 有端到端测试。Supabase 的两列已写进 `supabase/schema.sql`（含 `add column if not exists`），同样尚未在真实 Postgres 上执行。
 - 下一步：用户建好 Supabase 项目后，按 `supabase/README.md` 配置并实测阶段 7；把阶段 8/9 装到真机、把 Hope 加到表盘，实测手机→手表交接与三端收敛。Realtime（7b）先不做。

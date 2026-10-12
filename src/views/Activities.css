@@ -47,6 +47,21 @@
   white-space: nowrap;
 }
 
+/* Inside the row button the name only takes its own width, so a badge can follow it. */
+.activity-open .activity-name {
+  flex: 0 1 auto;
+}
+
+/* "Timetable" next to the timetable group's name (rebuild-plan 13.4). */
+.activity-badge {
+  flex-shrink: 0;
+  padding: 0 var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: var(--text-xs);
+  color: var(--fg-2);
+}
+
 .activity-chevron {
   color: var(--fg-3);
 }
@@ -79,6 +94,13 @@
 
 .activity-editing.is-child {
   padding-left: var(--s-8);
+}
+
+.activity-editor-check {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-sm);
 }
 
 .activity-editor-note {

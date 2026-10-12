@@ -3,7 +3,8 @@ import { activityColorVar } from "../lib/activity";
 import type { Activity } from "../lib/bindings";
 import { commands } from "../lib/bindings";
 import { useQuery } from "../lib/data";
-import { summarizeDay, totalsByActivity } from "../lib/stats";
+import { useIncludeSchedule } from "../lib/preferences";
+import { dayTotals, summarizeDay } from "../lib/stats";
 import { dateKey, dayRange, formatDuration, shiftDays, weekDays } from "../lib/time";
 
 interface Props {
@@ -22,6 +23,7 @@ export function WeekCard({ now, activities }: Props) {
   const lastFrom = shiftDays(from, -7);
   const lastUntil = shiftDays(now, -7);
   const weekKey = dateKey(days[0]!);
+  const includeSchedule = useIncludeSchedule();
 
   const sessions = useQuery(() => commands.sessionList({ from_ms: from, to_ms: to }), [weekKey]);
   const lastSessions = useQuery(() => commands.sessionList({ from_ms: lastFrom, to_ms: lastUntil }), [
@@ -29,12 +31,16 @@ export function WeekCard({ now, activities }: Props) {
     Math.floor(now / 60_000),
   ]);
 
-  const bars = days.map((d) => {
-    const s = summarizeDay(sessions ?? [], activities ?? [], dayRange(d), now);
-    return { key: dateKey(d), date: d, totalMs: s.totalMs, parts: totalsByActivity(s.entries) };
-  });
+  const bars = days.map((d) => dayTotals(sessions ?? [], activities ?? [], d, now, includeSchedule));
   const totalMs = bars.reduce((sum, b) => sum + b.totalMs, 0);
-  const lastMs = summarizeDay(lastSessions ?? [], [], { from_ms: lastFrom, to_ms: lastUntil }, now).totalMs;
+  // Activities are needed here too, to tell timetable time apart.
+  const lastMs = summarizeDay(
+    lastSessions ?? [],
+    activities ?? [],
+    { from_ms: lastFrom, to_ms: lastUntil },
+    now,
+    includeSchedule,
+  ).totalMs;
   const delta = totalMs - lastMs;
   const peak = Math.max(...bars.map((b) => b.totalMs), 1);
   const todayKey = dateKey(new Date(now));

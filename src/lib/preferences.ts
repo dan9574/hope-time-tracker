@@ -14,6 +14,8 @@ export const PREF = {
   appearance: "theme.appearance",
   wakeButtonUntil: "wake_button_until_hm",
   sleepButtonFrom: "sleep_button_from_hm",
+  /** "1" = timetable records count towards totals; unset / "0" = they don't (rebuild-plan 13.4). */
+  includeSchedule: "stats.include_schedule",
 } as const;
 
 export const APPEARANCES = ["system", "light", "dark"] as const;
@@ -63,4 +65,9 @@ export function useThemePreference() {
 
 export function useRingWidth(): number {
   return useSetting(PREF.ring) === "16" ? 16 : 10;
+}
+
+/** Whether time logged under the timetable group counts towards totals (default: no). */
+export function useIncludeSchedule(): boolean {
+  return useSetting(PREF.includeSchedule) === "1";
 }

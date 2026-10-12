@@ -26,13 +26,14 @@ pub const TABLES: [Table; 5] = [
     Table {
         name: "activity",
         key: "id",
-        columns: &["id", "name", "color", "symbol", "sort", "archived_at", "parent_id", "updated_ms", "deleted_ms", "device_id"],
+        columns: &["id", "name", "color", "symbol", "sort", "archived_at", "parent_id", "kind", "updated_ms", "deleted_ms", "device_id"],
     },
     Table {
         name: "plan",
         key: "id",
         columns: &[
-            "id", "activity_id", "date", "start_hm", "end_hm", "rule", "auto_log", "until", "updated_ms", "deleted_ms", "device_id",
+            "id", "activity_id", "date", "start_hm", "end_hm", "rule", "auto_log", "until", "skip_dates", "updated_ms", "deleted_ms",
+            "device_id",
         ],
     },
     Table {

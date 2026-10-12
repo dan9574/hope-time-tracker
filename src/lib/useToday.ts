@@ -6,6 +6,7 @@ import {
   DEFAULT_WAKE,
   DEFAULT_WAKE_BUTTON_UNTIL,
   PREF,
+  useIncludeSchedule,
 } from "./preferences";
 import { summarizeDay } from "./stats";
 import { atClock, dateKey, DAY, dayRange, shiftDays } from "./time";
@@ -36,6 +37,7 @@ export function useToday(now: number) {
   const sleepHm = useSetting(PREF.sleep);
   const wakeUntilHm = useSetting(PREF.wakeButtonUntil);
   const sleepFromHm = useSetting(PREF.sleepButtonFrom);
+  const includeSchedule = useIncludeSchedule();
 
   const cal = new Date(now);
   const calKey = dateKey(cal);
@@ -85,7 +87,7 @@ export function useToday(now: number) {
   };
   const sessions = useQuery(() => commands.sessionList(range), [range.from_ms, range.to_ms]);
   const activities = useQuery(() => commands.activityList(true), []);
-  const summary = summarizeDay(sessions ?? [], activities ?? [], range, now);
+  const summary = summarizeDay(sessions ?? [], activities ?? [], range, now, includeSchedule);
 
   const lastNightMs = wakeMs !== null && prev?.sleep_ms != null ? wakeMs - prev.sleep_ms : null;
 
@@ -107,6 +109,9 @@ export function useToday(now: number) {
     key,
     day,
     summary,
+    /** Whether timetable time is in `summary.totalMs` (the setting); `summary.scheduleMs` has it either way. */
+    includeSchedule,
+    scheduleMs: summary.scheduleMs,
     activities,
     loaded: sessions !== undefined,
     /** Ring bounds. */

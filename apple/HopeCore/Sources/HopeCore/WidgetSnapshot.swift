@@ -25,7 +25,8 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     public var effectiveStartMs: Int64?
     /// Paused only: the chain's frozen time.
     public var elapsedMs: Int64?
-    /// Today's total at `writtenAtMs`, for the calendar day `[dayStartMs, dayEndMs)`.
+    /// Today's total at `writtenAtMs`, for the calendar day `[dayStartMs, dayEndMs)`. Schedule time is left
+    /// out (rebuild-plan 13.4).
     public var todayTotalMs: Int64
     public var dayStartMs: Int64
     public var dayEndMs: Int64

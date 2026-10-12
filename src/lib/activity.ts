@@ -22,3 +22,15 @@ export function indexById(activities: Activity[] | undefined): Map<string, Activ
 export function activityColorVar(color: ActivityColor | undefined): string {
   return `var(--activity-${color ?? "gray"})`;
 }
+
+/** Timetable time: the activity or its parent is a timetable group (rebuild-plan 13.4). */
+export function isScheduleActivity(activity: Activity | undefined, parent?: Activity): boolean {
+  return activity?.kind === "schedule" || parent?.kind === "schedule";
+}
+
+/** The timetable group the importer would use: the live top-level one with the smallest `sort`. */
+export function scheduleGroup(activities: Activity[] | undefined): Activity | undefined {
+  return (activities ?? [])
+    .filter((a) => a.kind === "schedule" && a.parent_id === null && a.archived_at === null)
+    .sort((a, b) => a.sort - b.sort)[0];
+}

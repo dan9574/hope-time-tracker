@@ -34,6 +34,8 @@ export function occursOn(plan: Plan, date: Date): boolean {
   const key = dateKey(date);
   if (plan.rule === null) return plan.date === key;
   if (plan.until !== null && key > plan.until) return false;
+  // Holidays from an imported timetable (rebuild-plan 13.1).
+  if (plan.skip_dates.includes(key)) return false;
   return plan.date <= key && ruleDays(plan.rule).includes(isoWeekday(date));
 }
 

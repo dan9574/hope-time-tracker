@@ -327,6 +327,45 @@ struct SyncEngineTests {
         #expect(a.setting("sync.cursor.activity") == "5", "the cursor still moves past skipped rows")
     }
 
+    @Test func newColumnsRoundTrip() throws {
+        // rebuild-plan 13.1: activity.kind and plan.skip_dates.
+        let activity: Row = [
+            "id": "sched", "name": "Classes", "color": "pink", "symbol": "graduationcap", "sort": 2, "archived_at": nil,
+            "parent_id": nil, "kind": "schedule", "updated_ms": 7, "deleted_ms": nil, "device_id": "x",
+        ]
+        let a = try ActivityRecord.decode(activity)
+        #expect(a.kind == "schedule" && a.isScheduleGroup)
+        #expect(a.row() == activity)
+        #expect(Set(a.row().keys) == Set(SyncTable.activity.columns))
+
+        let plan: Row = [
+            "id": "p", "activity_id": "sched", "date": "2026-09-25", "start_hm": "09:00", "end_hm": "09:50",
+            "rule": "weekly:1,3,5", "auto_log": 1, "until": "2026-12-04", "skip_dates": "2026-11-11,2026-11-27",
+            "updated_ms": 8, "deleted_ms": nil, "device_id": "x",
+        ]
+        let p = try PlanRecord.decode(plan)
+        #expect(p.skipDates == "2026-11-11,2026-11-27")
+        #expect(p.row() == plan)
+        #expect(Set(p.row().keys) == Set(SyncTable.plan.columns))
+
+        // Rows from before the columns existed read as null.
+        var old = plan
+        old["skip_dates"] = nil
+        #expect(try PlanRecord.decode(old).skipDates == nil)
+        var oldActivity = activity
+        oldActivity["kind"] = nil
+        #expect(try ActivityRecord.decode(oldActivity).kind == nil)
+
+        // assign(from:) carries them too.
+        let local = ActivityRecord(id: "sched", name: "Old", color: "blue", updatedMs: 1, deviceId: "y")
+        local.assign(from: a)
+        #expect(local.kind == "schedule")
+        let localPlan = PlanRecord(
+            id: "p", activityId: "a", date: "2026-01-01", startHm: "08:00", endHm: "09:00", updatedMs: 1, deviceId: "y")
+        localPlan.assign(from: p)
+        #expect(localPlan.skipDates == "2026-11-11,2026-11-27")
+    }
+
     @Test func localWritesAlwaysMoveTheVersionForward() throws {
         // A clock that went backwards must not produce a version the server would ignore.
         let db = try device("d")

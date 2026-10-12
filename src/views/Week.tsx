@@ -4,6 +4,7 @@ import { Bars } from "../components/Bars";
 import { Duration } from "../components/Duration";
 import { Page } from "../components/Page";
 import { PeriodNav } from "../components/PeriodNav";
+import { scheduleGroup } from "../lib/activity";
 import { usePeriod } from "../lib/usePeriod";
 import { addWeeks, relativePeriod, weekDays } from "../lib/time";
 import { useUi } from "../stores/ui";
@@ -14,7 +15,8 @@ export function Week() {
   const setOffset = useUi((s) => s.setWeekOffset);
 
   const days = weekDays(addWeeks(new Date(), offset));
-  const { perDay, totals, todayKey } = usePeriod(days);
+  const { perDay, totals, todayKey, activities, includeSchedule, scheduleMs } = usePeriod(days);
+  const group = scheduleGroup(activities);
   const totalMs = totals.reduce((sum, a) => sum + a.ms, 0);
 
   const range = new Intl.DateTimeFormat(i18n.language, { month: "long", day: "numeric" }).formatRange(
@@ -33,7 +35,12 @@ export function Week() {
         <Duration ms={totalMs} />
       </p>
       <Bars days={perDay} label={(d) => weekday.format(d)} highlightKey={todayKey} />
-      <ActivitySummary totals={totals} />
+      <ActivitySummary
+        totals={totals}
+        scheduleMs={includeSchedule ? 0 : scheduleMs}
+        scheduleName={group?.name}
+        scheduleColor={group?.color}
+      />
     </Page>
   );
 }

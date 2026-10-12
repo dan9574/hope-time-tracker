@@ -64,6 +64,14 @@ extension LocalStore {
         return a.name
     }
 
+    /// Whether time on `activityId` is schedule (class) time: the activity or its parent is a schedule group
+    /// (rebuild-plan 13.4). Every schedule group counts, even if sync brought more than one. Unknown
+    /// activities are not.
+    public func isScheduled(activityId: String) -> Bool {
+        guard let a = activity(activityId) else { return false }
+        return a.isScheduleGroup || parent(of: a)?.isScheduleGroup == true
+    }
+
     /// Children always show their parent's colour; unknown activities are gray.
     public func color(activityId: String) -> ActivityColor {
         guard let a = activity(activityId) else { return .gray }
@@ -205,10 +213,16 @@ public struct DayEntry: Identifiable, Sendable {
     public var endMs: Int64?
     /// Time inside the range; pauses don't count.
     public var durationMs: Int64
+    /// Schedule (class) time: the activity or its parent is the schedule group.
+    public var scheduled: Bool
 }
 
 public struct DaySummary: Sendable {
+    /// Tracked time; schedule time only when asked to include it.
     public var totalMs: Int64
+    /// Schedule time, always computed.
+    public var scheduleMs: Int64
+    /// Every entry, scheduled ones included.
     public var entries: [DayEntry]
 }
 
@@ -230,7 +244,9 @@ extension LocalStore {
     }
 
     /// Entries and total for `[from, to)`. Orphan sessions (unknown activity) count like any other.
-    public func summary(from: Int64, to: Int64, now: Int64) -> DaySummary {
+    /// Schedule time is left out of `totalMs` unless `includeSchedule` (the desktop's default; the Apple apps
+    /// have no switch yet), and always reported in `scheduleMs`.
+    public func summary(from: Int64, to: Int64, now: Int64, includeSchedule: Bool = false) -> DaySummary {
         let sessions = self.sessions(from: from, to: to)
         let byId = Dictionary(sessions.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         func root(_ s: SessionRecord) -> String {
@@ -248,27 +264,34 @@ extension LocalStore {
         }
         var entries: [DayEntry] = []
         var total: Int64 = 0
+        var scheduleTotal: Int64 = 0
+        var scheduledById: [String: Bool] = [:]
         for key in order {
             let chain = groups[key]!.sorted { $0.startMs < $1.startMs }
             let first = chain[0]
             let duration = chain.reduce(Int64(0)) { sum, s in
                 sum + max(0, min(s.endMs ?? now, to) - max(s.startMs, from))
             }
-            total += duration
+            let scheduled = scheduledById[first.activityId] ?? isScheduled(activityId: first.activityId)
+            scheduledById[first.activityId] = scheduled
+            if scheduled { scheduleTotal += duration }
+            if !scheduled || includeSchedule { total += duration }
             entries.append(
                 DayEntry(
                     id: key, activityId: first.activityId, title: displayName(activityId: first.activityId),
                     color: color(activityId: first.activityId), startMs: first.startMs, endMs: chain.last!.endMs,
-                    durationMs: duration))
+                    durationMs: duration, scheduled: scheduled))
         }
         entries.sort { $0.startMs < $1.startMs }
-        return DaySummary(totalMs: total, entries: entries)
+        return DaySummary(totalMs: total, scheduleMs: scheduleTotal, entries: entries)
     }
 
     /// Today as the calendar day containing `now`.
-    public func todaySummary(now: Int64? = nil, calendar: Calendar = .current) -> DaySummary {
+    public func todaySummary(
+        now: Int64? = nil, calendar: Calendar = .current, includeSchedule: Bool = false
+    ) -> DaySummary {
         let now = now ?? self.now
         let range = Self.dayRange(of: Date(timeIntervalSince1970: Double(now) / 1000), calendar: calendar)
-        return summary(from: range.from, to: range.to, now: now)
+        return summary(from: range.from, to: range.to, now: now, includeSchedule: includeSchedule)
     }
 }

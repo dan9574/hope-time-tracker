@@ -3,6 +3,7 @@ pub mod autolog;
 pub mod day;
 pub mod journal;
 pub mod plan;
+pub mod schedule;
 pub mod session;
 pub mod setting;
 pub mod transfer;
@@ -21,6 +22,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_init.sql"),
     include_str!("migrations/0002_subactivities_days_autolog.sql"),
     include_str!("migrations/0003_sync_dirty.sql"),
+    include_str!("migrations/0004_schedule.sql"),
 ];
 
 pub struct Db {
@@ -147,6 +149,8 @@ mod tests {
         assert_eq!((auto_log, until), (1, None), "existing plans default to auto-log, no end date");
         let dirty: i64 = conn.query_row("SELECT dirty FROM plan WHERE id = 'p'", [], |r| r.get(0)).unwrap();
         assert_eq!(dirty, 1, "rows from before sync start dirty, so the first sign-in uploads them");
+        let skip: Option<String> = conn.query_row("SELECT skip_dates FROM plan WHERE id = 'p'", [], |r| r.get(0)).unwrap();
+        assert_eq!(skip, None, "existing plans skip nothing");
     }
 
     #[test]

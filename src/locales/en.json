@@ -71,12 +71,15 @@
     "wipeConfirm": "Clear",
     "wiped": "Cleared. Backup saved to {{path}}",
     "wakeButtonUntil": "Show “Wake Up” until",
-    "sleepButtonFrom": "Show “Go to Sleep” from"
+    "sleepButtonFrom": "Show “Go to Sleep” from",
+    "includeSchedule": "Count classes in totals",
+    "includeScheduleHint": "When off, records under the timetable group stay out of totals but still show on the timeline. Import an .ics timetable from the Schedule page."
   },
   "today": {
     "total": "Tracked",
     "empty": "Nothing tracked yet",
-    "now": "now"
+    "now": "now",
+    "schedule": "Classes {{duration}}"
   },
   "timer": {
     "start": "Start Timer",
@@ -127,7 +130,11 @@
     "cannotDeleteTitle": "Can't Delete",
     "cannotDelete": "{{name}} has {{count}} records, so it can't be deleted. Archive it if you no longer use it.",
     "confirmDelete": "Delete {{name}}? Its plans are deleted too. This can't be undone.",
-    "confirmDeleteWithSubs": "Delete {{name}} and its {{count}} sub-activities? Their plans are deleted too. This can't be undone."
+    "confirmDeleteWithSubs": "Delete {{name}} and its {{count}} sub-activities? Their plans are deleted too. This can't be undone.",
+    "scheduleGroup": "Timetable group",
+    "scheduleGroupHint": "Its records stay out of totals by default",
+    "scheduleBadge": "Timetable",
+    "scheduleExists": "“{{name}}” is already the timetable group; there can be only one."
   },
   "common": {
     "cancel": "Cancel",
@@ -155,7 +162,9 @@
     "autoLog": "Log automatically",
     "autoLogHint": "Repeats weekly. When it ends and you haven't recorded anything then, a record is added for you. Delete that record to mark it as skipped.",
     "autoLogged": "Logged from a plan",
-    "untilBeforeStart": "The end date is before the start"
+    "untilBeforeStart": "The end date is before the start",
+    "skipDates_one": "Skips 1 day (from the import)",
+    "skipDates_other": "Skips {{count}} days (from the import)"
   },
   "journal": {
     "title": "Today's Journal",
@@ -194,7 +203,51 @@
     "useDefault": "Use Default"
   },
   "schedule": {
-    "empty": "No weekly routine yet. Click any slot above to add one, like a class."
+    "empty": "No weekly routine yet. Click any slot above to add one, like a class.",
+    "group": "Classes",
+    "import": {
+      "button": "Import .ics…",
+      "title": "Import Timetable",
+      "subtitle_one": "{{name}} · 1 item",
+      "subtitle_other": "{{name}} · {{count}} items",
+      "nothing": "The file has no events to import.",
+      "start": "Start",
+      "end": "End",
+      "fromFile": "From File",
+      "today": "Today",
+      "custom": "Custom",
+      "noEnd": "No End",
+      "rangeHint": "Start and End only adjust weekly classes. One-off events such as exams keep their dates; those outside the range start unchecked.",
+      "name": "Activity name",
+      "openEnded": "From {{date}}, no end",
+      "skips_one": "Skips 1 day",
+      "skips_other": "Skips {{count}} days",
+      "outside": "Outside the chosen range",
+      "untitled": "(Untitled)",
+      "reason": {
+        "unsupportedRule": "Repeat rule not supported",
+        "interval": "Every other week not supported",
+        "allDay": "All-day event",
+        "recurrenceId": "Modified occurrence",
+        "noTime": "No start/end time"
+      },
+      "foreignZone": "The file uses {{zone}}; times are converted to local time.",
+      "footnote": "Classes go under the timetable group “{{group}}”.",
+      "footnoteNew": "Classes go under a new pink timetable group, “{{group}}”.",
+      "sameName": "Rows with the same name share one sub-activity.",
+      "notCounted": "Class time isn't counted in totals by default; you can change this in Settings.",
+      "counted": "Class time currently counts towards totals; you can change this in Settings.",
+      "nameRequired": "Every checked row needs a name.",
+      "backfill": "Log past classes",
+      "backfillCount_one": "1 class, counted as attended",
+      "backfillCount_other": "{{count}} classes, counted as attended",
+      "confirm_one": "Import 1 Item",
+      "confirm_other": "Import {{count}} Items",
+      "doneTitle": "Timetable Imported",
+      "done": "Import finished: {{activities}} activities created, {{added}} plans added, {{updated}} updated.",
+      "doneLogged_one": "Import finished: {{activities}} activities created, {{added}} plans added, {{updated}} updated, 1 class logged.",
+      "doneLogged_other": "Import finished: {{activities}} activities created, {{added}} plans added, {{updated}} updated, {{count}} classes logged."
+    }
   },
   "units": {
     "h": "h",

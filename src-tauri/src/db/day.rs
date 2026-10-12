@@ -130,7 +130,7 @@ mod tests {
             &conn,
             "d",
             0,
-            ActivityInput { id: None, name: "A".into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None },
+            ActivityInput { id: None, name: "A".into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None, kind: None },
         )
         .unwrap();
         wake_now(&conn, "d", 7 * H, "2026-10-03", 0).unwrap();

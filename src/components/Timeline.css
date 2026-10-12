@@ -56,6 +56,11 @@
   color: var(--fg-2);
 }
 
+/* Timetable time left out of the totals: still listed and editable, at the plan opacity of the ring. */
+.timeline-row.is-dim {
+  opacity: 0.4;
+}
+
 .timeline-repeat {
   margin-left: var(--s-1);
   vertical-align: -1px;

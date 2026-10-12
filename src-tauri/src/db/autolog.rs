@@ -9,7 +9,7 @@ use serde::Deserialize;
 use specta::Type;
 use uuid::Uuid;
 
-use super::validate;
+use super::{plan, validate};
 use crate::error::Result;
 
 /// Namespace for autolog ids. Never change it: the Swift apps derive the same ids from it.
@@ -61,9 +61,20 @@ fn uncovered(start: i64, end: i64, mut covered: Vec<(i64, i64)>) -> Vec<(i64, i6
     pieces
 }
 
-/// Logs every eligible occurrence; returns how many sessions were created.
+/// Logs every eligible occurrence in its own transaction; returns how many sessions were created.
+/// This is the normal path (`plan_autolog`): occurrences that ended before the plan's last edit are left alone.
 pub fn log(conn: &mut Connection, device: &str, now: i64, occurrences: &[Occurrence]) -> Result<u32> {
     let tx = conn.transaction()?;
+    let created = log_in(&tx, device, now, occurrences, false)?;
+    tx.commit()?;
+    Ok(created)
+}
+
+/// Logs occurrences inside the caller's transaction. With `allow_past`, an occurrence that ended before the
+/// plan was created or last edited is logged too (timetable import backfill, rebuild-plan 13.3.1); every other
+/// rule still applies: deterministic ids, done-or-deleted, manual records subtracted, skipped days, bounds,
+/// nothing in the future.
+pub fn log_in(conn: &Connection, device: &str, now: i64, occurrences: &[Occurrence], allow_past: bool) -> Result<u32> {
     let mut created = 0;
     for occ in occurrences {
         if occ.end_ms > now || occ.end_ms <= occ.start_ms || occ.end_ms - occ.start_ms > MAX_OCCURRENCE_MS {
@@ -72,24 +83,28 @@ pub fn log(conn: &mut Connection, device: &str, now: i64, occurrences: &[Occurre
         if validate::date(&occ.date).is_err() {
             continue;
         }
-        type PlanRow = (String, Option<String>, bool, String, Option<String>, i64);
-        let plan: Option<PlanRow> = tx
+        type PlanRow = (String, Option<String>, bool, String, Option<String>, i64, Option<String>);
+        let plan: Option<PlanRow> = conn
             .query_row(
-                "SELECT activity_id, rule, auto_log, date, until, updated_ms FROM plan WHERE id = ?1 AND deleted_ms IS NULL",
+                "SELECT activity_id, rule, auto_log, date, until, updated_ms, skip_dates FROM plan WHERE id = ?1 AND deleted_ms IS NULL",
                 [&occ.plan_id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?)),
             )
             .optional()?;
-        let Some((activity_id, rule, auto_log, first_day, until, plan_updated)) = plan else { continue };
+        let Some((activity_id, rule, auto_log, first_day, until, plan_updated, skip_dates)) = plan else { continue };
         if rule.is_none() || !auto_log || occ.date < first_day || until.is_some_and(|u| occ.date > u) {
             continue;
         }
+        // A skipped day (holiday from a timetable import, rebuild-plan 13.1) has no occurrence.
+        if plan::parse_skip_dates(skip_dates.as_deref()).contains(&occ.date) {
+            continue;
+        }
         // Editing a plan only affects the future, and a new plan never fills in the past.
-        if occ.end_ms <= plan_updated {
+        if !allow_past && occ.end_ms <= plan_updated {
             continue;
         }
         // Already logged — or logged and then deleted, which means "skipped that class". Either way, done.
-        let done: i64 = tx.query_row(
+        let done: i64 = conn.query_row(
             "SELECT COUNT(*) FROM session WHERE id = ?1 OR (plan_id = ?2 AND start_ms < ?4 AND end_ms > ?3)",
             params![session_id(&occ.plan_id, &occ.date, 0), occ.plan_id, occ.start_ms, occ.end_ms],
             |r| r.get(0),
@@ -97,7 +112,7 @@ pub fn log(conn: &mut Connection, device: &str, now: i64, occurrences: &[Occurre
         if done > 0 {
             continue;
         }
-        let covered: Vec<(i64, i64)> = tx
+        let covered: Vec<(i64, i64)> = conn
             .prepare(
                 "SELECT start_ms, COALESCE(end_ms, ?3) FROM session
                  WHERE deleted_ms IS NULL AND start_ms < ?2 AND COALESCE(end_ms, ?3) > ?1",
@@ -106,21 +121,20 @@ pub fn log(conn: &mut Connection, device: &str, now: i64, occurrences: &[Occurre
             .collect::<rusqlite::Result<_>>()?;
         let pieces = uncovered(occ.start_ms, occ.end_ms, covered);
         for (index, (s, e)) in pieces.into_iter().filter(|(s, e)| e - s >= MIN_PIECE_MS).enumerate() {
-            created += tx.execute(
+            created += conn.execute(
                 "INSERT OR IGNORE INTO session (id, activity_id, start_ms, end_ms, plan_id, updated_ms, device_id)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                 params![session_id(&occ.plan_id, &occ.date, index), activity_id, s, e, occ.plan_id, now, device],
             )? as u32;
         }
     }
-    tx.commit()?;
     Ok(created)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::plan::{self, PlanInput};
+    use crate::db::plan::PlanInput;
     use crate::db::session::{self, SessionInput};
     use crate::db::test_conn;
 
@@ -140,6 +154,7 @@ mod tests {
                 rule: Some("weekly:1".into()),
                 auto_log: true,
                 until: None,
+                skip_dates: vec![],
             },
         )
         .unwrap()
@@ -205,5 +220,49 @@ mod tests {
         conn.execute("UPDATE plan SET auto_log = 1, until = '2026-10-10'", []).unwrap();
         assert_eq!(log(&mut conn, "d", 9000 * M, &[occ(&p, "2026-10-12", 6000 * M)]).unwrap(), 0, "after until");
         assert_eq!(log(&mut conn, "d", 9000 * M, &[occ(&p, "2026-10-05", 6000 * M)]).unwrap(), 1);
+    }
+
+    fn backfill(conn: &Connection, now: i64, occurrences: &[Occurrence]) -> u32 {
+        log_in(conn, "d", now, occurrences, true).unwrap()
+    }
+
+    #[test]
+    fn backfill_logs_occurrences_before_the_plan_existed() {
+        let mut conn = test_conn();
+        let p = weekly(&conn, 5000 * M);
+        let o = occ(&p, "2026-10-05", 1000 * M);
+        assert_eq!(log(&mut conn, "d", 9000 * M, &[o.clone()]).unwrap(), 0, "normal mode keeps ignoring the past");
+        assert_eq!(backfill(&conn, 9000 * M, &[o.clone()]), 1);
+        assert!(session::get(&conn, &session_id(&p, "2026-10-05", 0)).unwrap().is_some());
+        assert_eq!(backfill(&conn, 9001 * M, &[o]), 0, "idempotent");
+    }
+
+    #[test]
+    fn backfill_keeps_every_other_rule() {
+        let conn = test_conn();
+        let p = weekly(&conn, 5000 * M);
+        conn.execute("UPDATE plan SET skip_dates = '2026-11-09', until = '2026-12-04'", []).unwrap();
+        // Logged once and deleted: the user skipped that class.
+        let deleted = occ(&p, "2026-10-12", 1100 * M);
+        assert_eq!(backfill(&conn, 9000 * M, &[deleted.clone()]), 1);
+        session::delete(&conn, "d", 9001 * M, &session_id(&p, "2026-10-12", 0)).unwrap();
+        assert_eq!(backfill(&conn, 9002 * M, &[deleted]), 0, "deleted stays deleted");
+        assert_eq!(backfill(&conn, 9002 * M, &[occ(&p, "2026-11-09", 1200 * M)]), 0, "skipped day");
+        assert_eq!(backfill(&conn, 9002 * M, &[occ(&p, "2026-08-31", 900 * M)]), 0, "before the first day");
+        assert_eq!(backfill(&conn, 9002 * M, &[occ(&p, "2026-12-07", 1300 * M)]), 0, "after until");
+        assert_eq!(backfill(&conn, 9002 * M, &[occ(&p, "2026-11-16", 9000 * M)]), 0, "not over yet");
+
+        let manual = SessionInput { id: None, activity_id: "x".into(), start_ms: 1420 * M, end_ms: Some(1430 * M), note: None };
+        session::upsert(&conn, "d", 0, manual).unwrap();
+        assert_eq!(backfill(&conn, 9002 * M, &[occ(&p, "2026-11-23", 1400 * M)]), 2, "around the manual record");
+    }
+
+    #[test]
+    fn skips_skipped_dates() {
+        let mut conn = test_conn();
+        let p = weekly(&conn, 0);
+        conn.execute("UPDATE plan SET skip_dates = '2026-11-09,2026-11-23'", []).unwrap();
+        assert_eq!(log(&mut conn, "d", 9000 * M, &[occ(&p, "2026-11-09", 1000 * M)]).unwrap(), 0, "holiday");
+        assert_eq!(log(&mut conn, "d", 9000 * M, &[occ(&p, "2026-11-16", 2000 * M)]).unwrap(), 1);
     }
 }

@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Repeat } from "lucide-react";
+import { CalendarArrowDown, Repeat } from "lucide-react";
 import { Page } from "../components/Page";
 import { PlanEditor, type PlanPreset } from "../components/PlanEditor";
+import { ScheduleImport } from "../components/ScheduleImport";
 import { activityColorVar, activityName, indexById, parentOf } from "../lib/activity";
 import { commands, type Plan } from "../lib/bindings";
 import { useQuery, useSetting } from "../lib/data";
+import { errorMessage } from "../lib/errors";
+import { alertInfo } from "../lib/confirm";
+import { parseIcs, type IcsParseResult } from "../lib/ics";
 import { ruleDays } from "../lib/plans";
 import { DEFAULT_SLEEP, DEFAULT_WAKE, PREF } from "../lib/preferences";
 import { dateKey, weekDays } from "../lib/time";
@@ -60,6 +64,19 @@ export function Schedule() {
   const wakeHm = useSetting(PREF.wake) ?? DEFAULT_WAKE;
   const sleepHm = useSetting(PREF.sleep) ?? DEFAULT_SLEEP;
   const [editing, setEditing] = useState<{ plan: Plan | null; preset?: PlanPreset } | null>(null);
+  const [importing, setImporting] = useState<IcsParseResult | null>(null);
+
+  const pickIcs = async () => {
+    const res = await commands.icsPick();
+    if (res.status === "error") return alertInfo(t, t("schedule.import.title"), errorMessage(res.error, t));
+    if (res.data === null) return; // cancelled
+    const result = parseIcs(res.data);
+    if (result.courses.length === 0 && result.skipped.length === 0) {
+      await alertInfo(t, t("schedule.import.title"), t("schedule.import.nothing"));
+      return;
+    }
+    setImporting(result);
+  };
 
   const byId = indexById(activities);
   const recurring = (plans ?? []).filter((p) => p.rule !== null);
@@ -80,7 +97,16 @@ export function Schedule() {
   };
 
   return (
-    <Page title={t("nav.schedule")} subtitle={t("views.schedule.subtitle")}>
+    <Page
+      title={t("nav.schedule")}
+      subtitle={t("views.schedule.subtitle")}
+      accessory={
+        <button type="button" className="schedule-import" onClick={() => void pickIcs()}>
+          <CalendarArrowDown size={14} aria-hidden />
+          {t("schedule.import.button")}
+        </button>
+      }
+    >
       <div className="schedule">
         <div className="schedule-head">
           <span />
@@ -153,6 +179,7 @@ export function Schedule() {
           onClose={() => setEditing(null)}
         />
       )}
+      {importing && <ScheduleImport result={importing} activities={activities} onClose={() => setImporting(null)} />}
     </Page>
   );
 }

@@ -4,6 +4,7 @@ import { MonthCalendar } from "../components/MonthCalendar";
 import { Duration } from "../components/Duration";
 import { Page } from "../components/Page";
 import { PeriodNav } from "../components/PeriodNav";
+import { scheduleGroup } from "../lib/activity";
 import { usePeriod } from "../lib/usePeriod";
 import { addMonths, monthDays, relativePeriod, weekDays } from "../lib/time";
 import { useUi } from "../stores/ui";
@@ -15,7 +16,8 @@ export function Month() {
 
   const month = addMonths(new Date(), offset);
   const days = monthDays(month);
-  const { now, perDay, totals, todayKey } = usePeriod(days);
+  const { now, perDay, totals, todayKey, activities, includeSchedule, scheduleMs } = usePeriod(days);
+  const group = scheduleGroup(activities);
   const totalMs = totals.reduce((sum, a) => sum + a.ms, 0);
 
   const title = new Intl.DateTimeFormat(i18n.language, { year: "numeric", month: "long" }).format(month);
@@ -32,7 +34,12 @@ export function Month() {
         <Duration ms={totalMs} />
       </p>
       <MonthCalendar days={perDay} weekdays={weekdays} todayKey={todayKey} now={now} />
-      <ActivitySummary totals={totals} />
+      <ActivitySummary
+        totals={totals}
+        scheduleMs={includeSchedule ? 0 : scheduleMs}
+        scheduleName={group?.name}
+        scheduleColor={group?.color}
+      />
     </Page>
   );
 }

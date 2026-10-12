@@ -6,6 +6,7 @@ pub mod dialog;
 pub mod journal;
 pub mod overlay;
 pub mod plan;
+pub mod schedule;
 pub mod session;
 pub mod setting;
 pub mod sync;

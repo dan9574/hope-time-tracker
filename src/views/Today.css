@@ -1,7 +1,14 @@
 .today-ring {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: var(--s-6);
+}
+
+.today-schedule {
+  margin-top: var(--s-1);
+  font-size: var(--text-sm);
+  color: var(--fg-3);
 }
 
 .today-day-button {

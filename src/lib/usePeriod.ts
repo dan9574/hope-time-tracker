@@ -1,5 +1,6 @@
 import { commands } from "./bindings";
 import { useQuery } from "./data";
+import { useIncludeSchedule } from "./preferences";
 import { mergeTotals, summarizeDays } from "./stats";
 import { dateKey, dayRange } from "./time";
 import { useNow } from "./useNow";
@@ -14,7 +15,18 @@ export function usePeriod(days: Date[]) {
 
   const sessions = useQuery(() => commands.sessionList(range), [range.from_ms, range.to_ms]);
   const activities = useQuery(() => commands.activityList(true), []);
+  const includeSchedule = useIncludeSchedule();
 
-  const perDay = summarizeDays(sessions ?? [], activities ?? [], days, now);
-  return { now, perDay, totals: mergeTotals(perDay), todayKey: dateKey(new Date(now)) };
+  // Unless the setting says otherwise, timetable time stays out of the bars and totals (rebuild-plan 13.4).
+  const perDay = summarizeDays(sessions ?? [], activities ?? [], days, now, includeSchedule);
+  const scheduleMs = perDay.reduce((sum, d) => sum + d.scheduleMs, 0);
+  return {
+    now,
+    perDay,
+    totals: mergeTotals(perDay),
+    todayKey: dateKey(new Date(now)),
+    activities,
+    includeSchedule,
+    scheduleMs,
+  };
 }

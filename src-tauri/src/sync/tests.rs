@@ -25,7 +25,7 @@ fn add_activity(db: &Db, now: i64, name: &str) -> String {
         &db.conn(),
         db.device_id(),
         now,
-        ActivityInput { id: None, name: name.into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None },
+        ActivityInput { id: None, name: name.into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None, kind: None },
     )
     .unwrap()
     .id
@@ -36,7 +36,7 @@ fn rename(db: &Db, now: i64, id: &str, name: &str) {
         &db.conn(),
         db.device_id(),
         now,
-        ActivityInput { id: Some(id.into()), name: name.into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None },
+        ActivityInput { id: Some(id.into()), name: name.into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None, kind: None },
     )
     .unwrap();
 }
@@ -128,6 +128,7 @@ fn two_devices_converge() {
             rule: Some("weekly:1".into()),
             auto_log: true,
             until: None,
+            skip_dates: vec![],
         },
     )
     .unwrap();
@@ -413,7 +414,7 @@ fn every_local_write_marks_the_row_dirty() {
         &conn,
         &dev,
         1,
-        ActivityInput { id: None, name: "A".into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None },
+        ActivityInput { id: None, name: "A".into(), color: ActivityColor::Blue, symbol: None, sort: None, parent_id: None, kind: None },
     )
     .unwrap()
     .id;
@@ -421,7 +422,7 @@ fn every_local_write_marks_the_row_dirty() {
         &conn,
         &dev,
         1,
-        ActivityInput { id: None, name: "B".into(), color: ActivityColor::Gray, symbol: None, sort: None, parent_id: None },
+        ActivityInput { id: None, name: "B".into(), color: ActivityColor::Gray, symbol: None, sort: None, parent_id: None, kind: None },
     )
     .unwrap()
     .id;
@@ -438,6 +439,7 @@ fn every_local_write_marks_the_row_dirty() {
             rule: Some("weekly:1".into()),
             auto_log: true,
             until: None,
+            skip_dates: vec![],
         },
     )
     .unwrap()
@@ -452,7 +454,7 @@ fn every_local_write_marks_the_row_dirty() {
             assert!(is_dirty(&conn, $table, $key_col, &$key), "{} must mark {} dirty", $what, $table);
         }};
     }
-    let input = |name: &str| ActivityInput { id: Some(a.clone()), name: name.into(), color: ActivityColor::Green, symbol: None, sort: None, parent_id: None };
+    let input = |name: &str| ActivityInput { id: Some(a.clone()), name: name.into(), color: ActivityColor::Green, symbol: None, sort: None, parent_id: None, kind: None };
 
     check!("activity edit", "activity", "id", a, activity::upsert(&conn, &dev, 20, input("A2")).unwrap());
     check!("archive", "activity", "id", a, activity::set_archived(&conn, &dev, 21, &a, true).unwrap());
@@ -478,6 +480,7 @@ fn every_local_write_marks_the_row_dirty() {
             rule: Some("weekly:1".into()),
             auto_log: true,
             until: None,
+            skip_dates: vec![],
         };
         plan::upsert(&conn, &dev, 90, input).unwrap()
     });

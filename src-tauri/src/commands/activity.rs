@@ -51,3 +51,14 @@ pub fn activity_delete(app: AppHandle, db: State<'_, Db>, id: String) -> CmdResu
     events::data_changed(&app);
     Ok(())
 }
+
+/// The timetable group, created as `name` if there is none (rebuild-plan 13.3).
+#[tauri::command]
+#[specta::specta]
+pub fn activity_schedule_ensure(app: AppHandle, db: State<'_, Db>, name: String) -> CmdResult<Activity> {
+    let (group, created) = activity::schedule_ensure(&db.conn(), db.device_id(), now_ms(), &name)?;
+    if created {
+        events::data_changed(&app);
+    }
+    Ok(group)
+}

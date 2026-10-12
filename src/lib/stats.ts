@@ -1,6 +1,6 @@
 import type { Activity, Session, TimeRange } from "./bindings";
 import type { RingSegment } from "../components/Ring";
-import { parentOf } from "./activity";
+import { isScheduleActivity, parentOf } from "./activity";
 import { dateKey, dayRange } from "./time";
 
 /** One timeline row: a pause/resume chain shown as a single entry. */
@@ -23,10 +23,15 @@ export interface DayEntry {
   sessions: Session[];
   /** Logged automatically from a recurring plan. */
   autoLogged: boolean;
+  /** Timetable time: the activity or its parent is a timetable group (rebuild-plan 13.4). */
+  scheduled: boolean;
 }
 
 export interface DaySummary {
+  /** Logged time; leaves timetable time out unless `includeSchedule`. */
   totalMs: number;
+  /** Timetable time, always computed (shown as its own line when it is left out of the total). */
+  scheduleMs: number;
   entries: DayEntry[];
 }
 
@@ -35,6 +40,7 @@ export function summarizeDay(
   activities: Activity[],
   range: TimeRange,
   now: number,
+  includeSchedule = true,
 ): DaySummary {
   const byId = new Map(sessions.map((s) => [s.id, s]));
   const activityById = new Map(activities.map((a) => [a.id, a]));
@@ -62,6 +68,7 @@ export function summarizeDay(
 
   const entries: DayEntry[] = [];
   let totalMs = 0;
+  let scheduleMs = 0;
   for (const [key, chain] of groups) {
     chain.sort((a, b) => a.start_ms - b.start_ms);
     const first = chain[0]!;
@@ -73,12 +80,16 @@ export function summarizeDay(
       }))
       .filter((seg) => seg.endMs > seg.startMs);
     const durationMs = segments.reduce((sum, seg) => sum + seg.endMs - seg.startMs, 0);
-    totalMs += durationMs;
+    const activity = activityById.get(first.activity_id);
+    const parent = parentOf(activity, activityById);
+    const scheduled = isScheduleActivity(activity, parent);
+    if (scheduled) scheduleMs += durationMs;
+    if (!scheduled || includeSchedule) totalMs += durationMs;
     entries.push({
       key,
       activityId: first.activity_id,
-      activity: activityById.get(first.activity_id),
-      parent: parentOf(activityById.get(first.activity_id), activityById),
+      activity,
+      parent,
       startMs: first.start_ms,
       endMs: last.end_ms,
       durationMs,
@@ -86,10 +97,11 @@ export function summarizeDay(
       note: chain.map((s) => s.note).find((n): n is string => !!n) ?? null,
       sessions: chain,
       autoLogged: chain.some((s) => s.plan_id !== null),
+      scheduled,
     });
   }
   entries.sort((a, b) => a.startMs - b.startMs);
-  return { totalMs, entries };
+  return { totalMs, scheduleMs, entries };
 }
 
 /** Time per top-level activity; sub-activities roll up into their parent. */
@@ -122,11 +134,15 @@ function finish(map: Map<string, ActivityTotal>, childMaps: Map<string, Map<stri
     .sort((a, b) => b.ms - a.ms);
 }
 
-/** Totals per top-level activity, largest first, with a per-sub-activity breakdown. */
-export function totalsByActivity(entries: DayEntry[]): ActivityTotal[] {
+/**
+ * Totals per top-level activity, largest first, with a per-sub-activity breakdown.
+ * Timetable entries are left out unless `includeSchedule`.
+ */
+export function totalsByActivity(entries: DayEntry[], includeSchedule = true): ActivityTotal[] {
   const totals = new Map<string, ActivityTotal>();
   const childMaps = new Map<string, Map<string, ActivityTotal>>();
   for (const e of entries) {
+    if (e.scheduled && !includeSchedule) continue;
     const root = e.parent ?? e.activity;
     const rootId = e.parent?.id ?? e.activityId;
     addTo(totals, rootId, root, e.durationMs);
@@ -136,8 +152,15 @@ export function totalsByActivity(entries: DayEntry[]): ActivityTotal[] {
   return finish(totals, childMaps);
 }
 
-/** Day entries flattened into ring segments; segments of one record share its hover group. */
-export function ringRecords(entries: DayEntry[], describe?: (e: DayEntry) => string): RingSegment[] {
+/**
+ * Day entries flattened into ring segments; segments of one record share its hover group.
+ * Timetable entries left out of the totals are still drawn, dimmed.
+ */
+export function ringRecords(
+  entries: DayEntry[],
+  describe?: (e: DayEntry) => string,
+  includeSchedule = true,
+): RingSegment[] {
   return entries.flatMap((e) =>
     e.segments.map((seg) => ({
       key: `${e.key}-${seg.startMs}`,
@@ -146,6 +169,7 @@ export function ringRecords(entries: DayEntry[], describe?: (e: DayEntry) => str
       ...seg,
       color: e.activity?.color,
       tooltip: describe?.(e),
+      dim: e.scheduled && !includeSchedule,
     })),
   );
 }
@@ -154,15 +178,38 @@ export interface DayTotals {
   key: string;
   date: Date;
   totalMs: number;
+  /** Timetable time of the day, whether or not it is in `totalMs` / `parts`. */
+  scheduleMs: number;
   parts: ActivityTotal[];
 }
 
+/** One day's total and per-activity split, following the "count timetable time" setting. */
+export function dayTotals(
+  sessions: Session[],
+  activities: Activity[],
+  date: Date,
+  now: number,
+  includeSchedule = true,
+): DayTotals {
+  const s = summarizeDay(sessions, activities, dayRange(date), now, includeSchedule);
+  return {
+    key: dateKey(date),
+    date,
+    totalMs: s.totalMs,
+    scheduleMs: s.scheduleMs,
+    parts: totalsByActivity(s.entries, includeSchedule),
+  };
+}
+
 /** Each day's total and per-activity split; sessions crossing midnight are split between days. */
-export function summarizeDays(sessions: Session[], activities: Activity[], days: Date[], now: number): DayTotals[] {
-  return days.map((date) => {
-    const s = summarizeDay(sessions, activities, dayRange(date), now);
-    return { key: dateKey(date), date, totalMs: s.totalMs, parts: totalsByActivity(s.entries) };
-  });
+export function summarizeDays(
+  sessions: Session[],
+  activities: Activity[],
+  days: Date[],
+  now: number,
+  includeSchedule = true,
+): DayTotals[] {
+  return days.map((date) => dayTotals(sessions, activities, date, now, includeSchedule));
 }
 
 /** Per-activity totals across several days, largest first, keeping the sub-activity breakdown. */

@@ -12,6 +12,8 @@ import "./Timeline.css";
 interface Props {
   entries: DayEntry[];
   plans: PlanOccurrence[];
+  /** False = timetable records are left out of the totals, so their rows are dimmed (rebuild-plan 13.4). */
+  includeSchedule?: boolean;
   onEntryClick: (entry: DayEntry) => void;
   onPlanClick: (plan: Plan) => void;
 }
@@ -19,7 +21,7 @@ interface Props {
 type Row = { kind: "entry"; startMs: number; entry: DayEntry } | { kind: "plan"; startMs: number; plan: PlanOccurrence };
 
 /** Logged time (solid bar) and plans (dashed bar), in time order. */
-export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
+export function Timeline({ entries, plans, includeSchedule = true, onEntryClick, onPlanClick }: Props) {
   const { t, i18n } = useTranslation();
   const hoverKey = useUi((s) => s.hoverKey);
   const hoverAlso = useUi((s) => s.hoverAlso);
@@ -36,7 +38,7 @@ export function Timeline({ entries, plans, onEntryClick, onPlanClick }: Props) {
           <li key={row.entry.key}>
             <button
               type="button"
-              className="timeline-row is-entry"
+              className={row.entry.scheduled && !includeSchedule ? "timeline-row is-entry is-dim" : "timeline-row is-entry"}
               style={{ borderLeftColor: activityColorVar(row.entry.activity?.color) }}
               data-hover={hoverStateOf(hoverKey, hoverAlso, [row.entry.key])}
               {...hoverProps(row.entry.key)}

@@ -39,6 +39,7 @@ export interface DrawnSegment {
   endPx: number;
   color: ActivityColor | undefined;
   tooltip?: string;
+  dim?: boolean;
 }
 
 /**
@@ -59,7 +60,14 @@ export function layoutSegments(
     const endPx = toPx(s.endMs);
     if (endPx <= 0 || startPx >= arcPx || endPx <= startPx) continue;
     const last = out[out.length - 1];
-    if (merge && last && s.mergeKey !== undefined && last.mergeKey === s.mergeKey && s.startMs - last.endMs <= MERGE_GAP_MS) {
+    if (
+      merge &&
+      last &&
+      s.mergeKey !== undefined &&
+      last.mergeKey === s.mergeKey &&
+      !!last.dim === !!s.dim &&
+      s.startMs - last.endMs <= MERGE_GAP_MS
+    ) {
       last.endPx = Math.max(last.endPx, endPx);
       last.endMs = Math.max(last.endMs, s.endMs);
       if (!last.groups.includes(s.group)) last.groups.push(s.group);
@@ -74,6 +82,7 @@ export function layoutSegments(
       endPx,
       endMs: s.endMs,
       color: s.color,
+      dim: s.dim,
       tips: s.tooltip ? [s.tooltip] : [],
     });
   }

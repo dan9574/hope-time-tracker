@@ -17,6 +17,8 @@ export const commands = {
 	activityUsage: (id: string) => typedError<number, CommandError>(__TAURI_INVOKE("activity_usage", { id })),
 	/**  Deletes an activity without sessions (with its sub-activities and plans). Ask the user first. */
 	activityDelete: (id: string) => typedError<null, CommandError>(__TAURI_INVOKE("activity_delete", { id })),
+	/**  The timetable group, created as `name` if there is none (rebuild-plan 13.3). */
+	activityScheduleEnsure: (name: string) => typedError<Activity, CommandError>(__TAURI_INVOKE("activity_schedule_ensure", { name })),
 	sessionStart: (activityId: string) => typedError<Session, CommandError>(__TAURI_INVOKE("session_start", { activityId })),
 	sessionPause: () => typedError<{
 	id: string,
@@ -69,6 +71,10 @@ export const commands = {
 	 *  Returns how many sessions were created.
 	 */
 	planAutolog: (occurrences: Occurrence[]) => typedError<number, CommandError>(__TAURI_INVOKE("plan_autolog", { occurrences })),
+	/**  Opens a file panel for an `.ics` file and returns its text. `None` if cancelled. */
+	icsPick: () => typedError<string | null, CommandError>(__TAURI_INVOKE("ics_pick")),
+	/**  Files parsed courses under the timetable group, all or nothing. */
+	scheduleImport: (input: ScheduleImport) => typedError<ScheduleImportReport, CommandError>(__TAURI_INVOKE("schedule_import", { input })),
 	journalList: (range: DateRange) => typedError<Journal[], CommandError>(__TAURI_INVOKE("journal_list", { range })),
 	/**  Saves the day's entry; blank text removes it and returns `null`. */
 	journalUpsert: (date: string, text: string) => typedError<{
@@ -139,6 +145,8 @@ export type Activity = {
 	archived_at: number | null,
 	/**  `None` = top level. Sub-activities are one level deep and always take their parent's color. */
 	parent_id: string | null,
+	/**  `None` = normal; `"schedule"` = the timetable group (rebuild-plan 13.1, top level only). */
+	kind: string | null,
 };
 
 /**  The fixed activity palette (rebuild-plan 4.3). Stored by name; hex lives in tokens.css. */
@@ -155,6 +163,8 @@ export type ActivityInput = {
 	symbol: string | null,
 	sort: number | null,
 	parent_id: string | null,
+	/**  `None` or `"schedule"` (see `Activity.kind`). Editors must send the current value back. */
+	kind: string | null,
 };
 
 export type AppInfo = {
@@ -175,6 +185,12 @@ export type CardFrame = {
 export type CommandError = {
 	code: ErrorCode,
 	message: string,
+};
+
+/**  One course: becomes (or reuses) a sub-activity of the timetable group, by trimmed name. */
+export type CourseImport = {
+	name: string,
+	plans: PlanImportInput[],
 };
 
 /**  Activities or sessions changed; views should refetch. */
@@ -246,6 +262,13 @@ export type Occurrence = {
 /**  The overlay entered or left position-editing mode. */
 export type OverlayEditing = boolean;
 
+/**  One past occurrence of an imported recurring plan, worked out by the page in local time. */
+export type PastOccurrence = {
+	date: string,
+	start_ms: number,
+	end_ms: number,
+};
+
 export type Plan = {
 	id: string,
 	activity_id: string,
@@ -259,6 +282,28 @@ export type Plan = {
 	auto_log: boolean,
 	/**  Recurring plans only: last day (inclusive); `None` = repeats forever. */
 	until: string | null,
+	/**
+	 *  Recurring plans only: 'YYYY-MM-DD' days without an occurrence (holidays from a timetable import,
+	 *  rebuild-plan 13.1). Sorted, no duplicates.
+	 */
+	skip_dates: string[],
+};
+
+/**  One plan parsed from the file. `source_key` is the event `UID` (merged events: sorted UIDs joined by `|`). */
+export type PlanImportInput = {
+	source_key: string,
+	date: string,
+	start_hm: string,
+	end_hm: string,
+	rule: string | null,
+	auto_log: boolean,
+	until: string | null,
+	skip_dates: string[],
+	/**
+	 *  Occurrences that already ended, to log as attended (rebuild-plan 13.3.1). Empty when the page's
+	 *  backfill switch is off; ignored for one-off plans.
+	 */
+	past?: PastOccurrence[],
 };
 
 export type PlanInput = {
@@ -270,6 +315,27 @@ export type PlanInput = {
 	rule: string | null,
 	auto_log: boolean,
 	until: string | null,
+	/**
+	 *  Editors have no UI for these but must send them back unchanged, or they are cleared.
+	 *  Required (no serde default) so the TypeScript type forces every caller to pass it.
+	 */
+	skip_dates: string[],
+};
+
+export type ScheduleImport = {
+	/**  Name for the timetable group if it has to be created (localized by the page). */
+	group_name: string,
+	courses: CourseImport[],
+};
+
+/**  Shown to the user after an import, like the JSON import report. */
+export type ScheduleImportReport = {
+	/**  Includes the timetable group when it was created. */
+	activities_created: number,
+	plans_added: number,
+	plans_updated: number,
+	/**  Past classes logged by the backfill. */
+	sessions_logged: number,
 };
 
 export type Session = {

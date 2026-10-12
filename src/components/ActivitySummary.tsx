@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import { activityName } from "../lib/activity";
+import type { ActivityColor } from "../lib/bindings";
 import type { ActivityTotal } from "../lib/stats";
 import { formatDuration } from "../lib/time";
 import { ActivityDot } from "./ActivityDot";
@@ -9,8 +10,20 @@ import { hoverProps } from "../lib/useHover";
 import { useUi } from "../stores/ui";
 import "./ActivitySummary.css";
 
+interface Props {
+  totals: ActivityTotal[];
+  /**
+   * Timetable time left out of `totals` (rebuild-plan 13.4): listed last, dimmed, outside the shares.
+   * Pass 0 when it is already counted in `totals`.
+   */
+  scheduleMs?: number;
+  /** Name and color of the timetable group for that row. */
+  scheduleName?: string;
+  scheduleColor?: ActivityColor;
+}
+
 /** Totals per top-level activity with each one's share; rows with sub-activities expand. */
-export function ActivitySummary({ totals }: { totals: ActivityTotal[] }) {
+export function ActivitySummary({ totals, scheduleMs = 0, scheduleName, scheduleColor }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState<Set<string>>(new Set());
   const hoverKey = useUi((s) => s.hoverKey);
@@ -29,7 +42,7 @@ export function ActivitySummary({ totals }: { totals: ActivityTotal[] }) {
       <header className="summary-header">
         <h2>{t("period.byActivity")}</h2>
       </header>
-      {totals.length === 0 ? (
+      {totals.length === 0 && scheduleMs === 0 ? (
         <p className="summary-empty">{t("period.empty")}</p>
       ) : (
         <ul className="summary-list">
@@ -75,6 +88,14 @@ export function ActivitySummary({ totals }: { totals: ActivityTotal[] }) {
               </li>
             );
           })}
+          {scheduleMs > 0 && (
+            <li className="summary-row is-schedule">
+              <ChevronRight size={12} className="summary-chevron is-hidden" aria-hidden />
+              <ActivityDot color={scheduleColor} />
+              <span className="summary-name">{scheduleName ?? t("schedule.group")}</span>
+              <span className="summary-value tabular">{formatDuration(scheduleMs)}</span>
+            </li>
+          )}
         </ul>
       )}
     </section>

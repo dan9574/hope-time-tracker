@@ -88,3 +88,12 @@
   font-size: var(--text-sm);
   color: var(--fg-3);
 }
+
+/* "Import .ics…" next to the title, styled like Today's toolbar links. */
+.schedule-import {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--text-sm);
+  color: var(--accent-text);
+}

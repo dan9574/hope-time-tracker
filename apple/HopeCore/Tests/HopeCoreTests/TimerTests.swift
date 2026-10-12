@@ -118,6 +118,36 @@ struct TimerTests {
         #expect(db.todaySummary(now: now, calendar: cal).totalMs == s.totalMs)
     }
 
+    @Test func scheduleTimeIsLeftOutOfTheTotal() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        let db = try device("d")
+        let classes = try db.addActivity(0, "Classes", color: .pink)
+        try db.write { db.activity(classes)!.kind = ActivityRecord.scheduleKind }
+        let cse = try db.at(0) { try db.createActivity(name: "CSE 100", color: .pink, parentId: classes) }
+        let study = try db.addActivity(0, "Study")
+        let day = LocalStore.dayRange(of: Date(timeIntervalSince1970: 1_790_000_000), calendar: cal)
+        let h: Int64 = 3_600_000
+        try db.at(1) { _ = try db.addSession(activityId: cse.id, startMs: day.from + 9 * h, endMs: day.from + 10 * h) }
+        try db.at(1) {
+            _ = try db.addSession(activityId: classes, startMs: day.from + 10 * h, endMs: day.from + 10 * h + h / 2)
+        }
+        try db.at(1) { _ = try db.addSession(activityId: study, startMs: day.from + 11 * h, endMs: day.from + 13 * h) }
+
+        #expect(db.isScheduled(activityId: cse.id) && db.isScheduled(activityId: classes))
+        #expect(!db.isScheduled(activityId: study) && !db.isScheduled(activityId: "unknown"))
+
+        let now = day.from + 14 * h
+        let s = db.summary(from: day.from, to: day.to, now: now)
+        #expect(s.totalMs == 2 * h, "the scheduled sub-activity and the group itself are left out")
+        #expect(s.scheduleMs == h + h / 2)
+        #expect(s.entries.count == 3, "scheduled rows stay in the list")
+        #expect(s.entries.map(\.scheduled) == [true, true, false])
+        #expect(db.summary(from: day.from, to: day.to, now: now, includeSchedule: true).totalMs == 3 * h + h / 2)
+        #expect(db.todaySummary(now: now, calendar: cal).totalMs == 2 * h)
+        #expect(db.widgetSnapshot(now: now, calendar: cal).todayTotalMs == 2 * h)
+    }
+
     @Test func durationFormat() {
         let unit = { (u: DurationFormat.Unit) in u == .hour ? "h" : "min" }
         let nb = DurationFormat.unitSpace

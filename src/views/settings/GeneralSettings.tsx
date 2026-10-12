@@ -3,7 +3,7 @@ import { Segmented } from "../../components/Segmented";
 import { ColorPicker } from "../../components/ColorPicker";
 import { commands, type ActivityColor } from "../../lib/bindings";
 import { run, useSetting } from "../../lib/data";
-import { APPEARANCES, DEFAULT_SLEEP, DEFAULT_SLEEP_BUTTON_FROM, DEFAULT_WAKE, DEFAULT_WAKE_BUTTON_UNTIL, PREF, RING_WIDTHS, TINTS, type Appearance, type Tint } from "../../lib/preferences";
+import { APPEARANCES, DEFAULT_SLEEP, DEFAULT_SLEEP_BUTTON_FROM, DEFAULT_WAKE, DEFAULT_WAKE_BUTTON_UNTIL, PREF, RING_WIDTHS, TINTS, useIncludeSchedule, type Appearance, type Tint } from "../../lib/preferences";
 
 const save = (key: string, value: string) => void run(commands.settingSet(key, value));
 
@@ -34,6 +34,7 @@ export function ScheduleSettings() {
   const sleep = useSetting(PREF.sleep) ?? DEFAULT_SLEEP;
   const wakeUntil = useSetting(PREF.wakeButtonUntil) ?? DEFAULT_WAKE_BUTTON_UNTIL;
   const sleepFrom = useSetting(PREF.sleepButtonFrom) ?? DEFAULT_SLEEP_BUTTON_FROM;
+  const includeSchedule = useIncludeSchedule();
 
   return (
     <section className="settings-group">
@@ -55,8 +56,17 @@ export function ScheduleSettings() {
           <span>{t("settings.sleepButtonFrom")}</span>
           <TimeInput value={sleepFrom} onCommit={(v) => save(PREF.sleepButtonFrom, v)} />
         </label>
+        <label className="settings-row">
+          <span>{t("settings.includeSchedule")}</span>
+          <input
+            type="checkbox"
+            checked={includeSchedule}
+            onChange={(e) => save(PREF.includeSchedule, e.target.checked ? "1" : "0")}
+          />
+        </label>
       </div>
       <p className="settings-footnote">{t("settings.scheduleHint")}</p>
+      <p className="settings-footnote">{t("settings.includeScheduleHint")}</p>
     </section>
   );
 }

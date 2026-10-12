@@ -20,6 +20,8 @@ export interface RingSegment {
   color: ActivityColor | undefined;
   /** Shown when the pointer is on this segment, e.g. "Study · 9:00–10:30 · 1 h 30 min". */
   tooltip?: string;
+  /** Drawn at the plan opacity (40%): timetable time left out of the totals (rebuild-plan 13.4). */
+  dim?: boolean;
 }
 
 interface RingProps {
@@ -195,7 +197,7 @@ export function Ring({
           );
         })}
         {planShapes.map((s) => drawSegment(s, "ring-plan"))}
-        {recordShapes.map((s) => drawSegment(s, "ring-record"))}
+        {recordShapes.map((s) => drawSegment(s, s.dim ? "ring-record is-dim" : "ring-record"))}
         {now >= wakeMs && now <= sleepMs && (
           <circle
             className="ring-now"

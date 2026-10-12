@@ -11,9 +11,9 @@ public enum SyncTable: String, CaseIterable, Sendable {
     public var columns: [String] {
         switch self {
         case .activity:
-            ["id", "name", "color", "symbol", "sort", "archived_at", "parent_id", "updated_ms", "deleted_ms", "device_id"]
+            ["id", "name", "color", "symbol", "sort", "archived_at", "parent_id", "kind", "updated_ms", "deleted_ms", "device_id"]
         case .plan:
-            ["id", "activity_id", "date", "start_hm", "end_hm", "rule", "auto_log", "until", "updated_ms", "deleted_ms", "device_id"]
+            ["id", "activity_id", "date", "start_hm", "end_hm", "rule", "auto_log", "until", "skip_dates", "updated_ms", "deleted_ms", "device_id"]
         case .session:
             ["id", "activity_id", "start_ms", "end_ms", "note", "continues_id", "plan_id", "updated_ms", "deleted_ms", "device_id"]
         case .journal:

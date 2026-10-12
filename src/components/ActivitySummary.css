@@ -79,6 +79,11 @@ button.summary-row {
   color: var(--fg-2);
 }
 
+/* Timetable time kept out of the totals: listed for reference, no share (rebuild-plan 13.4). */
+.summary-row.is-schedule {
+  opacity: 0.4;
+}
+
 .summary-name {
   flex: 1;
   min-width: 0;

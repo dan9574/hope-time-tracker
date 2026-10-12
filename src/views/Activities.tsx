@@ -56,6 +56,7 @@ export function Activities() {
                   <button type="button" className="activity-open" onClick={() => setEditing({ kind: "edit", id: root.id })}>
                     <ActivityGlyph activity={root} />
                     <span className="activity-name">{root.name}</span>
+                    {root.kind === "schedule" && <span className="activity-badge">{t("activities.scheduleBadge")}</span>}
                   </button>
                   <button
                     type="button"

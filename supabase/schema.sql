@@ -2,7 +2,8 @@
 --
 -- Paste the whole file into the Supabase SQL Editor and run it. It is safe to run again: tables are
 -- created only if missing, functions are replaced, and triggers / policies are dropped and recreated.
--- (Running it again does NOT alter existing tables; a later schema change will ship its own migration.)
+-- Columns added after the first release are also added to existing tables by idempotent
+-- `alter table … add column if not exists` statements right after the create statements.
 --
 -- Rules every client relies on:
 --   * Columns mirror the local SQLite tables, plus user_id (owner) and server_seq (pull cursor).
@@ -25,6 +26,7 @@ create table if not exists public.activity (
   sort        bigint not null default 0,
   archived_at bigint,
   parent_id   text,
+  kind        text,                                 -- null = normal; 'schedule' = timetable group
   updated_ms  bigint not null,
   deleted_ms  bigint,
   device_id   text   not null,
@@ -59,6 +61,7 @@ create table if not exists public.plan (
   rule        text,
   auto_log    integer not null default 1,           -- 0 / 1, as in SQLite
   until       text,
+  skip_dates  text,                                 -- 'YYYY-MM-DD,…' sorted; null = none
   updated_ms  bigint  not null,
   deleted_ms  bigint,
   device_id   text    not null,
@@ -90,6 +93,10 @@ create table if not exists public.day (
   server_seq     bigint  not null,
   primary key (user_id, date)
 );
+
+-- Stage 10 (rebuild-plan 13.1): for databases created before these columns existed.
+alter table public.activity add column if not exists kind text;
+alter table public.plan     add column if not exists skip_dates text;
 
 -- ---------------------------------------------------------------------------------------------
 -- Last write wins + server_seq (BEFORE INSERT OR UPDATE, every table)

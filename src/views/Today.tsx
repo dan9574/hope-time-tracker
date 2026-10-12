@@ -32,7 +32,7 @@ export function Today() {
   const timer = useQuery(() => commands.sessionCurrent(), []);
   const now = useNow(timer?.running ? 1000 : 30_000);
   const day = useToday(now);
-  const { today, summary, activities, loaded, wakeMs, sleepMs } = day;
+  const { today, summary, activities, loaded, wakeMs, sleepMs, includeSchedule, scheduleMs } = day;
   const ringWidth = useRingWidth();
   const [editing, setEditing] = useState<Editing>(null);
 
@@ -83,7 +83,7 @@ export function Today() {
         <Ring
           wakeMs={wakeMs}
           sleepMs={sleepMs}
-          records={ringRecords(summary.entries, describe)}
+          records={ringRecords(summary.entries, describe, includeSchedule)}
           interactive
           plans={planSegments}
           now={now}
@@ -100,6 +100,10 @@ export function Today() {
           </span>
           <span className="today-total-label">{day.slept ? t("day.rested") : t("today.total")}</span>
         </Ring>
+        {/* Timetable time left out of the total still gets a quiet line of its own (rebuild-plan 13.4). */}
+        {!includeSchedule && scheduleMs > 0 && (
+          <p className="today-schedule tabular">{t("today.schedule", { duration: formatDuration(scheduleMs) })}</p>
+        )}
       </section>
 
       {day.button && (
@@ -137,6 +141,7 @@ export function Today() {
         <Timeline
           entries={summary.entries}
           plans={occurrences}
+          includeSchedule={includeSchedule}
           onEntryClick={(entry) => setEditing({ kind: "record", entry })}
           onPlanClick={(plan) => setEditing({ kind: "plan", plan })}
         />

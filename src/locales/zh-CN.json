@@ -71,12 +71,15 @@
     "wipeConfirm": "清空",
     "wiped": "已清空。备份保存在 {{path}}",
     "wakeButtonUntil": "「起床」按钮显示到",
-    "sleepButtonFrom": "「睡觉」按钮显示从"
+    "sleepButtonFrom": "「睡觉」按钮显示从",
+    "includeSchedule": "总时长计入课表",
+    "includeScheduleHint": "关闭时，课表组下的记录不进总时长，仍会显示在时间线上。导入 .ics 课表在「日程」页。"
   },
   "today": {
     "total": "已记录",
     "empty": "今天还没有记录",
-    "now": "现在"
+    "now": "现在",
+    "schedule": "上课 {{duration}}"
   },
   "timer": {
     "start": "开始计时",
@@ -127,7 +130,11 @@
     "cannotDeleteTitle": "不能删除",
     "cannotDelete": "「{{name}}」下有 {{count}} 条记录，不能删除。不再使用的话可以归档。",
     "confirmDelete": "删除「{{name}}」？它的计划也会一起删除，此操作无法撤销。",
-    "confirmDeleteWithSubs": "删除「{{name}}」及其 {{count}} 个子活动？它们的计划也会一起删除，此操作无法撤销。"
+    "confirmDeleteWithSubs": "删除「{{name}}」及其 {{count}} 个子活动？它们的计划也会一起删除，此操作无法撤销。",
+    "scheduleGroup": "作为课表组",
+    "scheduleGroupHint": "记录默认不计入总时长",
+    "scheduleBadge": "课表",
+    "scheduleExists": "「{{name}}」已经是课表组了，只能有一个课表组。"
   },
   "common": {
     "cancel": "取消",
@@ -155,7 +162,8 @@
     "autoLog": "到点自动计入",
     "autoLogHint": "每周重复；结束后若这段时间没有手动记录，会自动记一条。删除那条记录就代表那次没去。",
     "autoLogged": "由计划自动计入",
-    "untilBeforeStart": "结束日期不能早于开始日期"
+    "untilBeforeStart": "结束日期不能早于开始日期",
+    "skipDates_other": "跳过 {{count}} 天（来自导入）"
   },
   "journal": {
     "title": "今天的日记",
@@ -194,7 +202,46 @@
     "useDefault": "用默认值"
   },
   "schedule": {
-    "empty": "还没有每周重复的安排。点上方任意时间格添加，比如一节课。"
+    "empty": "还没有每周重复的安排。点上方任意时间格添加，比如一节课。",
+    "group": "课程",
+    "import": {
+      "button": "导入 .ics…",
+      "title": "导入课表",
+      "subtitle_other": "{{name}} · {{count}} 项",
+      "nothing": "文件里没有可导入的事件。",
+      "start": "开始",
+      "end": "结束",
+      "fromFile": "按文件",
+      "today": "今天",
+      "custom": "自定义",
+      "noEnd": "不设结束",
+      "rangeHint": "开始和结束只调整每周重复的课；单次事件（如考试）保持原日期，落在范围外的默认不勾选。",
+      "name": "活动名",
+      "openEnded": "{{date}} 起，不设结束",
+      "skips_other": "跳过 {{count}} 天",
+      "outside": "不在所选范围内",
+      "untitled": "（无标题）",
+      "reason": {
+        "unsupportedRule": "不支持的重复规则",
+        "interval": "不支持隔周重复",
+        "allDay": "全天事件",
+        "recurrenceId": "重复事件中单独改过的一次",
+        "noTime": "没有开始或结束时间"
+      },
+      "foreignZone": "文件时区 {{zone}}，已换算为本地时间。",
+      "footnote": "会放进课表组「{{group}}」下。",
+      "footnoteNew": "会放进课表组「{{group}}」下（粉色）。",
+      "sameName": "同名的行归到同一个子活动。",
+      "notCounted": "课表时间默认不计入总时长，可在设置里更改。",
+      "counted": "按当前设置，课表时间计入总时长，可在设置里更改。",
+      "nameRequired": "勾选的行都要有活动名。",
+      "backfill": "补记已过去的课",
+      "backfillCount_other": "{{count}} 节，视为全部参加",
+      "confirm_other": "导入 {{count}} 项",
+      "doneTitle": "课表已导入",
+      "done": "导入完成：新建 {{activities}} 个活动，计划新增 {{added}} 条、更新 {{updated}} 条。",
+      "doneLogged_other": "导入完成：新建 {{activities}} 个活动，计划新增 {{added}} 条、更新 {{updated}} 条，补记 {{count}} 节课。"
+    }
   },
   "units": {
     "h": "小时",

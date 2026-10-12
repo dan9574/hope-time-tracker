@@ -14,14 +14,14 @@ interface Props {
 /** Thin horseshoe ring + the day's top three activities. */
 export function TodayCard({ today, now }: Props) {
   const { t } = useTranslation();
-  const top = totalsByActivity(today.summary.entries).slice(0, 3);
+  const top = totalsByActivity(today.summary.entries, today.includeSchedule).slice(0, 3);
 
   return (
     <section className="overlay-card overlay-today">
       <Ring
         wakeMs={today.wakeMs}
         sleepMs={today.sleepMs}
-        records={ringRecords(today.summary.entries)}
+        records={ringRecords(today.summary.entries, undefined, today.includeSchedule)}
         plans={[]}
         now={now}
         diameter={72}

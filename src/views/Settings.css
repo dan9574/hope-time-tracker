@@ -116,6 +116,10 @@
   font-weight: 600;
 }
 
+.settings-button.is-primary:disabled {
+  color: var(--fg-3);
+}
+
 /* Destructive actions use plain emphasis rather than a red fill; the palette has no red by design. */
 .settings-button.is-destructive {
   font-weight: 600;

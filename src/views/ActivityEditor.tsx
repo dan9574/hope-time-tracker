@@ -25,15 +25,23 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
   const [color, setColor] = useState<ActivityColor>(activity?.color ?? "blue");
   const [symbol, setSymbol] = useState<string | null>(activity?.symbol ?? null);
   const [parentId, setParentId] = useState<string | null>(initialParent);
+  // Timetable group (rebuild-plan 13.4): top-level only, at most one.
+  const [isSchedule, setIsSchedule] = useState(activity?.kind === "schedule");
   const [error, setError] = useState<string | null>(null);
 
   const parent = roots.find((r) => r.id === parentId);
   // Sub-activities show their parent's color; an activity with children cannot be moved under another.
   const shownColor = parent?.color ?? color;
   const parentChoices = roots.filter((r) => r.id !== activity?.id);
+  const otherGroup = roots.find((r) => r.kind === "schedule" && r.id !== activity?.id);
+  const schedule = isSchedule && parentId === null;
 
   const save = async () => {
     if (!name.trim()) return setError(t("activities.nameRequired"));
+    // Rust enforces this too; checking here gives a readable message.
+    if (schedule && otherGroup) {
+      return setError(t("activities.scheduleExists", { name: otherGroup.name }));
+    }
     const res = await commands.activityUpsert({
       id: activity?.id ?? null,
       name,
@@ -41,6 +49,7 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
       symbol,
       sort: null,
       parent_id: parentId,
+      kind: schedule ? "schedule" : null,
     });
     if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
@@ -85,7 +94,7 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
         placeholder={parent ? t("activities.subNamePlaceholder", { name: parent.name }) : t("activities.namePlaceholder")}
         onChange={(e) => setName(e.target.value)}
       />
-      {childCount === 0 && (activity || parentId) && (
+      {childCount === 0 && !schedule && (activity || parentId) && (
         <label className="activity-editor-row">
           <span className="activity-editor-label">{t("activities.parent")}</span>
           <select className="settings-select" value={parentId ?? ""} onChange={(e) => setParentId(e.target.value || null)}>
@@ -96,6 +105,16 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
               </option>
             ))}
           </select>
+        </label>
+      )}
+      {parentId === null && (
+        <label className="activity-editor-row">
+          <span className="activity-editor-label" />
+          <span className="activity-editor-check">
+            <input type="checkbox" checked={isSchedule} onChange={(e) => setIsSchedule(e.target.checked)} />
+            {t("activities.scheduleGroup")}
+            <span className="activity-editor-note">{t("activities.scheduleGroupHint")}</span>
+          </span>
         </label>
       )}
       <div className="activity-editor-row">

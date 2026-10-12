@@ -34,6 +34,8 @@ public final class ActivityRecord {
     public var archivedAt: Int64?
     /// `nil` = top level. One level only.
     public var parentId: String?
+    /// `nil` = ordinary, `schedule` = the schedule (classes) group; top level only (rebuild-plan 13.1).
+    public var kind: String?
     public var updatedMs: Int64
     public var deletedMs: Int64?
     public var deviceId: String
@@ -41,7 +43,8 @@ public final class ActivityRecord {
 
     public init(
         id: String, name: String, color: String, symbol: String? = nil, sort: Int64 = 0, archivedAt: Int64? = nil,
-        parentId: String? = nil, updatedMs: Int64, deletedMs: Int64? = nil, deviceId: String, dirty: Bool = true
+        parentId: String? = nil, kind: String? = nil, updatedMs: Int64, deletedMs: Int64? = nil, deviceId: String,
+        dirty: Bool = true
     ) {
         self.id = id
         self.name = name
@@ -50,6 +53,7 @@ public final class ActivityRecord {
         self.sort = sort
         self.archivedAt = archivedAt
         self.parentId = parentId
+        self.kind = kind
         self.updatedMs = updatedMs
         self.deletedMs = deletedMs
         self.deviceId = deviceId
@@ -57,6 +61,11 @@ public final class ActivityRecord {
     }
 
     public var palette: ActivityColor { ActivityColor(rawValue: color) ?? .gray }
+
+    /// The `kind` of the schedule group.
+    public static let scheduleKind = "schedule"
+
+    public var isScheduleGroup: Bool { kind == Self.scheduleKind }
 }
 
 @Model
@@ -107,6 +116,8 @@ public final class PlanRecord {
     /// 0 / 1, as in SQLite and on the server.
     public var autoLog: Int64
     public var until: String?
+    /// Dates a recurring plan does not occur on, `YYYY-MM-DD,YYYY-MM-DD` (sorted, no duplicates); `nil` = none.
+    public var skipDates: String?
     public var updatedMs: Int64
     public var deletedMs: Int64?
     public var deviceId: String
@@ -114,8 +125,8 @@ public final class PlanRecord {
 
     public init(
         id: String, activityId: String, date: String, startHm: String, endHm: String, rule: String? = nil,
-        autoLog: Int64 = 1, until: String? = nil, updatedMs: Int64, deletedMs: Int64? = nil, deviceId: String,
-        dirty: Bool = true
+        autoLog: Int64 = 1, until: String? = nil, skipDates: String? = nil, updatedMs: Int64, deletedMs: Int64? = nil,
+        deviceId: String, dirty: Bool = true
     ) {
         self.id = id
         self.activityId = activityId
@@ -125,6 +136,7 @@ public final class PlanRecord {
         self.rule = rule
         self.autoLog = autoLog
         self.until = until
+        self.skipDates = skipDates
         self.updatedMs = updatedMs
         self.deletedMs = deletedMs
         self.deviceId = deviceId
@@ -205,7 +217,8 @@ extension ActivityRecord: SyncedRecord {
         return ActivityRecord(
             id: try r.text("id"), name: try r.text("name"), color: color, symbol: try r.optionalText("symbol"),
             sort: try r.optionalInteger("sort") ?? 0, archivedAt: try r.optionalInteger("archived_at"),
-            parentId: try r.optionalText("parent_id"), updatedMs: try r.integer("updated_ms"),
+            parentId: try r.optionalText("parent_id"), kind: try r.optionalText("kind"),
+            updatedMs: try r.integer("updated_ms"),
             deletedMs: try r.optionalInteger("deleted_ms"), deviceId: try r.text("device_id"), dirty: false)
     }
 
@@ -216,6 +229,7 @@ extension ActivityRecord: SyncedRecord {
         sort = o.sort
         archivedAt = o.archivedAt
         parentId = o.parentId
+        kind = o.kind
         updatedMs = o.updatedMs
         deletedMs = o.deletedMs
         deviceId = o.deviceId
@@ -225,7 +239,7 @@ extension ActivityRecord: SyncedRecord {
         [
             "id": .string(id), "name": .string(name), "color": .string(color), "symbol": JSONValue(symbol),
             "sort": .int(sort), "archived_at": JSONValue(archivedAt), "parent_id": JSONValue(parentId),
-            "updated_ms": .int(updatedMs), "deleted_ms": JSONValue(deletedMs), "device_id": .string(deviceId),
+            "kind": JSONValue(kind), "updated_ms": .int(updatedMs), "deleted_ms": JSONValue(deletedMs), "device_id": .string(deviceId),
         ]
     }
 
@@ -295,7 +309,7 @@ extension PlanRecord: SyncedRecord {
             id: try r.text("id"), activityId: try r.text("activity_id"), date: try r.text("date"),
             startHm: try r.text("start_hm"), endHm: try r.text("end_hm"), rule: try r.optionalText("rule"),
             autoLog: try r.optionalInteger("auto_log") ?? 1, until: try r.optionalText("until"),
-            updatedMs: try r.integer("updated_ms"), deletedMs: try r.optionalInteger("deleted_ms"),
+            skipDates: try r.optionalText("skip_dates"), updatedMs: try r.integer("updated_ms"), deletedMs: try r.optionalInteger("deleted_ms"),
             deviceId: try r.text("device_id"), dirty: false)
     }
 
@@ -307,6 +321,7 @@ extension PlanRecord: SyncedRecord {
         rule = o.rule
         autoLog = o.autoLog
         until = o.until
+        skipDates = o.skipDates
         updatedMs = o.updatedMs
         deletedMs = o.deletedMs
         deviceId = o.deviceId
@@ -316,7 +331,7 @@ extension PlanRecord: SyncedRecord {
         [
             "id": .string(id), "activity_id": .string(activityId), "date": .string(date), "start_hm": .string(startHm),
             "end_hm": .string(endHm), "rule": JSONValue(rule), "auto_log": .int(autoLog), "until": JSONValue(until),
-            "updated_ms": .int(updatedMs), "deleted_ms": JSONValue(deletedMs), "device_id": .string(deviceId),
+            "skip_dates": JSONValue(skipDates), "updated_ms": .int(updatedMs), "deleted_ms": JSONValue(deletedMs), "device_id": .string(deviceId),
         ]
     }
 

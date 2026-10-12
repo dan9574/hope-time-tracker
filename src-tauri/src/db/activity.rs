@@ -88,6 +88,8 @@ pub struct Activity {
     pub archived_at: Option<i64>,
     /// `None` = top level. Sub-activities are one level deep and always take their parent's color.
     pub parent_id: Option<String>,
+    /// `None` = normal; `"schedule"` = the timetable group (rebuild-plan 13.1, top level only).
+    pub kind: Option<String>,
 }
 
 /// Create (`id: None`) or update an activity. `sort: None` appends on create and keeps the current value
@@ -101,11 +103,16 @@ pub struct ActivityInput {
     #[specta(type = Option<specta_typescript::Number>)]
     pub sort: Option<i64>,
     pub parent_id: Option<String>,
+    /// `None` or `"schedule"` (see `Activity.kind`). Editors must send the current value back.
+    pub kind: Option<String>,
 }
+
+/// `activity.kind` of the timetable group (rebuild-plan 13.1).
+pub const KIND_SCHEDULE: &str = "schedule";
 
 // Reads take the color from a live parent, so a child can never drift from it.
 // A child whose parent is missing (sync may deliver it later) reads as a top-level activity.
-const SELECT: &str = "SELECT a.id, a.name, COALESCE(p.color, a.color), a.symbol, a.sort, a.archived_at, a.parent_id
+const SELECT: &str = "SELECT a.id, a.name, COALESCE(p.color, a.color), a.symbol, a.sort, a.archived_at, a.parent_id, a.kind
      FROM activity a LEFT JOIN activity p ON p.id = a.parent_id AND p.deleted_ms IS NULL";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<Activity> {
@@ -117,6 +124,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<Activity> {
         sort: r.get(4)?,
         archived_at: r.get(5)?,
         parent_id: r.get(6)?,
+        kind: r.get(7)?,
     })
 }
 
@@ -163,21 +171,52 @@ fn check_parent(conn: &Connection, id: Option<&str>, parent_id: Option<&str>, co
     Ok(parent.color)
 }
 
+/// `kind` must be `None` or `"schedule"`; shared by `upsert` and the JSON importer.
+pub fn validate_kind(kind: Option<&str>) -> Result<()> {
+    match kind {
+        None | Some(KIND_SCHEDULE) => Ok(()),
+        Some(other) => Err(Error::Invalid(format!("unknown activity kind {other:?}"))),
+    }
+}
+
+/// Enforces rebuild-plan 13.1: a timetable group is top level, and this device keeps at most one live one.
+/// (Sync may still deliver a second; readers treat every `kind = 'schedule'` activity as a timetable.)
+fn check_kind(conn: &Connection, id: Option<&str>, parent_id: Option<&str>, kind: Option<&str>) -> Result<()> {
+    validate_kind(kind)?;
+    if kind != Some(KIND_SCHEDULE) {
+        return Ok(());
+    }
+    if parent_id.is_some() {
+        return Err(Error::Invalid("a timetable group must be a top-level activity".into()));
+    }
+    let others: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM activity WHERE kind = ?1 AND deleted_ms IS NULL AND id IS NOT ?2",
+        params![KIND_SCHEDULE, id],
+        |r| r.get(0),
+    )?;
+    if others > 0 {
+        return Err(Error::Invalid("there is already a timetable group".into()));
+    }
+    Ok(())
+}
+
 pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -> Result<Activity> {
     let name = input.name.trim();
     if name.is_empty() {
         return Err(Error::Invalid("activity name is empty".into()));
     }
     let parent_id = input.parent_id.as_deref();
+    let kind = input.kind.as_deref();
+    check_kind(conn, input.id.as_deref(), parent_id, kind)?;
     let color = check_parent(conn, input.id.as_deref(), parent_id, input.color)?;
     let id = match input.id {
         Some(id) => {
             let changed = conn.execute(
                 "UPDATE activity
-                 SET name = ?2, color = ?3, symbol = ?4, sort = COALESCE(?5, sort), parent_id = ?6,
-                     updated_ms = MAX(?7, updated_ms + 1), device_id = ?8, dirty = 1
+                 SET name = ?2, color = ?3, symbol = ?4, sort = COALESCE(?5, sort), parent_id = ?6, kind = ?7,
+                     updated_ms = MAX(?8, updated_ms + 1), device_id = ?9, dirty = 1
                  WHERE id = ?1 AND deleted_ms IS NULL",
-                params![id, name, color, input.symbol, input.sort, parent_id, now, device],
+                params![id, name, color, input.symbol, input.sort, parent_id, kind, now, device],
             )?;
             if changed == 0 {
                 return Err(Error::NotFound("activity"));
@@ -193,17 +232,48 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -
         None => {
             let id = new_id();
             conn.execute(
-                "INSERT INTO activity (id, name, color, symbol, sort, parent_id, updated_ms, device_id)
+                "INSERT INTO activity (id, name, color, symbol, sort, parent_id, kind, updated_ms, device_id)
                  VALUES (?1, ?2, ?3, ?4,
                          COALESCE(?5, (SELECT COALESCE(MAX(sort), -1) + 1 FROM activity
                                        WHERE parent_id IS ?6 AND deleted_ms IS NULL)),
-                         ?6, ?7, ?8)",
-                params![id, name, color, input.symbol, input.sort, parent_id, now, device],
+                         ?6, ?7, ?8, ?9)",
+                params![id, name, color, input.symbol, input.sort, parent_id, kind, now, device],
             )?;
             id
         }
     };
     get(conn, &id)?.ok_or(Error::NotFound("activity"))
+}
+
+/// The timetable group: the live top-level `kind = 'schedule'` activity with the smallest `sort`.
+pub fn schedule_group(conn: &Connection) -> Result<Option<Activity>> {
+    let sql = format!(
+        "{SELECT} WHERE a.kind = ?1 AND a.parent_id IS NULL AND a.deleted_ms IS NULL ORDER BY a.archived_at IS NOT NULL, a.sort, a.name LIMIT 1"
+    );
+    Ok(conn.query_row(&sql, [KIND_SCHEDULE], from_row).optional()?)
+}
+
+/// Returns the timetable group, creating it (pink, graduation cap) when there is none (rebuild-plan 13.3).
+/// The flag says whether it was created; `name` is only used then.
+pub fn schedule_ensure(conn: &Connection, device: &str, now: i64, name: &str) -> Result<(Activity, bool)> {
+    if let Some(group) = schedule_group(conn)? {
+        // Importing into the group means the person wants to see it again.
+        if group.archived_at.is_some() {
+            set_archived(conn, device, now, &group.id, false)?;
+            return Ok((get(conn, &group.id)?.ok_or(Error::NotFound("activity"))?, false));
+        }
+        return Ok((group, false));
+    }
+    let input = ActivityInput {
+        id: None,
+        name: name.into(),
+        color: ActivityColor::Pink,
+        symbol: Some("graduationcap".into()),
+        sort: None,
+        parent_id: None,
+        kind: Some(KIND_SCHEDULE.into()),
+    };
+    Ok((upsert(conn, device, now, input)?, true))
 }
 
 pub fn set_archived(conn: &Connection, device: &str, now: i64, id: &str, archived: bool) -> Result<()> {
@@ -286,7 +356,7 @@ pub fn seed_samples_if_empty(conn: &Connection, device: &str, now: i64) -> Resul
             conn,
             device,
             now,
-            ActivityInput { id: None, name: name.into(), color, symbol: None, sort: None, parent_id: None },
+            ActivityInput { id: None, name: name.into(), color, symbol: None, sort: None, parent_id: None, kind: None },
         )?;
     }
     Ok(())
@@ -298,7 +368,11 @@ mod tests {
     use crate::db::test_conn;
 
     fn input(name: &str) -> ActivityInput {
-        ActivityInput { id: None, name: name.into(), color: ActivityColor::Teal, symbol: None, sort: None, parent_id: None }
+        ActivityInput { id: None, name: name.into(), color: ActivityColor::Teal, symbol: None, sort: None, parent_id: None, kind: None }
+    }
+
+    fn schedule(name: &str) -> ActivityInput {
+        ActivityInput { kind: Some(KIND_SCHEDULE.into()), ..input(name) }
     }
 
     fn child(name: &str, parent: &str) -> ActivityInput {
@@ -338,6 +412,48 @@ mod tests {
         // Moving a child to another parent is allowed.
         let moved = upsert(&conn, "d", 3, ActivityInput { id: Some(linalg.id.clone()), ..child("Linear algebra", &read.id) }).unwrap();
         assert_eq!(moved.parent_id.as_deref(), Some(read.id.as_str()));
+    }
+
+    #[test]
+    fn at_most_one_top_level_schedule_group() {
+        let conn = test_conn();
+        let group = upsert(&conn, "d", 1, schedule("Courses")).unwrap();
+        assert_eq!(group.kind.as_deref(), Some(KIND_SCHEDULE));
+        let renamed = upsert(&conn, "d", 2, ActivityInput { id: Some(group.id.clone()), ..schedule("Classes") }).unwrap();
+        assert_eq!(renamed.name, "Classes", "the group itself may be edited");
+
+        assert!(matches!(upsert(&conn, "d", 3, schedule("Second")), Err(Error::Invalid(_))));
+        let other = upsert(&conn, "d", 3, input("Read")).unwrap();
+        let promote = ActivityInput { id: Some(other.id.clone()), ..schedule("Read") };
+        assert!(matches!(upsert(&conn, "d", 4, promote), Err(Error::Invalid(_))));
+
+        let nested = ActivityInput { kind: Some(KIND_SCHEDULE.into()), ..child("Nested", &other.id) };
+        assert!(matches!(upsert(&conn, "d", 4, nested), Err(Error::Invalid(_))));
+        let demote = ActivityInput { id: Some(group.id.clone()), kind: Some(KIND_SCHEDULE.into()), ..child("Classes", &other.id) };
+        assert!(matches!(upsert(&conn, "d", 4, demote), Err(Error::Invalid(_))), "a group cannot become a sub-activity");
+        assert!(matches!(upsert(&conn, "d", 4, ActivityInput { kind: Some("work".into()), ..input("X") }), Err(Error::Invalid(_))));
+
+        // Clearing the flag frees the slot.
+        upsert(&conn, "d", 5, ActivityInput { id: Some(group.id.clone()), ..input("Classes") }).unwrap();
+        upsert(&conn, "d", 6, schedule("Second")).unwrap();
+    }
+
+    #[test]
+    fn schedule_ensure_creates_once_and_prefers_smallest_sort() {
+        let conn = test_conn();
+        let (group, created) = schedule_ensure(&conn, "d", 1, "Courses").unwrap();
+        assert!(created);
+        assert_eq!((group.color, group.symbol.as_deref(), group.parent_id.as_deref()), (ActivityColor::Pink, Some("graduationcap"), None));
+        let (again, created) = schedule_ensure(&conn, "d", 2, "Other name").unwrap();
+        assert_eq!((again.id.as_str(), created), (group.id.as_str(), false));
+
+        // A second group arriving through sync: the one sorted first wins.
+        conn.execute(
+            "INSERT INTO activity (id, name, color, sort, kind, updated_ms, device_id) VALUES ('synced', 'A', 'pink', -1, 'schedule', 0, 'x')",
+            [],
+        )
+        .unwrap();
+        assert_eq!(schedule_ensure(&conn, "d", 3, "Courses").unwrap().0.id, "synced");
     }
 
     #[test]
