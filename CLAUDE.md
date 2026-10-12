@@ -44,7 +44,7 @@
   - 安装包未签名、未公证（需要 Apple Developer ID）。
   - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
   - 本机 dmg：2026-10-03 复查，`npm run tauri build -- --target aarch64-apple-darwin` 连跑两次 dmg 都成功，问题不在仓库配置。之前那次失败留下的 `bundle/macos/rw.39387.Hope_0.1.0_aarch64.dmg` 显示脚本已走完 Finder AppleScript 和 SetFile，卡在最后的 `hdiutil detach`（卷被占用 EBUSY，重试 3 次后退出 16，镜像一直挂着到 20:06 才被卸下）——是偶发的环境问题（Finder / Spotlight / 安全扫描仍占着刚生成的卷）。再遇到时：关掉 Finder 里打开的 `dmg.*` 窗口，`hdiutil info` 查残留镜像并 `hdiutil detach`，删掉 `bundle/macos/rw.*.dmg` 后重跑。注意别单独用 `--bundles dmg`：它构建完会删掉 `bundle/macos/Hope.app`。
-- 阶段 7（同步层，rebuild-plan 第 12 节）：桌面端代码已完成并提交，但**尚未对真实 Supabase 项目验证**——只通过了内存假服务端的单元测试，`supabase/schema.sql` 从未在 Postgres 上执行过，登录 / 钥匙串 / PostgREST 请求也没有真实跑过。开启步骤见 `supabase/README.md`。
+- 阶段 7（同步层，rebuild-plan 第 12 节）：已对真实 Supabase 项目跑通（`.env` 已配置，桌面与手表都在同步）。注意：**本地加列后必须同步在 Supabase SQL Editor 里执行 `supabase/schema.sql` 末尾的 `alter table … add column if not exists`**，否则推送不会报错但新列会被丢掉（阶段 10 的 `kind` / `skip_dates` 就发生过一次）。
 - 阶段 8、9（`apple/`，说明见 `apple/README.md`）：一个 Xcode 工程 `Hope.xcodeproj`（iOS 18+ / watchOS 11+）+ 本地 Swift 包 `HopeCore`（SwiftData 存储、计时规则、同步协议、表盘快照的 Swift 移植，`swift test` 45 个测试）。iOS 与 Watch 有 App 图标（由桌面图标 `sips` 裁切）。
   - iPhone 是最小版：今天总时长 + 今日记录 + 开始/暂停/继续/结束 + 两级活动选择 + 账号；承载 Watch app，并通过 WatchConnectivity 把**另一个独立的登录会话**交给手表（refresh token 会轮换，不能共用）。
   - Watch：活动列表（今日总时长、两级）、计时页（大号跳秒、暂停/结束，暂停后继续/结束），直连 Supabase，无账号也能纯本地用。
@@ -52,5 +52,5 @@
   - 已验证：`swift test`；对已注册的 iPhone 签名编译成功（含 Watch app 与复杂功能扩展，App Group 已进描述文件）；iOS 与 watchOS 模拟器上开始 / 暂停 / 继续 / 结束 / 切换活动、中文界面；watchOS 27 模拟器上快照文件内容正确，复杂功能各视图在 app 内渲染截图正常。
   - **未验证**：真机安装（Xcode 已登录、已能签名，但还没装）；复杂功能真正放到表盘上的样子（模拟器无法驱动表盘编辑）及着色表盘下的效果；对真实 Supabase 的登录、同步、手机→手表交接（模拟器上没有建账号）；手表上文本输入（模拟器无法驱动）。
   - 偏离文档：没有 Live Activity、底部 Tab；"今天"按自然日而不是起床/睡觉日；Apple 端不生成计划自动计入的记录；暂停状态只在本机（与桌面一致）。
-- 阶段 10（课表导入与课表时间区分，rebuild-plan 第 13 节）：已完成桌面端与 Apple 模型层。迁移 0004 加了 `activity.kind`（`'schedule'` = 课表组）和 `plan.skip_dates`（假期）；日程页「导入 .ics…」→ 预览 Sheet（开始 / 结束范围、可改课名）→ `schedule_import`（UUID v5 确定性 id，重复导入即更新；开始日期早于今天时可勾选「补记已过去的课」，走 autolog 的允许过去模式，幂等）；设置「总时长计入课表」默认关，Today / 本周 / 本月 / Overlay / Apple 今日总时长都排除课表组。ICS 解析器 `src/lib/ics.ts` 无依赖，`npm run test:ics` 用 Node 自带 test runner；`src-tauri/src/db/fixtures/fall2026-import.json` 是用它解析真实课表得到的导入输入，Rust 有端到端测试。Supabase 的两列已写进 `supabase/schema.sql`（含 `add column if not exists`），同样尚未在真实 Postgres 上执行。
-- 下一步：用户建好 Supabase 项目后，按 `supabase/README.md` 配置并实测阶段 7；把阶段 8/9 装到真机、把 Hope 加到表盘，实测手机→手表交接与三端收敛。Realtime（7b）先不做。
+- 阶段 10（课表导入与课表时间区分，rebuild-plan 第 13 节）：已完成桌面端与 Apple 模型层。迁移 0004 加了 `activity.kind`（`'schedule'` = 课表组）和 `plan.skip_dates`（假期）；日程页「导入 .ics…」→ 预览 Sheet（开始 / 结束范围、可改课名）→ `schedule_import`（UUID v5 确定性 id，重复导入即更新；开始日期早于今天时可勾选「补记已过去的课」，走 autolog 的允许过去模式，幂等）；设置「总时长计入课表」默认关，Today / 本周 / 本月 / Overlay / Apple 今日总时长都排除课表组。ICS 解析器 `src/lib/ics.ts` 无依赖，`npm run test:ics` 用 Node 自带 test runner；`src-tauri/src/db/fixtures/fall2026-import.json` 是用它解析真实课表得到的导入输入，Rust 有端到端测试。Supabase 的两列已写进 `supabase/schema.sql`（含 `add column if not exists`），需要在 SQL Editor 里执行后再把本地的课表组和带假期的计划重新推送。
+- 下一步：在 Supabase 上补齐阶段 10 的两列并重推；把阶段 8/9 装到真机、把 Hope 加到表盘，实测手机→手表交接与三端收敛。Realtime（7b）先不做。
