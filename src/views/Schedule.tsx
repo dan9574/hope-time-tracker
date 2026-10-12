@@ -175,7 +175,7 @@ export function Schedule() {
           plan={editing.plan}
           preset={editing.preset}
           date={today}
-          activities={activities.filter((a) => a.archived_at === null)}
+          activities={activities}
           onClose={() => setEditing(null)}
         />
       )}

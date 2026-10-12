@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Activity, type Plan } from "../lib/bindings";
+import { pickableActivities } from "../lib/activity";
 import { makeRule, ruleDays } from "../lib/plans";
 import { ActivityPicker } from "./ActivityPicker";
 import { errorMessage } from "../lib/errors";
@@ -19,6 +20,7 @@ interface Props {
   /** `null` creates a plan for `date`. */
   plan: Plan | null;
   date: Date;
+  /** All activities, archived included: the picker offers the live ones plus the plan's own. */
   activities: Activity[];
   preset?: PlanPreset;
   onClose: () => void;
@@ -28,7 +30,9 @@ interface Props {
 export function PlanEditor({ plan, date, activities, preset, onClose }: Props) {
   const { t, i18n } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
-  const [activityId, setActivityId] = useState(plan?.activity_id ?? activities[0]?.id ?? "");
+  // Timetable plans sit on archived courses (rebuild-plan 13.7); editing one must keep its activity.
+  const pickable = pickableActivities(activities, plan?.activity_id);
+  const [activityId, setActivityId] = useState(plan?.activity_id ?? pickable[0]?.id ?? "");
   const [start, setStart] = useState(plan?.start_hm ?? preset?.start ?? "09:00");
   const [end, setEnd] = useState(plan?.end_hm ?? preset?.end ?? "10:00");
   const [days, setDays] = useState<number[]>(plan ? ruleDays(plan.rule) : (preset?.days ?? []));
@@ -85,7 +89,7 @@ export function PlanEditor({ plan, date, activities, preset, onClose }: Props) {
 
         <div className="sheet-row">
           <span>{t("plan.activity")}</span>
-          <ActivityPicker activities={activities} value={activityId} onChange={setActivityId} />
+          <ActivityPicker activities={pickable} value={activityId} onChange={setActivityId} />
         </div>
         <div className="sheet-row">
           <span>{t("plan.time")}</span>

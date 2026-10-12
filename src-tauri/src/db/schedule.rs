@@ -74,7 +74,8 @@ pub fn plan_id(source_key: &str) -> String {
     Uuid::new_v5(&ICS_NAMESPACE, format!("hope-ics/{source_key}").as_bytes()).to_string()
 }
 
-/// The live sub-activity of `group` named `name`, or a new one. The flag says whether it was created.
+/// The live sub-activity of `group` named `name`, reused as it is (archived or not), or a new archived one
+/// (rebuild-plan 13.7). The flag says whether it was created.
 fn course_activity(conn: &Connection, device: &str, now: i64, group: &Activity, name: &str) -> Result<(String, bool)> {
     let existing: Option<String> = conn
         .query_row(
@@ -96,7 +97,7 @@ fn course_activity(conn: &Connection, device: &str, now: i64, group: &Activity, 
         parent_id: Some(group.id.clone()),
         kind: None,
     };
-    Ok((activity::upsert(conn, device, now, input)?.id, true))
+    Ok((activity::create_archived(conn, device, now, input)?.id, true))
 }
 
 /// Writes the whole import or nothing.
@@ -217,6 +218,8 @@ mod tests {
         names.sort();
         assert_eq!(names, ["CSE 100", "CSE 101"], "trimmed, no sub-activity for a course without plans");
         assert!(courses.iter().all(|a| a.color == ActivityColor::Pink), "courses take the group's color");
+        assert!(group.archived_at.is_some() && courses.iter().all(|a| a.archived_at.is_some()), "all created archived");
+        assert!(activity::list(&conn, false).unwrap().is_empty(), "none offered when starting a timer");
 
         let p = plan::get(&conn, &plan_id("uid-1")).unwrap().unwrap();
         assert_eq!((p.rule.as_deref(), p.skip_dates.as_slice()), (Some("weekly:1,3,5"), ["2026-11-11".to_string()].as_slice()));
@@ -249,11 +252,18 @@ mod tests {
             kind: None,
         };
         let existing = activity::upsert(&conn, "d", 1, input).unwrap();
+        // The person restored the group earlier; the import leaves both as they are.
+        activity::set_archived(&conn, "d", 2, &group.id, false).unwrap();
 
         let report = import(&mut conn, "d", 100, fall()).unwrap();
         assert_eq!(report.activities_created, 1, "only CSE 101 is new");
         assert_eq!(plan::get(&conn, &plan_id("uid-1")).unwrap().unwrap().activity_id, existing.id);
-        assert_eq!(activity::schedule_group(&conn).unwrap().unwrap().name, "My classes");
+        let group = activity::schedule_group(&conn).unwrap().unwrap();
+        assert_eq!((group.name.as_str(), group.archived_at), ("My classes", None), "not re-archived");
+        let all = activity::list(&conn, true).unwrap();
+        let archived = |name: &str| all.iter().find(|a| a.name == name).unwrap().archived_at.is_some();
+        assert!(!archived("CSE 100"), "an existing course is reused as it is");
+        assert!(archived("CSE 101"), "a new course is created archived");
     }
 
     #[test]
@@ -323,14 +333,16 @@ mod tests {
 
         let group = activity::schedule_group(&conn).unwrap().unwrap();
         assert_eq!((group.name.as_str(), group.color, group.kind.as_deref()), ("课程", ActivityColor::Pink, Some(KIND_SCHEDULE)));
-        let mut courses: Vec<String> = activity::list(&conn, false)
+        assert!(group.archived_at.is_some(), "the group is created archived");
+        let courses: Vec<Activity> = activity::list(&conn, true)
             .unwrap()
             .into_iter()
             .filter(|a| a.parent_id.as_deref() == Some(group.id.as_str()))
-            .map(|a| a.name)
             .collect();
-        courses.sort();
-        assert_eq!(courses, ["CSE 100", "CSE 101", "MUS 127", "PHIL 27"]);
+        assert!(courses.iter().all(|a| a.archived_at.is_some()), "every course is created archived");
+        let mut names: Vec<&str> = courses.iter().map(|a| a.name.as_str()).collect();
+        names.sort();
+        assert_eq!(names, ["CSE 100", "CSE 101", "MUS 127", "PHIL 27"]);
 
         let plans = plan::list(&conn, &plan::DateRange { from: "2026-09-01".into(), to: "2026-12-31".into() }).unwrap();
         assert_eq!(plans.len(), 11);

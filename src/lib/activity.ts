@@ -28,9 +28,35 @@ export function isScheduleActivity(activity: Activity | undefined, parent?: Acti
   return activity?.kind === "schedule" || parent?.kind === "schedule";
 }
 
-/** The timetable group the importer would use: the live top-level one with the smallest `sort`. */
+/**
+ * The timetable group the importer would use, as Rust's `schedule_group` picks it: a top-level `kind = 'schedule'`
+ * activity, unarchived ones first, then the smallest `sort`. The group is normally archived (rebuild-plan 13.7).
+ */
 export function scheduleGroup(activities: Activity[] | undefined): Activity | undefined {
+  const archived = (a: Activity) => (a.archived_at === null ? 0 : 1);
   return (activities ?? [])
-    .filter((a) => a.kind === "schedule" && a.parent_id === null && a.archived_at === null)
-    .sort((a, b) => a.sort - b.sort)[0];
+    .filter((a) => a.kind === "schedule" && a.parent_id === null)
+    .sort((a, b) => archived(a) - archived(b) || a.sort - b.sort || a.name.localeCompare(b.name))[0];
+}
+
+/** Hidden like an archived activity: archived itself, or a sub-activity of an archived parent (as Rust lists them). */
+export function isArchived(activity: Activity, byId: Map<string, Activity>): boolean {
+  return activity.archived_at !== null || (parentOf(activity, byId)?.archived_at ?? null) !== null;
+}
+
+/** Activities that can be picked when starting a timer or adding something new. */
+export function liveActivities(activities: Activity[]): Activity[] {
+  const byId = indexById(activities);
+  return activities.filter((a) => !isArchived(a, byId));
+}
+
+/**
+ * What an editor's activity picker offers: the live activities plus the one already chosen (with its parent), so
+ * a plan or record on an archived activity, such as every timetable course (rebuild-plan 13.7), keeps showing it.
+ */
+export function pickableActivities(activities: Activity[], currentId: string | null | undefined): Activity[] {
+  const byId = indexById(activities);
+  const current = currentId ? byId.get(currentId) : undefined;
+  const keep = new Set([current?.id, current?.parent_id ?? undefined]);
+  return activities.filter((a) => keep.has(a.id) || !isArchived(a, byId));
 }

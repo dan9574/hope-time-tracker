@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Activity, type SessionInput } from "../lib/bindings";
-import { activityName, indexById } from "../lib/activity";
+import { activityName, pickableActivities } from "../lib/activity";
 import { confirmDelete } from "../lib/confirm";
 import { errorMessage } from "../lib/errors";
 import type { DayEntry } from "../lib/stats";
@@ -12,7 +12,7 @@ import "./Sheet.css";
 interface Props {
   /** `null` adds a past record by hand. */
   entry: DayEntry | null;
-  /** All activities (for labels); only live ones can be picked. */
+  /** All activities, archived included: the picker offers the live ones plus the record's own. */
   activities: Activity[];
   /** Day a new record starts on. */
   date: Date;
@@ -43,10 +43,10 @@ const parseDate = (key: string) => {
 export function RecordEditor({ entry, activities, date, onClose }: Props) {
   const { t, i18n } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
-  const byId = indexById(activities);
-  const live = activities.filter((a) => a.archived_at === null);
+  // Class records sit on archived courses (rebuild-plan 13.7); editing one must keep its activity.
+  const pickable = pickableActivities(activities, entry?.activityId);
 
-  const [activityId, setActivityId] = useState(entry?.activityId ?? live[0]?.id ?? "");
+  const [activityId, setActivityId] = useState(entry?.activityId ?? pickable[0]?.id ?? "");
   const [day, setDay] = useState(dateKey(entry ? new Date(entry.startMs) : date));
   const [note, setNote] = useState(entry?.note ?? "");
   const [segments, setSegments] = useState<Segment[]>(() => {
@@ -59,8 +59,8 @@ export function RecordEditor({ entry, activities, date, onClose }: Props) {
   useEffect(() => ref.current?.showModal(), []);
   // A new record defaults to the first activity once the list has loaded.
   useEffect(() => {
-    if (!activityId && live[0]) setActivityId(live[0].id);
-  }, [activityId, live[0]?.id]);
+    if (!activityId && pickable[0]) setActivityId(pickable[0].id);
+  }, [activityId, pickable[0]?.id]);
 
   const setSegment = (i: number, patch: Partial<Segment>) =>
     setSegments((segs) => segs.map((s, j) => (j === i ? { ...s, ...patch } : s)));
@@ -99,7 +99,6 @@ export function RecordEditor({ entry, activities, date, onClose }: Props) {
     else onClose();
   };
 
-  const selected = byId.get(activityId);
   return (
     <dialog ref={ref} className="sheet" onClose={onClose} onCancel={onClose}>
       <form
@@ -114,11 +113,7 @@ export function RecordEditor({ entry, activities, date, onClose }: Props) {
 
         <div className="sheet-row">
           <span>{t("plan.activity")}</span>
-          <ActivityPicker
-            activities={selected && !live.includes(selected) ? [...live, selected] : live}
-            value={activityId}
-            onChange={setActivityId}
-          />
+          <ActivityPicker activities={pickable} value={activityId} onChange={setActivityId} />
         </div>
         <label className="sheet-row">
           <span>{t("record.date")}</span>

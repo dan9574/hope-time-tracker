@@ -10,7 +10,7 @@ import { Ring, type RingSegment } from "../components/Ring";
 import { Timeline } from "../components/Timeline";
 import { commands, type Plan } from "../lib/bindings";
 import { useQuery } from "../lib/data";
-import { activityName } from "../lib/activity";
+import { activityName, liveActivities } from "../lib/activity";
 import { autoLogs, occurrencesOn } from "../lib/plans";
 import { useRingWidth } from "../lib/preferences";
 import { ringRecords, type DayEntry } from "../lib/stats";
@@ -53,7 +53,7 @@ export function Today() {
   }));
   const describe = (e: DayEntry) =>
     `${activityName(e.activity, t, e.parent)} · ${clock(e.startMs)}–${e.endMs === null ? t("today.now") : clock(e.endMs)} · ${formatDuration(e.durationMs)}`;
-  const pickable = (activities ?? []).filter((a) => a.archived_at === null);
+  const live = liveActivities(activities ?? []);
 
   const dateText = new Intl.DateTimeFormat(i18n.language, {
     month: "long",
@@ -118,7 +118,7 @@ export function Today() {
         <button
           type="button"
           className="today-add"
-          disabled={pickable.length === 0}
+          disabled={live.length === 0}
           onClick={() => setEditing({ kind: "record", entry: null })}
         >
           <History size={14} aria-hidden />
@@ -127,7 +127,7 @@ export function Today() {
         <button
           type="button"
           className="today-add"
-          disabled={pickable.length === 0}
+          disabled={live.length === 0}
           onClick={() => setEditing({ kind: "plan", plan: null })}
         >
           <Plus size={14} aria-hidden />
@@ -150,7 +150,7 @@ export function Today() {
       <Journal date={key} />
 
       {editing?.kind === "plan" && (
-        <PlanEditor plan={editing.plan} date={today} activities={pickable} onClose={() => setEditing(null)} />
+        <PlanEditor plan={editing.plan} date={today} activities={activities ?? []} onClose={() => setEditing(null)} />
       )}
       {editing?.kind === "day" && (
         <DayTimeEditor

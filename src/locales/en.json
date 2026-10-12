@@ -131,10 +131,7 @@
     "cannotDelete": "{{name}} has {{count}} records, so it can't be deleted. Archive it if you no longer use it.",
     "confirmDelete": "Delete {{name}}? Its plans are deleted too. This can't be undone.",
     "confirmDeleteWithSubs": "Delete {{name}} and its {{count}} sub-activities? Their plans are deleted too. This can't be undone.",
-    "scheduleGroup": "Timetable group",
-    "scheduleGroupHint": "Its records stay out of totals by default",
-    "scheduleBadge": "Timetable",
-    "scheduleExists": "“{{name}}” is already the timetable group; there can be only one."
+    "scheduleBadge": "Timetable"
   },
   "common": {
     "cancel": "Cancel",
@@ -232,8 +229,8 @@
         "noTime": "No start/end time"
       },
       "foreignZone": "The file uses {{zone}}; times are converted to local time.",
-      "footnote": "Classes go under the timetable group “{{group}}”.",
-      "footnoteNew": "Classes go under a new pink timetable group, “{{group}}”.",
+      "footnote": "Courses go under the timetable group “{{group}}” and are archived: they are not offered when starting a timer, but class time is still logged automatically.",
+      "footnoteNew": "Courses go under a new pink timetable group, “{{group}}”, and are archived: they are not offered when starting a timer, but class time is still logged automatically.",
       "sameName": "Rows with the same name share one sub-activity.",
       "notCounted": "Class time isn't counted in totals by default; you can change this in Settings.",
       "counted": "Class time currently counts towards totals; you can change this in Settings.",

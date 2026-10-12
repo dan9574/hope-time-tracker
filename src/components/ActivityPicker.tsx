@@ -8,7 +8,7 @@ import { ActivityDot } from "./ActivityDot";
 import "./ActivityPicker.css";
 
 interface Props {
-  /** Live (non-archived) activities. */
+  /** Live activities, plus the current choice and its parent when they are archived (see `pickableActivities`). */
   activities: Activity[];
   value: string;
   onChange: (id: string) => void;

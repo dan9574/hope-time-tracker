@@ -96,13 +96,6 @@
   padding-left: var(--s-8);
 }
 
-.activity-editor-check {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-size: var(--text-sm);
-}
-
 .activity-editor-note {
   font-size: var(--text-sm);
   color: var(--fg-2);
@@ -120,6 +113,20 @@
 .activity-row.is-archived {
   padding: var(--s-2) 0 var(--s-2) var(--s-6);
   color: var(--fg-2);
+}
+
+/* Archived rows keep the badge next to the name and the restore button at the end. */
+.activity-row.is-archived .activity-name {
+  flex: 0 1 auto;
+}
+
+.activity-row-spacer {
+  flex: 1;
+}
+
+/* A sub-activity hidden with its archived parent: its glyph lines up under the parent's name. */
+.activity-row.is-archived.is-child {
+  padding-left: calc(var(--s-6) + var(--s-4) + var(--s-2));
 }
 
 .activity-archived {

@@ -131,10 +131,7 @@
     "cannotDelete": "「{{name}}」下有 {{count}} 条记录，不能删除。不再使用的话可以归档。",
     "confirmDelete": "删除「{{name}}」？它的计划也会一起删除，此操作无法撤销。",
     "confirmDeleteWithSubs": "删除「{{name}}」及其 {{count}} 个子活动？它们的计划也会一起删除，此操作无法撤销。",
-    "scheduleGroup": "作为课表组",
-    "scheduleGroupHint": "记录默认不计入总时长",
-    "scheduleBadge": "课表",
-    "scheduleExists": "「{{name}}」已经是课表组了，只能有一个课表组。"
+    "scheduleBadge": "课表"
   },
   "common": {
     "cancel": "取消",
@@ -229,8 +226,8 @@
         "noTime": "没有开始或结束时间"
       },
       "foreignZone": "文件时区 {{zone}}，已换算为本地时间。",
-      "footnote": "会放进课表组「{{group}}」下。",
-      "footnoteNew": "会放进课表组「{{group}}」下（粉色）。",
+      "footnote": "课程会放进课表组「{{group}}」下并归档：不在开始计时的列表里，上课时间仍会自动计入。",
+      "footnoteNew": "课程会放进新建的课表组「{{group}}」（粉色）下并归档：不在开始计时的列表里，上课时间仍会自动计入。",
       "sameName": "同名的行归到同一个子活动。",
       "notCounted": "课表时间默认不计入总时长，可在设置里更改。",
       "counted": "按当前设置，课表时间计入总时长，可在设置里更改。",

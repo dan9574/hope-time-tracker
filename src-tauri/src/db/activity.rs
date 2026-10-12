@@ -245,7 +245,8 @@ pub fn upsert(conn: &Connection, device: &str, now: i64, input: ActivityInput) -
     get(conn, &id)?.ok_or(Error::NotFound("activity"))
 }
 
-/// The timetable group: the live top-level `kind = 'schedule'` activity with the smallest `sort`.
+/// The timetable group: the live top-level `kind = 'schedule'` activity with the smallest `sort`
+/// (a restored, unarchived one first if there are several).
 pub fn schedule_group(conn: &Connection) -> Result<Option<Activity>> {
     let sql = format!(
         "{SELECT} WHERE a.kind = ?1 AND a.parent_id IS NULL AND a.deleted_ms IS NULL ORDER BY a.archived_at IS NOT NULL, a.sort, a.name LIMIT 1"
@@ -253,15 +254,23 @@ pub fn schedule_group(conn: &Connection) -> Result<Option<Activity>> {
     Ok(conn.query_row(&sql, [KIND_SCHEDULE], from_row).optional()?)
 }
 
-/// Returns the timetable group, creating it (pink, graduation cap) when there is none (rebuild-plan 13.3).
+/// Inserts a new activity that starts out archived (`archived_at = now`), in the same write as far as sync
+/// is concerned: one `updated_ms`, one dirty row. Used for the timetable, whose group and courses are only
+/// ever logged automatically and so never offered when starting a timer (rebuild-plan 13.7).
+pub fn create_archived(conn: &Connection, device: &str, now: i64, input: ActivityInput) -> Result<Activity> {
+    if input.id.is_some() {
+        return Err(Error::Invalid("create_archived only creates new activities".into()));
+    }
+    let created = upsert(conn, device, now, input)?;
+    conn.execute("UPDATE activity SET archived_at = ?2 WHERE id = ?1", params![created.id, now])?;
+    get(conn, &created.id)?.ok_or(Error::NotFound("activity"))
+}
+
+/// Returns the timetable group, creating it archived (pink, graduation cap) when there is none
+/// (rebuild-plan 13.3, 13.7). An existing group is returned as it is, archived or not.
 /// The flag says whether it was created; `name` is only used then.
 pub fn schedule_ensure(conn: &Connection, device: &str, now: i64, name: &str) -> Result<(Activity, bool)> {
     if let Some(group) = schedule_group(conn)? {
-        // Importing into the group means the person wants to see it again.
-        if group.archived_at.is_some() {
-            set_archived(conn, device, now, &group.id, false)?;
-            return Ok((get(conn, &group.id)?.ok_or(Error::NotFound("activity"))?, false));
-        }
         return Ok((group, false));
     }
     let input = ActivityInput {
@@ -273,7 +282,7 @@ pub fn schedule_ensure(conn: &Connection, device: &str, now: i64, name: &str) ->
         parent_id: None,
         kind: Some(KIND_SCHEDULE.into()),
     };
-    Ok((upsert(conn, device, now, input)?, true))
+    Ok((create_archived(conn, device, now, input)?, true))
 }
 
 pub fn set_archived(conn: &Connection, device: &str, now: i64, id: &str, archived: bool) -> Result<()> {
@@ -444,8 +453,15 @@ mod tests {
         let (group, created) = schedule_ensure(&conn, "d", 1, "Courses").unwrap();
         assert!(created);
         assert_eq!((group.color, group.symbol.as_deref(), group.parent_id.as_deref()), (ActivityColor::Pink, Some("graduationcap"), None));
+        assert_eq!(group.archived_at, Some(1), "created archived (rebuild-plan 13.7)");
+        assert!(list(&conn, false).unwrap().is_empty(), "not offered when starting a timer");
         let (again, created) = schedule_ensure(&conn, "d", 2, "Other name").unwrap();
-        assert_eq!((again.id.as_str(), created), (group.id.as_str(), false));
+        assert_eq!((again.id.as_str(), created, again.archived_at), (group.id.as_str(), false, Some(1)));
+
+        // Restoring is allowed and sticks: ensuring again neither re-archives nor duplicates.
+        set_archived(&conn, "d", 3, &group.id, false).unwrap();
+        let (restored, created) = schedule_ensure(&conn, "d", 4, "Courses").unwrap();
+        assert_eq!((restored.id.as_str(), created, restored.archived_at), (group.id.as_str(), false, None));
 
         // A second group arriving through sync: the one sorted first wins.
         conn.execute(
@@ -453,7 +469,21 @@ mod tests {
             [],
         )
         .unwrap();
-        assert_eq!(schedule_ensure(&conn, "d", 3, "Courses").unwrap().0.id, "synced");
+        assert_eq!(schedule_ensure(&conn, "d", 5, "Courses").unwrap().0.id, "synced");
+    }
+
+    #[test]
+    fn create_archived_is_one_new_dirty_row() {
+        let conn = test_conn();
+        let a = create_archived(&conn, "d", 7, input("Old course")).unwrap();
+        let (archived_at, updated_ms, dirty): (Option<i64>, i64, i64) = conn
+            .query_row("SELECT archived_at, updated_ms, dirty FROM activity WHERE id = ?1", [&a.id], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })
+            .unwrap();
+        assert_eq!((archived_at, updated_ms, dirty), (Some(7), 7, 1));
+        let existing = ActivityInput { id: Some(a.id.clone()), ..input("Old course") };
+        assert!(matches!(create_archived(&conn, "d", 8, existing), Err(Error::Invalid(_))));
     }
 
     #[test]

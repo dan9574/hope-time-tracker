@@ -5,7 +5,7 @@ import { ActivityDot } from "../components/ActivityDot";
 import { Page } from "../components/Page";
 import { commands, type Activity } from "../lib/bindings";
 import { run, useQuery } from "../lib/data";
-import { activityColorVar, activityName, indexById, parentOf } from "../lib/activity";
+import { activityColorVar, activityName, indexById, liveActivities, parentOf } from "../lib/activity";
 import { buildTree } from "../lib/activityTree";
 import { symbolIcon } from "../lib/symbols";
 import { useDragOrder } from "../lib/useDragOrder";
@@ -24,10 +24,15 @@ export function Activities() {
   const [showArchived, setShowArchived] = useState(false);
 
   const byId = indexById(all);
-  const live = all.filter((a) => a.archived_at === null);
+  // Sub-activities of an archived parent are hidden with it (rebuild-plan 10 C), as Rust lists them.
+  const live = liveActivities(all);
+  const liveIds = new Set(live.map((a) => a.id));
   const tree = buildTree(live);
   const roots = tree.map((n) => n.activity);
-  const archived = all.filter((a) => a.archived_at !== null);
+  const archived = all.filter((a) => !liveIds.has(a.id));
+  // An archived parent keeps its sub-activities nested under it, e.g. the timetable group and its courses
+  // (rebuild-plan 13.7); an archived sub-activity of a live parent is listed as "Parent · Child".
+  const archivedTree = buildTree(archived);
   const order = useDragOrder(roots, reorder);
   const close = () => setEditing(null);
 
@@ -103,13 +108,18 @@ export function Activities() {
           </button>
           {showArchived && (
             <ul className="activity-list">
-              {archived.map((a) => (
-                <li key={a.id} className="activity-row is-archived">
-                  <ActivityGlyph activity={a} />
-                  <span className="activity-name">{activityName(a, t, parentOf(a, byId))}</span>
-                  <button type="button" className="settings-button" onClick={() => void run(commands.activityArchive(a.id, false))}>
-                    {t("activities.restore")}
-                  </button>
+              {archivedTree.map(({ activity: a, children }) => (
+                <li key={a.id} className="activity-group">
+                  <ArchivedRow activity={a} name={activityName(a, t, parentOf(a, byId))} nested={false} />
+                  {children.length > 0 && (
+                    <ul className="activity-children">
+                      {children.map((c) => (
+                        <li key={c.id}>
+                          <ArchivedRow activity={c} name={c.name} nested />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>
@@ -117,6 +127,32 @@ export function Activities() {
         </section>
       )}
     </Page>
+  );
+}
+
+interface ArchivedRowProps {
+  activity: Activity;
+  name: string;
+  /** A sub-activity hidden with its archived parent. */
+  nested: boolean;
+}
+
+/** A row of the archived list. */
+function ArchivedRow({ activity, name, nested }: ArchivedRowProps) {
+  const { t } = useTranslation();
+  return (
+    <div className={nested ? "activity-row is-archived is-child" : "activity-row is-archived"}>
+      <ActivityGlyph activity={activity} />
+      <span className="activity-name">{name}</span>
+      {activity.kind === "schedule" && <span className="activity-badge">{t("activities.scheduleBadge")}</span>}
+      <span className="activity-row-spacer" />
+      {/* Restoring a nested row alone would leave it hidden under its archived parent; restore the parent. */}
+      {!nested && (
+        <button type="button" className="settings-button" onClick={() => void run(commands.activityArchive(activity.id, false))}>
+          {t("activities.restore")}
+        </button>
+      )}
+    </div>
   );
 }
 
