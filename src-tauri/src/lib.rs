@@ -4,6 +4,7 @@ mod error;
 mod events;
 mod overlay;
 mod sync;
+mod taskbar_icon;
 mod tray;
 mod vibrancy;
 
@@ -135,6 +136,7 @@ pub fn run() {
                 };
                 main.set_theme(theme)?;
                 vibrancy::install(&main)?;
+                taskbar_icon::install(&main)?;
             }
             tray::init(app.handle())?;
             overlay::init(app.handle())?;
