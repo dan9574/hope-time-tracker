@@ -109,8 +109,12 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             let database = db::Db::open(&dir.join("hope.db"))?;
+            // Sample activities would be merged into the account at the first sign-in (and pushed to every
+            // device), so only local-only debug builds get them.
             #[cfg(debug_assertions)]
-            db::activity::seed_samples_if_empty(&database.conn(), database.device_id(), db::now_ms())?;
+            if !sync::configured() {
+                db::activity::seed_samples_if_empty(&database.conn(), database.device_id(), db::now_ms())?;
+            }
             app.manage(database);
             sync::init(app.handle())?;
 

@@ -6,9 +6,10 @@
   height: 100%;
 }
 
-/* Title bar strip: hosts the inset traffic lights on macOS and acts as the drag handle. */
+/* Title bar strip: the drag handle. Tall enough for the timer button under a native (Windows) title bar;
+   taller still on macOS, where it also hosts the inset traffic lights. */
 .titlebar {
-  height: var(--s-4);
+  height: calc(var(--s-8) + var(--s-2));
   flex-shrink: 0;
 }
 

@@ -153,6 +153,11 @@ mod keychain {
     }
 }
 
+/// Whether this build was given a Supabase project (rebuild-plan 12.4).
+pub fn configured() -> bool {
+    Config::from_build().is_some()
+}
+
 /// Creates the managed `SyncService` state and, when configured, starts the background thread.
 /// Call after `Db` is managed.
 pub fn init(app: &AppHandle) -> crate::error::Result<()> {
