@@ -339,13 +339,18 @@ fn dot_icon(color: ActivityColor, running: bool) -> Image<'static> {
     })
 }
 
-/// Template ring for the menu bar.
+/// Ring for the menu bar / tray. macOS renders it as a template (black, auto-inverted); Windows has
+/// no template rendering and shows the tray at 16px, so there it is the app icon's blue and thicker.
 fn tray_icon() -> Image<'static> {
     let c = ICON_PX as f64 / 2.0;
-    draw([0, 0, 0], move |x, y| {
+    #[cfg(target_os = "macos")]
+    let (rgb, radius, half_width) = ([0, 0, 0], 12.5, 2.5);
+    #[cfg(not(target_os = "macos"))]
+    let (rgb, radius, half_width) = (ActivityColor::Blue.rgb(), 13.0, 4.0);
+    draw(rgb, move |x, y| {
         let (dx, dy) = (x - c, y - c);
         let r = (dx * dx + dy * dy).sqrt();
-        edge((r - 12.5).abs() - 2.5)
+        edge((r - radius).abs() - half_width)
     })
 }
 
