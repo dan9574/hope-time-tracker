@@ -5,15 +5,20 @@ body {
 }
 
 .overlay {
+  /* "Size" in Settings; the window is sized by the same factor (src-tauri/src/overlay.rs). */
+  --overlay-scale: 1;
   height: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
   color: var(--overlay-fg);
 }
 
 .overlay-stack {
   position: relative;
-  width: 100%;
+  /* Laid out at the design width, then scaled as a whole. */
+  width: calc(100% / var(--overlay-scale));
+  transform: scale(var(--overlay-scale));
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
@@ -37,6 +42,11 @@ body {
   background: var(--overlay-card);
   border: 1px solid var(--overlay-line);
   font-size: var(--text-sm);
+}
+
+/* Windows: the Acrylic backdrop windows are rounded by DWM at a fixed 8px. */
+:root[data-platform="windows"] .overlay-card {
+  border-radius: var(--r-sm);
 }
 
 .overlay-label {

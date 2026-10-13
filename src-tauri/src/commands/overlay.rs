@@ -28,6 +28,13 @@ pub fn overlay_reset_position(app: AppHandle) -> CmdResult<()> {
     Ok(overlay::reset_position(&app)?)
 }
 
+/// Saves the "size" setting and resizes the overlay window to match.
+#[tauri::command]
+#[specta::specta]
+pub fn overlay_set_scale(app: AppHandle, scale: f64) -> CmdResult<()> {
+    Ok(overlay::set_scale(&app, scale)?)
+}
+
 /// Called by the overlay page whenever its cards move or resize.
 #[tauri::command]
 #[specta::specta]

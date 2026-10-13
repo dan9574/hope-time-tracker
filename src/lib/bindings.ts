@@ -62,6 +62,8 @@ export const commands = {
 	overlayResetPosition: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_reset_position")),
 	/**  Called by the overlay page whenever its cards move or resize. */
 	overlayLayout: (cards: CardFrame[]) => typedError<null, CommandError>(__TAURI_INVOKE("overlay_layout", { cards })),
+	/**  Saves the "size" setting and resizes the overlay window to match. */
+	overlaySetScale: (scale: number | null) => typedError<null, CommandError>(__TAURI_INVOKE("overlay_set_scale", { scale })),
 	/**  One-off plans in the range plus recurring plans that have started; the frontend expands occurrences. */
 	planList: (range: DateRange) => typedError<Plan[], CommandError>(__TAURI_INVOKE("plan_list", { range })),
 	planUpsert: (input: PlanInput) => typedError<Plan, CommandError>(__TAURI_INVOKE("plan_upsert", { input })),
@@ -179,6 +181,8 @@ export type CardFrame = {
 	y: number | null,
 	width: number | null,
 	height: number | null,
+	/**  Corner radius as drawn (the page has applied its scale). Windows rounds with DWM instead. */
+	radius: number | null,
 };
 
 /**  Error returned to the frontend: a code for the UI plus the developer-facing message. */

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Segmented } from "../../components/Segmented";
 import { commands } from "../../lib/bindings";
 import { run, useSetting } from "../../lib/data";
 import {
@@ -9,9 +10,13 @@ import {
   OVERLAY_CARDS,
   OVERLAY_ENABLED,
   OVERLAY_OPACITY,
+  OVERLAY_SCALE,
+  SCALES,
   parseCards,
   parseOpacity,
+  parseScale,
   type CardId,
+  type Scale,
 } from "../../overlay/settings";
 
 const CARD_LABEL: Record<CardId, string> = {
@@ -25,6 +30,7 @@ export function OverlaySettings() {
   const enabled = useSetting(OVERLAY_ENABLED) !== "0";
   const cards = parseCards(useSetting(OVERLAY_CARDS));
   const storedOpacity = parseOpacity(useSetting(OVERLAY_OPACITY));
+  const scale = String(parseScale(useSetting(OVERLAY_SCALE))) as Scale;
   const [opacity, setOpacity] = useState(storedOpacity);
   const [editing, setEditing] = useState(false);
 
@@ -69,6 +75,15 @@ export function OverlaySettings() {
               </label>
             ))}
           </span>
+        </div>
+        <div className="settings-row">
+          <span>{t("settings.overlaySize")}</span>
+          <Segmented
+            label={t("settings.overlaySize")}
+            value={scale}
+            options={SCALES.map((s) => ({ value: s, label: `${Math.round(Number(s) * 100)}%` }))}
+            onChange={(s) => void run(commands.overlaySetScale(Number(s)))}
+          />
         </div>
         <label className="settings-row">
           <span>{t("settings.overlayOpacity")}</span>

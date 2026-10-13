@@ -40,7 +40,7 @@
 - 阶段 1–6、6.5、6.6 已完成：桌面端功能齐全（Today / 本周 / 本月 / 日程 / 活动与子活动 / 记录编辑 / 起床睡觉 / 日记 / 设置与主题 / Overlay / JSON 导入导出），macOS dmg 与 Windows nsis 由 `.github/workflows/release.yml` 出包。
 - 不做旧库直接导入；数据进出口只有 rebuild-plan 3.3 的 JSON 格式。
 - 欠账：
-  - Windows 版 2026-10-13 已在真机（Windows 11）上用 `npm run tauri dev` 跑通，并对真实 Supabase 登录、同步成功。Windows 开发要 Node ≥ 20.19（Vite 8；旧版 npm 会静默跳过 rolldown 的原生绑定）。Windows 上 `cargo test` 的测试 exe 没有 Tauri 嵌给主程序的 comctl32 v6 清单，会以 STATUS_ENTRYPOINT_NOT_FOUND（TaskDialogIndirect）退出：在 `target/debug/deps/hope_lib-<hash>.exe` 旁放一个声明 Microsoft.Windows.Common-Controls 6.0.0.0 的 `.exe.manifest`、更新 exe 的修改时间后直接运行它即可（CI 只在 macOS 跑 cargo test）。Overlay 在 Windows 上没有逐卡模糊（CSS 半透明底）。
+  - Windows 版 2026-10-13 已在真机（Windows 11）上用 `npm run tauri dev` 跑通，并对真实 Supabase 登录、同步成功。Windows 开发要 Node ≥ 20.19（Vite 8；旧版 npm 会静默跳过 rolldown 的原生绑定）。Windows 上 `cargo test` 的测试 exe 没有 Tauri 嵌给主程序的 comctl32 v6 清单，会以 STATUS_ENTRYPOINT_NOT_FOUND（TaskDialogIndirect）退出：在 `target/debug/deps/hope_lib-<hash>.exe` 旁放一个声明 Microsoft.Windows.Common-Controls 6.0.0.0 的 `.exe.manifest`、更新 exe 的修改时间后直接运行它即可（CI 只在 macOS 跑 cargo test）。Overlay 在 Windows 上的逐卡模糊已做（每卡一个 Acrylic 小窗口）。
   - 安装包未签名、未公证（需要 Apple Developer ID）。
   - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
   - 本机 dmg：2026-10-03 复查，`npm run tauri build -- --target aarch64-apple-darwin` 连跑两次 dmg 都成功，问题不在仓库配置。之前那次失败留下的 `bundle/macos/rw.39387.Hope_0.1.0_aarch64.dmg` 显示脚本已走完 Finder AppleScript 和 SetFile，卡在最后的 `hdiutil detach`（卷被占用 EBUSY，重试 3 次后退出 16，镜像一直挂着到 20:06 才被卸下）——是偶发的环境问题（Finder / Spotlight / 安全扫描仍占着刚生成的卷）。再遇到时：关掉 Finder 里打开的 `dmg.*` 窗口，`hdiutil info` 查残留镜像并 `hdiutil detach`，删掉 `bundle/macos/rw.*.dmg` 后重跑。注意别单独用 `--bundles dmg`：它构建完会删掉 `bundle/macos/Hope.app`。

@@ -209,8 +209,9 @@ purple  #B08CFF   teal    #5CD0D0   yellow  #F5D56A   gray    #A5A5AC
 - 独立 Tauri 窗口 `overlay`：`transparent: true, decorations: false, always_on_bottom: true, skip_taskbar: true, focusable: false`，`set_ignore_cursor_events(true)`。
 - macOS 额外把 NSWindow level 设为 `kCGDesktopIconWindowLevel - 1`，让它位于桌面图标之下、壁纸之上。
 - **模糊是原生的**：透明窗口里 CSS `backdrop-filter` 看不到壁纸。每张卡下面放一块原生 `NSVisualEffectView`（objc2），位置由页面量好后交给 Rust；卡片位置、尺寸、显隐任何变化都要重新量并同步底板。
-- Windows：always-on-bottom + `window-vibrancy` crate 的 Acrylic / Mica 做底板模糊。在第 6 阶段打包时于 Windows 机器或 CI 上验证，之前不盲写。
+- Windows：always-on-bottom 定层级；模糊是每张卡下面一个无 webview 的小窗口（Tauri `unstable` feature）开 Acrylic 做底板，位置随卡片和 Overlay 窗口移动同步，DWM 固定 8px 圆角，所以卡片在 Windows 上用 `--r-sm`。2026-10-13 在 Windows 11 真机验证。
 - 默认停靠屏幕右侧，宽 320px，距右边 48px，垂直居中；设置里可拖动，「完成」时保存，另有「恢复默认」。
+- 设置里的「大小」（100 / 125 / 150%）把三张卡整体缩放（CSS transform），窗口按同一系数变大，默认停靠位置按放大后的尺寸算。
 - 内容三块，竖排，每块是独立材质卡（原生模糊底板 + `rgba(255,255,255,0.14)` 填充，1px 白线 15%，圆角 `--r-lg`）：
   1. **Now**：进行中活动名 + 已持续时间（无进行中则显示"今天 · 总时长"）。
   2. **Today**：细环 + 前 3 个活动与时长。
@@ -248,7 +249,7 @@ hope/
    - 推 `v*` tag → `.github/workflows/release.yml` 先跑类型检查与 Rust 测试，再并行出三个包，放进草稿 Release；手动触发只上传 artifact。
    - 暂不签名（ad-hoc），macOS 首次打开需右键 → 打开；CI 里已预留 Developer ID 签名 + 公证的环境变量，补 Secrets 后取消注释即可。
    - macOS 最低 13.0。Windows 安装为当前用户（无需管理员）。
-   - 欠账：Windows 上 Overlay 的逐卡模糊（需拆成每卡一窗），等有 Windows 真机再做；目前是 CSS 半透明底。
+   - Windows 上 Overlay 的逐卡模糊：2026-10-13 已做（每卡一个 Acrylic 小窗口，第 5 节）。
 6.5 / 6.6 **修复与补全**（第 10、11 节）：滚动 bug、子活动、起床/睡觉、记录编辑与删除、周期安排自动计入、主题加强。**必须在同步层之前做完**，因为它改表结构。
 7. **同步层**：Supabase 建表 + 桌面端 push/pull + 实时订阅（手表开始计时后 Overlay 卡片实时变化）。
 8. **iPhone**：原生 Swift 工程，SwiftData 本地库 + 同步，Live Activity 显示进行中计时。

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events } from "../lib/bindings";
 import { useQuery, useSetting } from "../lib/data";
@@ -8,13 +8,14 @@ import { useToday } from "../lib/useToday";
 import { NowCard } from "./NowCard";
 import { TodayCard } from "./TodayCard";
 import { WeekCard } from "./WeekCard";
-import { OVERLAY_CARDS, OVERLAY_OPACITY, parseCards, parseOpacity } from "./settings";
+import { OVERLAY_CARDS, OVERLAY_OPACITY, OVERLAY_SCALE, parseCards, parseOpacity, parseScale } from "./settings";
 import "./Overlay.css";
 
 export function Overlay() {
   const { t } = useTranslation();
   const cards = parseCards(useSetting(OVERLAY_CARDS));
   const opacity = parseOpacity(useSetting(OVERLAY_OPACITY));
+  const scale = parseScale(useSetting(OVERLAY_SCALE));
   const editing = useEditing();
   useLocalePreference();
 
@@ -23,10 +24,10 @@ export function Overlay() {
   const today = useToday(now);
 
   const stackRef = useRef<HTMLDivElement>(null);
-  useCardBackdrops(stackRef);
+  useCardBackdrops(stackRef, scale);
 
   return (
-    <main className="overlay" style={{ opacity }}>
+    <main className="overlay" style={{ opacity, "--overlay-scale": scale } as CSSProperties}>
       <div ref={stackRef} className={editing ? "overlay-stack is-editing" : "overlay-stack"}>
         {cards.has("now") && <NowCard timer={timer} activities={today.activities} todayMs={today.summary.totalMs} now={now} />}
         {cards.has("today") && <TodayCard today={today} now={now} />}
@@ -52,20 +53,22 @@ function useEditing(): boolean {
  * Tells Rust where each card is so it can place a blurred native backdrop under it.
  * Re-measures whenever a card can move, resize, appear or disappear; unchanged frames are not resent.
  */
-function useCardBackdrops(stackRef: React.RefObject<HTMLDivElement>) {
+function useCardBackdrops(stackRef: React.RefObject<HTMLDivElement>, scale: number) {
   const last = useRef("");
   const report = useCallback(() => {
     const stack = stackRef.current;
     if (!stack) return;
     const frames = [...stack.querySelectorAll<HTMLElement>(".overlay-card")].map((el) => {
+      // The rect is as drawn (scaled); the computed radius is not, so scale it to match.
       const r = el.getBoundingClientRect();
-      return { x: r.left, y: r.top, width: r.width, height: r.height };
+      const radius = parseFloat(getComputedStyle(el).borderTopLeftRadius) * scale;
+      return { x: r.left, y: r.top, width: r.width, height: r.height, radius };
     });
     const key = JSON.stringify(frames);
     if (key === last.current) return;
     last.current = key;
     void commands.overlayLayout(frames);
-  }, [stackRef]);
+  }, [stackRef, scale]);
 
   // After every render: cards toggled, data changed, the edit hint appeared.
   useLayoutEffect(report);

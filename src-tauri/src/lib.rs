@@ -43,6 +43,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::overlay::overlay_set_editing,
             commands::overlay::overlay_reset_position,
             commands::overlay::overlay_layout,
+            commands::overlay::overlay_set_scale,
             commands::plan::plan_list,
             commands::plan::plan_upsert,
             commands::plan::plan_delete,
@@ -100,6 +101,12 @@ pub fn run() {
                 if window.label() == "main" {
                     api.prevent_close();
                     let _ = window.hide();
+                }
+            }
+            // Dragging the overlay while editing: its backdrops (Windows) follow.
+            if let WindowEvent::Moved(_) = event {
+                if window.label() == overlay::LABEL {
+                    overlay::on_moved(window.app_handle());
                 }
             }
         })
