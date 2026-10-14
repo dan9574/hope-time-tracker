@@ -10,6 +10,7 @@ const save = (key: string, value: string) => void run(commands.settingSet(key, v
 export function GeneralSettings() {
   const { t } = useTranslation();
   const locale = useSetting(PREF.locale) ?? "system";
+  const breakReminder = useSetting(PREF.breakReminder) !== "0";
 
   return (
     <section className="settings-group">
@@ -23,7 +24,16 @@ export function GeneralSettings() {
             <option value="en">English</option>
           </select>
         </label>
+        <label className="settings-row">
+          <span>{t("settings.breakReminder")}</span>
+          <input
+            type="checkbox"
+            checked={breakReminder}
+            onChange={(e) => save(PREF.breakReminder, e.target.checked ? "1" : "0")}
+          />
+        </label>
       </div>
+      <p className="settings-footnote">{t("settings.breakReminderHint")}</p>
     </section>
   );
 }

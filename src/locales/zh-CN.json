@@ -74,7 +74,9 @@
     "wakeButtonUntil": "「起床」按钮显示到",
     "sleepButtonFrom": "「睡觉」按钮显示从",
     "includeSchedule": "总时长计入课表",
-    "includeScheduleHint": "关闭时，课表组下的记录不进总时长，仍会显示在时间线上。导入 .ics 课表在「日程」页。"
+    "includeScheduleHint": "关闭时，课表组下的记录不进总时长，仍会显示在时间线上。导入 .ics 课表在「日程」页。",
+    "breakReminder": "休息提醒",
+    "breakReminderHint": "计时每满 90 分钟，弹一条系统通知提醒歇一歇。运动类活动和课表不提醒。手表先提醒，桌面晚一分钟。"
   },
   "today": {
     "total": "已记录",
@@ -96,6 +98,10 @@
     "noActivities": "还没有活动",
     "open": "打开 Hope",
     "quit": "退出 Hope"
+  },
+  "break": {
+    "title": "歇一歇",
+    "body": "「{{name}}」已连续 {{duration}}"
   },
   "overlay": {
     "today": "今天",

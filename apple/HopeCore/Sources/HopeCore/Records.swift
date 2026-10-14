@@ -84,6 +84,8 @@ public final class SessionRecord {
     public var continuesId: String?
     /// Set when logged automatically from a recurring plan.
     public var planId: String?
+    /// When the user last chose "Keep Going" on a break reminder while this segment ran (rebuild-plan 15.1).
+    public var breakAckMs: Int64?
     public var updatedMs: Int64
     public var deletedMs: Int64?
     public var deviceId: String
@@ -91,8 +93,8 @@ public final class SessionRecord {
 
     public init(
         id: String, activityId: String, startMs: Int64, endMs: Int64? = nil, note: String? = nil,
-        continuesId: String? = nil, planId: String? = nil, updatedMs: Int64, deletedMs: Int64? = nil,
-        deviceId: String, dirty: Bool = true
+        continuesId: String? = nil, planId: String? = nil, breakAckMs: Int64? = nil, updatedMs: Int64,
+        deletedMs: Int64? = nil, deviceId: String, dirty: Bool = true
     ) {
         self.id = id
         self.activityId = activityId
@@ -101,6 +103,7 @@ public final class SessionRecord {
         self.note = note
         self.continuesId = continuesId
         self.planId = planId
+        self.breakAckMs = breakAckMs
         self.updatedMs = updatedMs
         self.deletedMs = deletedMs
         self.deviceId = deviceId
@@ -269,8 +272,9 @@ extension SessionRecord: SyncedRecord {
         return SessionRecord(
             id: try r.text("id"), activityId: try r.text("activity_id"), startMs: start, endMs: end,
             note: try r.optionalText("note"), continuesId: try r.optionalText("continues_id"),
-            planId: try r.optionalText("plan_id"), updatedMs: try r.integer("updated_ms"),
-            deletedMs: try r.optionalInteger("deleted_ms"), deviceId: try r.text("device_id"), dirty: false)
+            planId: try r.optionalText("plan_id"), breakAckMs: try r.optionalInteger("break_ack_ms"),
+            updatedMs: try r.integer("updated_ms"), deletedMs: try r.optionalInteger("deleted_ms"),
+            deviceId: try r.text("device_id"), dirty: false)
     }
 
     func assign(from o: SessionRecord) {
@@ -280,6 +284,7 @@ extension SessionRecord: SyncedRecord {
         note = o.note
         continuesId = o.continuesId
         planId = o.planId
+        breakAckMs = o.breakAckMs
         updatedMs = o.updatedMs
         deletedMs = o.deletedMs
         deviceId = o.deviceId
@@ -289,7 +294,8 @@ extension SessionRecord: SyncedRecord {
         [
             "id": .string(id), "activity_id": .string(activityId), "start_ms": .int(startMs), "end_ms": JSONValue(endMs),
             "note": JSONValue(note), "continues_id": JSONValue(continuesId), "plan_id": JSONValue(planId),
-            "updated_ms": .int(updatedMs), "deleted_ms": JSONValue(deletedMs), "device_id": .string(deviceId),
+            "break_ack_ms": JSONValue(breakAckMs), "updated_ms": .int(updatedMs), "deleted_ms": JSONValue(deletedMs),
+            "device_id": .string(deviceId),
         ]
     }
 

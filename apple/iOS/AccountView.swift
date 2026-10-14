@@ -6,6 +6,7 @@ struct AccountView: View {
     @Environment(AppModel.self) private var model
     @Environment(PhoneLink.self) private var watch
     @Environment(AwayMonitor.self) private var away
+    @Environment(BreakScheduler.self) private var breaks
     @Environment(\.dismiss) private var dismiss
 
     @State private var email = ""
@@ -43,6 +44,7 @@ struct AccountView: View {
                     signedInSection(sync)
                 }
                 awaySection
+                breakSection
                 if let error {
                     Section { Text(verbatim: error).foregroundStyle(.red) }
                 }
@@ -87,6 +89,18 @@ struct AccountView: View {
             }
         } footer: {
             Text("With a timer running, Hope asks whether to stop once you are more than 300 m from where you started it. Exercise activities are left alone. Location needs to be set to Always.")
+        }
+    }
+
+    /// The break reminder (rebuild-plan 15.5). The watch reminds first; the phone two minutes later as a fallback.
+    private var breakSection: some View {
+        Section {
+            Toggle("Break reminders", isOn: Binding(get: { breaks.enabled }, set: { on in Task { await breaks.setEnabled(on) } }))
+            if breaks.enabled, breaks.notificationsDenied {
+                Text("Notifications are off for Hope. Turn them on in Settings.").foregroundStyle(.secondary)
+            }
+        } footer: {
+            Text("Every 90 minutes of running time, Hope suggests a break. Exercise and the timetable are left alone. The watch reminds first; the iPhone only if it did not.")
         }
     }
 

@@ -11,6 +11,26 @@
         }
       }
     },
+    "%@ has been running for %@ without a break": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%1$@」已连续 %2$@"
+          }
+        }
+      }
+    },
+    "A Little Longer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再来一会儿"
+          }
+        }
+      }
+    },
     "Account": {
       "localizations": {
         "zh-Hans": {
@@ -77,6 +97,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "蓝"
+          }
+        }
+      }
+    },
+    "Break reminders": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "休息提醒"
           }
         }
       }
@@ -207,6 +237,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "请再输入一次密码，让手表获得自己的登录。"
+          }
+        }
+      }
+    },
+    "Every 90 minutes of running time, Hope suggests a break. Exercise and the timetable are left alone. The watch reminds first; the iPhone only if it did not.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "计时每满 90 分钟，Hope 提醒你歇一歇。运动类活动和课表不提醒。手表先提醒，手表没提醒时 iPhone 才会。"
+          }
+        }
+      }
+    },
+    "Every 90 minutes of running time.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "计时每满 90 分钟提醒一次。"
           }
         }
       }
@@ -640,6 +690,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "同步中…"
+          }
+        }
+      }
+    },
+    "Take a break": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歇一歇"
           }
         }
       }

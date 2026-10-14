@@ -192,6 +192,45 @@ extension LocalStore {
         return TimerState(running: nil, paused: pausedSession())
     }
 
+    /// Id of the first segment of the chain ending with `session`: the chain's identity across pauses.
+    public func chainRootId(of session: SessionRecord) -> String {
+        var root = session.id
+        var seen: Set<String> = [session.id]
+        var next = session.continuesId
+        while let id = next, seen.insert(id).inserted, seen.count <= 1000, let s = self.session(id) {
+            root = s.id
+            next = s.continuesId
+        }
+        return root
+    }
+
+    /// The latest "Keep Going" on a break reminder anywhere in the chain ending with `session` (rebuild-plan 15.1).
+    public func chainBreakAckMs(endingWith session: SessionRecord) -> Int64? {
+        var latest = session.breakAckMs
+        var seen: Set<String> = [session.id]
+        var next = session.continuesId
+        while let id = next, seen.insert(id).inserted, seen.count <= 1000, let s = self.session(id) {
+            if let ack = s.breakAckMs { latest = max(latest ?? ack, ack) }
+            next = s.continuesId
+        }
+        return latest
+    }
+
+    /// "Keep Going" on a break reminder: stamps the running session so every device stops reminding for the
+    /// step that was due (rebuild-plan 15.2). Nothing running = nothing to stamp.
+    @discardableResult
+    public func breakAck() throws -> SessionRecord? {
+        guard let running = timerState().running else { return nil }
+        let now = self.now
+        return try write {
+            running.breakAckMs = now
+            running.updatedMs = Self.bump(running.updatedMs, now: now)
+            running.deviceId = deviceId
+            running.dirty = true
+            return running
+        }
+    }
+
     /// Time in the pause/resume chain ending with `session`, pauses excluded. A running segment counts up to `now`.
     public func chainDuration(endingWith session: SessionRecord, now: Int64) -> Int64 {
         var total: Int64 = 0

@@ -75,6 +75,7 @@ struct ActivityListView: View {
                 Label("New Activity", systemImage: "plus")
             }
             .foregroundStyle(.secondary)
+            BreakToggleRow()
             SyncFooter()
                 .listRowBackground(Color.clear)
         }
@@ -83,6 +84,22 @@ struct ActivityListView: View {
             NavigationStack {
                 NewActivityView { name, color in model.createActivity(name: name, color: color) }
             }
+        }
+    }
+}
+
+/// The break reminder switch (rebuild-plan 15.3); the watch has no settings page, so it lives at the
+/// bottom of the list.
+private struct BreakToggleRow: View {
+    @Environment(BreakScheduler.self) private var breaks
+
+    var body: some View {
+        Toggle("Break reminders", isOn: Binding(get: { breaks.enabled }, set: { on in Task { await breaks.setEnabled(on) } }))
+        if breaks.enabled {
+            Text(breaks.notificationsDenied ? "Notifications are off for Hope. Turn them on in Settings." : "Every 90 minutes of running time.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .listRowBackground(Color.clear)
         }
     }
 }

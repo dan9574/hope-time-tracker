@@ -1,3 +1,4 @@
+mod break_reminder;
 mod commands;
 mod db;
 mod error;
@@ -39,6 +40,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             commands::session::session_delete_many,
             commands::tray::tray_set_strings,
             commands::tray::timer_menu_popup,
+            commands::break_reminder::break_set_strings,
             commands::overlay::overlay_show,
             commands::overlay::overlay_hide,
             commands::overlay::overlay_set_editing,
@@ -94,6 +96,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(builder.invoke_handler())
         .on_menu_event(|app, event| tray::handle_menu_event(app, event.id().as_ref()))
         .on_window_event(|window, event| {
@@ -140,6 +143,7 @@ pub fn run() {
             }
             tray::init(app.handle())?;
             overlay::init(app.handle())?;
+            break_reminder::init(app.handle())?;
             Ok(())
         })
         .build(tauri::generate_context!())

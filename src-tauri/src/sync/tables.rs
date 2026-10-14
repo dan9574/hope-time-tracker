@@ -40,7 +40,8 @@ pub const TABLES: [Table; 5] = [
         name: "session",
         key: "id",
         columns: &[
-            "id", "activity_id", "start_ms", "end_ms", "note", "continues_id", "plan_id", "updated_ms", "deleted_ms", "device_id",
+            "id", "activity_id", "start_ms", "end_ms", "note", "continues_id", "plan_id", "break_ack_ms", "updated_ms", "deleted_ms",
+            "device_id",
         ],
     },
     Table { name: "journal", key: "id", columns: &["id", "date", "text", "updated_ms", "deleted_ms", "device_id"] },

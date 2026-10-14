@@ -43,6 +43,20 @@ function useTrayStrings() {
   }, [t, i18n.language]);
 }
 
+/** The break reminder is shown from Rust (rebuild-plan 15.4); hand it the localized text like the tray. */
+function useBreakStrings() {
+  const { t, i18n } = useTranslation();
+  useEffect(() => {
+    void commands.breakSetStrings({
+      title: t("break.title"),
+      body: t("break.body", { name: "{name}", duration: "{duration}" }),
+      hours: t("units.h"),
+      minutes: t("units.min"),
+      unknown_activity: t("activity.unknown"),
+    });
+  }, [t, i18n.language]);
+}
+
 /** Keeps the tray's wake/sleep item in step with the same time windows as the Today button. */
 function useTrayDayAction() {
   const now = useNow(60_000);
@@ -60,6 +74,7 @@ export function App() {
   useLocalePreference();
   useThemePreference();
   useTrayStrings();
+  useBreakStrings();
   useTrayDayAction();
   useAutoLog();
 

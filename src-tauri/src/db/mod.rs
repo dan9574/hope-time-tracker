@@ -1,5 +1,6 @@
 pub mod activity;
 pub mod autolog;
+pub mod break_reminder;
 pub mod day;
 pub mod journal;
 pub mod plan;
@@ -23,6 +24,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0002_subactivities_days_autolog.sql"),
     include_str!("migrations/0003_sync_dirty.sql"),
     include_str!("migrations/0004_schedule.sql"),
+    include_str!("migrations/0005_break_ack.sql"),
 ];
 
 pub struct Db {

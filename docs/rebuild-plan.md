@@ -256,6 +256,7 @@ hope/
 9. **Apple Watch**：watchOS target，表盘复杂功能 + 开始/暂停/结束。
 10. **课表导入与课表时间**（第 13 节）。
 11. **离开提醒**（第 14 节）：`kind = 'exercise'`、iPhone 离开开始地点 300 米的通知。
+12. **休息提醒**（第 15 节）：连续计时满 90 分钟，手表 → 桌面 → iPhone 依次提醒，`session.break_ack_ms` 跨端去重。
 
 ## 8. 环境要求
 
@@ -667,3 +668,66 @@ ALTER TABLE plan     ADD COLUMN skip_dates TEXT;  -- 跳过的日期 'YYYY-MM-DD
 ### 14.5.1 定下的参数
 
 300 米、5 分钟（两次检查 / 提示的最小间隔）、30 分钟（勿扰）都是常量，不进设置；做出来按体感再调。多算的时间 = 走出 300 米本身的几分钟加上检查延迟。
+
+## 15. 阶段 12：休息提醒（连续计时满 90 分钟）
+
+动机：学习、工作一坐就是几小时。累计计时每满 90 分钟，提醒一句"歇一歇"，用户选暂停或继续。不管计时是在哪台设备上开的都要提醒；三端都可能知道这段计时，所以按**手表 → 桌面 → iPhone** 的顺序错开，高优先级的提醒成功了，后面的尽量不再弹。
+
+### 15.1 表结构改动（迁移 0005）
+
+```sql
+ALTER TABLE session ADD COLUMN break_ack_ms INTEGER;  -- 最近一次在休息提醒上点「再来一会儿」的时刻，NULL = 没有
+```
+
+- 可空，旧数据不动。`supabase/schema.sql` 加同一列（`add column if not exists`，**要在 SQL Editor 里执行**），Rust `sync/tables.rs` 与 Swift `SessionRecord.row()/decode` 的列表加上，JSON `hope/1` 里是可选字段 `break_ack_ms`，格式名不变。
+- 写在**当时正在运行的那一段** session 上，和 `end_ms` 一样是普通的同步写（`updated_ms` 前进、`dirty`）。读的时候看整条暂停链里最大的 `break_ack_ms`。
+- 它是"用户已经看见并选择继续"的标记，不是"已经弹过"的标记：通知弹出时 app 多半没在运行，写不了库；只有用户点了按钮，app 才被拉起来写。
+
+### 15.2 规则（三端共用，Swift 在 HopeCore `BreakReminder`，Rust 在 `db/break_reminder.rs`，都是纯函数 + 测试）
+
+- 计数 = 暂停链累计时长（不含暂停），即计时器上显示的那个数。第 N 次提醒（N = 1, 2, 3…）在累计满 N × 90 分钟的那一刻到期，记作 `due_N`。暂停不清零：暂停 20 分钟再继续，计数接着算（和计时器显示一致；"长暂停算休息、重新计数"想过，没做，因为那样计时器上的数字和提醒对不上）。
+- 不提醒：运动类（`kind = 'exercise'`，含子活动）、课表组及课程。判定和 14.1 / 13.4 一致。
+- 已处理：链上有 `break_ack_ms ≥ due_N`，第 N 次就算处理过，不再弹。点「再来一会儿」通常发生在 `due_N` 之后、`due_N+1` 之前，所以只消掉第 N 次；用户拖到第 N+1 次到期后才点，两次一起消掉，可以接受。
+- 结束、换活动 = 链结束，一切作废。暂停 = 暂时取消，恢复后按剩余时间重排（`due_N - 已累计`）。
+- 每端的提醒时刻 = `due_N + 本端偏移`：手表 +0、桌面 +1 分钟、iPhone +2 分钟。
+
+### 15.3 手表（第一优先）
+
+- 手表 app 每次本地写入或拉取后（`revision` 变化）重算：有可提醒的 running session 就用 `UNTimeIntervalNotificationTrigger` 预排**接下来最多 4 次**（90 / 180 / 270 / 360 分钟）本地通知，标识 `hope.break.<链首 id>.<N>`；系统到点自己弹，app 挂起也行，不需要后台运行权限。没有 running 就全部撤掉。
+- 通知两个按钮，都在后台处理、不打开 app：「暂停」= `pause()` + `syncNow()`；「再来一会儿」= 在当前 running 段写 `break_ack_ms = now` 并推送。滑掉不处理 = 继续，不写标记（下次到期还会提醒）。
+- 开关在活动列表底部（手表没有设置页），默认关；打开时申请通知权限。
+- 每次排完，通过 WatchConnectivity `updateApplicationContext(["break": …])` 告诉 iPhone"链 X 的这几次我接了"（链首 id + 各次到期时刻），没有 running 时发空。这是手机去重的依据（15.5）。
+
+### 15.4 桌面（第二）
+
+- 依赖：`tauri-plugin-notification`（官方插件，macOS / Windows 走系统原生通知）。自己写要分别调 UserNotifications 与 WinRT toast，不值得。桌面通知**没有按钮**，点击只是打开 app，所以桌面不能写 `break_ack_ms`。
+- Rust `break_reminder.rs` 在 app 内起一个线程，每 15 秒查一次 running session（桌面每 5 秒拉一次同步，任何地方开的计时它几秒内都知道）：到了 `due_N + 1 分钟`、链上没有 `≥ due_N` 的 ack、本机没弹过这一次，就弹。"本机弹过"记在本地 `setting` 的 `break.notified = "<链首 id>:<N>"`，防止重启后重弹。
+- 文案由前端在启动和换语言时用 `break_set_strings` 送进来（和托盘菜单 `tray_set_strings` 同一套路，所有文案仍在 i18next 文件里）。
+- 设置 → 通用：「休息提醒」开关，默认开，存 `break.enabled`。macOS 首次弹时系统会问通知权限。
+
+### 15.5 iPhone（第三）与手表的去重
+
+- 同一个 `BreakScheduler`（放 `apple/Shared/`，两端共用）在 iPhone 上以 +2 分钟偏移排本地通知，按钮和处理与手表相同。开关在账号页，默认关，和离开提醒并列。
+- 去重：收到手表的 application context 后，把手表已接的那几次从本机待弹里撤掉，并记住手表的声明（链首 id + 到期时刻，`UserDefaults`），之后再排同一条链时跳过这些。iOS 在手机 app 没运行时会把它在后台拉起来接收 WatchConnectivity 数据，所以不依赖用户打开手机 app。手表 app 不运行时不会收到 iPhone 的任何东西——方向是单向的，手表只发不收。
+- 手机兜底弹出的通知，在手机锁屏、手表戴着时会被 iOS 自动转到手表上显示——所以"手表不知道这段计时"时，提醒最终还是先到手腕。
+- iPhone 上 `AwayMonitor` 和 `BreakScheduler` 都要收通知按钮，但 `UNUserNotificationCenter` 只有一个代理：加一个 `NotificationRouter`（`apple/Shared/`）按 category 分发，两边注册自己的 category。手表 app 也用它。
+
+### 15.6 做不到、接受下来的事
+
+- 手表和 iPhone 只在 app 打开时才同步。桌面开的计时，手表 app 没打开过就不知道，就不会提醒；此时桌面会弹，手机也只有打开过才会弹。要彻底解决需要推送或 Realtime（7b），本阶段不做。
+- 桌面不知道手表弹过没有（手表弹的那一刻 app 没在运行、写不了库），所以桌面在 +1 分钟照弹；只有用户在手表上点了「暂停」（链结束，5 秒内同步到）或「再来一会儿」（`break_ack_ms` 同步到）桌面才不弹。桌面和手腕是两个不同的地方，同时各提一句可以接受。
+- 桌面弹了之后手机在 +2 分钟仍会弹（桌面写不了 ack），除非手表已经通过 WatchConnectivity 把它消掉。
+
+### 15.7 实施顺序
+
+1. 迁移 0005、`tables.rs`、Swift 列表、JSON `hope/1`、`supabase/schema.sql`；`cargo test`、`swift test` 的往返测试。
+2. 规则：Rust `db/break_reminder.rs` 与 Swift `BreakReminder`（输入：链首 id、累计时长、ack、now → 输出：接下来各次的到期时刻 / 哪些已处理），两边测试同一组用例。
+3. 手表：`BreakScheduler` + `NotificationRouter` + 开关 + WatchConnectivity 声明。模拟器上验证通知到点弹出、两个按钮。
+4. 桌面：插件、Rust 线程、`break_set_strings`、设置开关；macOS 上验证。
+5. iPhone：同一个调度器 + 去重 + 账号页开关；`AwayMonitor` 改走 `NotificationRouter`。
+6. 真机：手表开计时满 90 分钟（测试时可临时把常量改短）收到提醒；手机不重复弹；桌面 +1 分钟弹；在手表点「暂停」后桌面与手机都安静。
+
+### 15.8 定下的参数与文案
+
+- 90 分钟、+1 / +2 分钟偏移、预排 4 次、桌面 15 秒轮询都是常量，不进设置。
+- 标题「歇一歇」，正文「「工作」已连续 1 h 30 min」；英文 "Take a break" / "Work has been running for 1 h 30 min"。按钮「暂停」「再来一会儿」/ "Pause" "Keep Going"。时长格式用 `DurationFormat.duration`（与 Today 一致）。

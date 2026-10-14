@@ -1,5 +1,6 @@
 pub mod activity;
 pub mod app;
+pub mod break_reminder;
 pub mod data;
 pub mod day;
 pub mod dialog;

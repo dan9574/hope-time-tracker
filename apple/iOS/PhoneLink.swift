@@ -2,12 +2,16 @@ import HopeCore
 import Observation
 import WatchConnectivity
 
-/// The iPhone end of WatchConnectivity. Used only to hand the watch a sign-in (rebuild-plan 12.7); data
-/// never travels this way — the watch talks to Supabase itself.
+/// The iPhone end of WatchConnectivity. Hands the watch a sign-in (rebuild-plan 12.7) and receives the
+/// watch's break-reminder claims (rebuild-plan 15.5); data never travels this way — the watch talks to
+/// Supabase itself.
 @MainActor
 @Observable
 final class PhoneLink: NSObject {
     private(set) var watchAvailable = false
+    /// The watch reported what break reminders it has scheduled (`nil`: none). iOS starts this app in the
+    /// background to deliver it when it is not running.
+    @ObservationIgnored var onBreakClaim: ((BreakClaim?) -> Void)?
     @ObservationIgnored private var pending: SessionHandoff?
     @ObservationIgnored private var activated = false
 
@@ -41,13 +45,29 @@ final class PhoneLink: NSObject {
             send(pending)
         }
     }
+
+    private func receiveBreakClaim(_ data: Data?) {
+        // The watch sends an empty value when it has nothing scheduled.
+        let claim = data.flatMap { try? JSONDecoder().decode(BreakClaim.self, from: $0) }
+        onBreakClaim?(claim)
+    }
 }
 
 extension PhoneLink: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: (any Error)?) {
         let activated = state == .activated
         let available = session.isPaired && session.isWatchAppInstalled
-        Task { @MainActor in self.update(activated: activated, available: available) }
+        // Whatever the watch sent while this app was not running.
+        let claim = session.receivedApplicationContext["break"] as? Data
+        Task { @MainActor in
+            self.update(activated: activated, available: available)
+            if claim != nil { self.receiveBreakClaim(claim) }
+        }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext context: [String: Any]) {
+        let claim = context["break"] as? Data
+        Task { @MainActor in self.receiveBreakClaim(claim) }
     }
 
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {

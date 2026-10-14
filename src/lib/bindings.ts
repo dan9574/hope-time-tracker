@@ -30,6 +30,8 @@ export const commands = {
 	continues_id: string | null,
 	/**  Set when the session was logged automatically from a recurring plan. */
 	plan_id: string | null,
+	/**  When the user last chose "Keep Going" on a break reminder while this segment ran (rebuild-plan 15.1). */
+	break_ack_ms: number | null,
 } | null, CommandError>(__TAURI_INVOKE("session_pause")),
 	sessionResume: () => typedError<Session, CommandError>(__TAURI_INVOKE("session_resume")),
 	sessionStop: () => typedError<{
@@ -42,6 +44,8 @@ export const commands = {
 	continues_id: string | null,
 	/**  Set when the session was logged automatically from a recurring plan. */
 	plan_id: string | null,
+	/**  When the user last chose "Keep Going" on a break reminder while this segment ran (rebuild-plan 15.1). */
+	break_ack_ms: number | null,
 } | null, CommandError>(__TAURI_INVOKE("session_stop")),
 	sessionCurrent: () => typedError<TimerState, CommandError>(__TAURI_INVOKE("session_current")),
 	/**  Sessions overlapping the range, including a running one. */
@@ -55,6 +59,8 @@ export const commands = {
 	traySetStrings: (strings: TrayStrings) => __TAURI_INVOKE<void>("tray_set_strings", { strings }),
 	/**  Shows the tray's timer menu below the main window's timer button (logical px). */
 	timerMenuPopup: (x: number, y: number) => typedError<null, CommandError>(__TAURI_INVOKE("timer_menu_popup", { x, y })),
+	/**  The break-reminder notification text, from the frontend's locale files (rebuild-plan 15.4). */
+	breakSetStrings: (strings: BreakStrings) => __TAURI_INVOKE<void>("break_set_strings", { strings }),
 	overlayShow: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_show")),
 	overlayHide: () => typedError<null, CommandError>(__TAURI_INVOKE("overlay_hide")),
 	/**  `true` lifts the overlay so it can be dragged; `false` saves the position and sinks it back. */
@@ -176,6 +182,19 @@ export type AppInfo = {
 	version: string,
 	schema_version: number,
 	db_path: string,
+};
+
+/**
+ *  Notification text, supplied by the frontend so every string stays in the i18next locale files.
+ *  `body` may contain `{name}` and `{duration}`.
+ */
+export type BreakStrings = {
+	title: string,
+	body: string,
+	/**  Duration units, as in `2 h 15 min`. */
+	hours: string,
+	minutes: string,
+	unknown_activity: string,
 };
 
 /**  A card's frame inside the overlay window, in logical px from the top-left. */
@@ -355,6 +374,8 @@ export type Session = {
 	continues_id: string | null,
 	/**  Set when the session was logged automatically from a recurring plan. */
 	plan_id: string | null,
+	/**  When the user last chose "Keep Going" on a break reminder while this segment ran (rebuild-plan 15.1). */
+	break_ack_ms: number | null,
 };
 
 /**  Create (`id: None`) or edit a finished session. Running sessions are only created through `start`. */

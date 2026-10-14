@@ -43,6 +43,7 @@ create table if not exists public.session (
   note         text,
   continues_id text,
   plan_id      text,
+  break_ack_ms bigint,                              -- stage 12: the user chose "Keep Going" on a break reminder at this time
   updated_ms   bigint not null,
   deleted_ms   bigint,
   device_id    text   not null,
@@ -97,6 +98,8 @@ create table if not exists public.day (
 -- Stage 10 (rebuild-plan 13.1): for databases created before these columns existed.
 alter table public.activity add column if not exists kind text;
 alter table public.plan     add column if not exists skip_dates text;
+-- Stage 12 (rebuild-plan 15.1).
+alter table public.session  add column if not exists break_ack_ms bigint;
 
 -- ---------------------------------------------------------------------------------------------
 -- Last write wins + server_seq (BEFORE INSERT OR UPDATE, every table)

@@ -18,6 +18,9 @@ pub struct Session {
     pub continues_id: Option<String>,
     /// Set when the session was logged automatically from a recurring plan.
     pub plan_id: Option<String>,
+    /// When the user last chose "Keep Going" on a break reminder while this segment ran (rebuild-plan 15.1).
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub break_ack_ms: Option<i64>,
 }
 
 /// Create (`id: None`) or edit a finished session. Running sessions are only created through `start`.
@@ -43,7 +46,7 @@ pub struct TimerState {
     pub prior_ms: i64,
 }
 
-const COLUMNS: &str = "id, activity_id, start_ms, end_ms, note, continues_id, plan_id";
+const COLUMNS: &str = "id, activity_id, start_ms, end_ms, note, continues_id, plan_id, break_ack_ms";
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<Session> {
     Ok(Session {
@@ -54,6 +57,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<Session> {
         note: r.get(4)?,
         continues_id: r.get(5)?,
         plan_id: r.get(6)?,
+        break_ack_ms: r.get(7)?,
     })
 }
 
@@ -168,6 +172,58 @@ fn prior_ms(conn: &Connection, session: &Session) -> Result<i64> {
         next = s.continues_id;
     }
     Ok(total)
+}
+
+/// Running time of the pause/resume chain ending with `session`, pauses excluded; a running segment counts
+/// up to `now`. Mirrors `chainDuration` in HopeCore.
+pub fn chain_duration_ms(conn: &Connection, session: &Session, now: i64) -> Result<i64> {
+    Ok((session.end_ms.unwrap_or(now) - session.start_ms).max(0) + prior_ms(conn, session)?)
+}
+
+/// Id of the first segment of the chain ending with `session`: the chain's identity across pauses.
+pub fn chain_root_id(conn: &Connection, session: &Session) -> Result<String> {
+    let mut root = session.id.clone();
+    let mut seen = std::collections::HashSet::from([session.id.clone()]);
+    let mut next = session.continues_id.clone();
+    while let Some(id) = next {
+        if !seen.insert(id.clone()) || seen.len() > 1000 {
+            break;
+        }
+        let Some(s) = get(conn, &id)? else { break };
+        root = s.id;
+        next = s.continues_id;
+    }
+    Ok(root)
+}
+
+/// The latest "Keep Going" in the pause/resume chain ending with `session` (rebuild-plan 15.1), or `None`.
+pub fn chain_break_ack_ms(conn: &Connection, session: &Session) -> Result<Option<i64>> {
+    let mut latest = session.break_ack_ms;
+    let mut seen = std::collections::HashSet::from([session.id.clone()]);
+    let mut next = session.continues_id.clone();
+    while let Some(id) = next {
+        if !seen.insert(id.clone()) || seen.len() > 1000 {
+            break;
+        }
+        let Some(s) = get(conn, &id)? else { break };
+        latest = latest.max(s.break_ack_ms);
+        next = s.continues_id;
+    }
+    Ok(latest)
+}
+
+/// "Keep Going" on a break reminder: stamps the running session so every device stops reminding for the
+/// reminder that was due (rebuild-plan 15.2). Nothing running = nothing to stamp. The desktop's
+/// notifications have no buttons, so only the Apple apps write this; it is the Rust twin of
+/// `LocalStore.breakAck` and keeps the import/export and sync tests honest.
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn break_ack(conn: &Connection, device: &str, now: i64) -> Result<Option<Session>> {
+    let Some(running) = running(conn)? else { return Ok(None) };
+    conn.execute(
+        "UPDATE session SET break_ack_ms = ?2, updated_ms = MAX(?2, updated_ms + 1), device_id = ?3, dirty = 1 WHERE id = ?1",
+        params![running.id, now, device],
+    )?;
+    get(conn, &running.id)
 }
 
 /// Sessions overlapping `[from_ms, to_ms)`, including a running one.
@@ -315,6 +371,36 @@ mod tests {
         assert_eq!(resumed.continues_id.as_deref(), Some(first.id.as_str()));
         assert_eq!(resumed.activity_id, a);
         assert!(current(&conn).unwrap().paused.is_none());
+    }
+
+    #[test]
+    fn break_ack_stamps_the_running_segment_and_the_chain_reads_the_latest() {
+        let mut conn = test_conn();
+        let a = activity(&conn, "A");
+        assert!(break_ack(&conn, "d", 50).unwrap().is_none(), "nothing running, nothing stamped");
+
+        let first = start(&mut conn, "d", 100, &a).unwrap();
+        assert_eq!(first.break_ack_ms, None);
+        let acked = break_ack(&conn, "d", 5_500_000).unwrap().unwrap();
+        assert_eq!(acked.id, first.id);
+        assert_eq!(acked.break_ack_ms, Some(5_500_000));
+        // A normal synced write: the version moved and the row is dirty.
+        let (updated, dirty): (i64, bool) =
+            conn.query_row("SELECT updated_ms, dirty FROM session WHERE id = ?1", [&first.id], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+        assert_eq!(updated, 5_500_000);
+        assert!(dirty);
+
+        pause(&mut conn, "d", 6_000_000).unwrap();
+        let resumed = resume(&mut conn, "d", 6_100_000).unwrap();
+        assert_eq!(resumed.break_ack_ms, None, "a new segment starts clean");
+        assert_eq!(chain_break_ack_ms(&conn, &resumed).unwrap(), Some(5_500_000), "but the chain remembers");
+        break_ack(&conn, "d", 11_000_000).unwrap();
+        let running = current(&conn).unwrap().running.unwrap();
+        assert_eq!(chain_break_ack_ms(&conn, &running).unwrap(), Some(11_000_000));
+
+        // A fresh start is a new chain.
+        let fresh = start(&mut conn, "d", 20_000_000, &a).unwrap();
+        assert_eq!(chain_break_ack_ms(&conn, &fresh).unwrap(), None);
     }
 
     #[test]

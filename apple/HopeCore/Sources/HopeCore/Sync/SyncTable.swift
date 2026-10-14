@@ -15,7 +15,7 @@ public enum SyncTable: String, CaseIterable, Sendable {
         case .plan:
             ["id", "activity_id", "date", "start_hm", "end_hm", "rule", "auto_log", "until", "skip_dates", "updated_ms", "deleted_ms", "device_id"]
         case .session:
-            ["id", "activity_id", "start_ms", "end_ms", "note", "continues_id", "plan_id", "updated_ms", "deleted_ms", "device_id"]
+            ["id", "activity_id", "start_ms", "end_ms", "note", "continues_id", "plan_id", "break_ack_ms", "updated_ms", "deleted_ms", "device_id"]
         case .journal:
             ["id", "date", "text", "updated_ms", "deleted_ms", "device_id"]
         case .day:

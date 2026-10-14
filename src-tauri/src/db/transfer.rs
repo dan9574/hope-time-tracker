@@ -65,6 +65,9 @@ pub struct SessionRow {
     /// Added in schema v2; absent in older files.
     #[serde(default)]
     pub plan_id: Option<String>,
+    /// Added in schema v5 (break reminder); absent in older files.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub break_ack_ms: Option<i64>,
     pub updated_ms: Option<i64>,
 }
 
@@ -154,7 +157,7 @@ pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
         .collect::<rusqlite::Result<_>>()?;
     let session = conn
         .prepare(
-            "SELECT id, activity_id, start_ms, end_ms, note, continues_id, plan_id, updated_ms FROM session
+            "SELECT id, activity_id, start_ms, end_ms, note, continues_id, plan_id, break_ack_ms, updated_ms FROM session
              WHERE deleted_ms IS NULL ORDER BY start_ms",
         )?
         .query_map([], |r| {
@@ -166,7 +169,8 @@ pub fn export(conn: &Connection, now: i64) -> Result<ExportFile> {
                 note: r.get(4)?,
                 continues_id: r.get(5)?,
                 plan_id: r.get(6)?,
-                updated_ms: r.get(7)?,
+                break_ack_ms: r.get(7)?,
+                updated_ms: r.get(8)?,
             })
         })?
         .collect::<rusqlite::Result<_>>()?;
@@ -246,13 +250,16 @@ pub fn import(conn: &mut Connection, device: &str, now: i64, file: ExportFile) -
         if action != Action::Skip {
             let note = row.note.as_deref().map(str::trim).filter(|n| !n.is_empty());
             tx.execute(
-                "INSERT INTO session (id, activity_id, start_ms, end_ms, note, continues_id, plan_id, updated_ms, deleted_ms, device_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, ?9)
+                "INSERT INTO session (id, activity_id, start_ms, end_ms, note, continues_id, plan_id, break_ack_ms, updated_ms, deleted_ms, device_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, ?10)
                  ON CONFLICT (id) DO UPDATE SET activity_id = excluded.activity_id, start_ms = excluded.start_ms,
                    end_ms = excluded.end_ms, note = excluded.note, continues_id = excluded.continues_id,
-                   plan_id = excluded.plan_id,
+                   plan_id = excluded.plan_id, break_ack_ms = excluded.break_ack_ms,
                    updated_ms = excluded.updated_ms, deleted_ms = NULL, device_id = excluded.device_id, dirty = 1",
-                params![id, row.activity_id, row.start_ms, row.end_ms, note, row.continues_id, row.plan_id, ms, device],
+                params![
+                    id, row.activity_id, row.start_ms, row.end_ms, note, row.continues_id, row.plan_id, row.break_ack_ms, ms,
+                    device
+                ],
             )?;
         }
         action.count(&mut report.session);
@@ -417,6 +424,7 @@ mod tests {
         .unwrap();
         let (courses, _) = activity::schedule_ensure(&conn, "d", 12, "Courses").unwrap();
         session::start(&mut conn, "d", 100, &linalg.id).unwrap();
+        session::break_ack(&conn, "d", 150).unwrap();
         session::stop(&mut conn, "d", 200).unwrap();
         plan::upsert(
             &conn,
@@ -471,6 +479,7 @@ mod tests {
         assert_eq!(activity::schedule_group(&target).unwrap().unwrap().kind.as_deref(), Some(KIND_SCHEDULE));
         let skipped = exported.plan.iter().find(|p| !p.skip_dates.is_empty()).unwrap();
         assert_eq!(skipped.skip_dates, ["2026-11-11", "2026-11-26"]);
+        assert_eq!(exported.session[0].break_ack_ms, Some(150), "the break acknowledgement travels in the file");
         assert_eq!(report.journal.added, 1);
         assert_eq!(report.day.added, 1);
 
@@ -526,6 +535,12 @@ mod tests {
         assert_eq!(out.plan[0].until, None);
         assert_eq!(out.activity[0].kind, None);
         assert!(out.plan[0].skip_dates.is_empty());
+        let json = r#"{"format":"hope/1","activity":[{"id":"a","name":"Study","color":"blue","updated_ms":1}],
+            "session":[{"id":"s","activity_id":"a","start_ms":100,"end_ms":200,"updated_ms":1}]}"#;
+        import(&mut conn, "d", 6, parse(json).unwrap()).unwrap();
+        let out = export(&conn, 0).unwrap();
+        assert_eq!(out.session[0].break_ack_ms, None);
+        assert!(!serde_json::to_string(&out).unwrap().contains("break_ack_ms"), "absent stays absent in the file");
     }
 
     #[test]

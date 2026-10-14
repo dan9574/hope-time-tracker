@@ -49,9 +49,9 @@ final class AwayMonitor: NSObject {
         super.init()
         location.delegate = self
         location.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        let center = UNUserNotificationCenter.current()
-        center.delegate = self
-        center.setNotificationCategories([Self.category()])
+        NotificationRouter.shared.register(Self.category()) { [weak self] action, _ in
+            await self?.handle(action: action)
+        }
         if enabled { startMonitor() }
         observe()
         syncWithTimer()
@@ -317,18 +317,5 @@ extension AwayMonitor: CLLocationManagerDelegate {
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         Task { @MainActor in self.authorizationChanged(status) }
-    }
-}
-
-extension AwayMonitor: UNUserNotificationCenterDelegate {
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter, willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
-    }
-
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        let action = response.actionIdentifier
-        await handle(action: action)
     }
 }

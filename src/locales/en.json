@@ -74,7 +74,9 @@
     "wakeButtonUntil": "Show “Wake Up” until",
     "sleepButtonFrom": "Show “Go to Sleep” from",
     "includeSchedule": "Count classes in totals",
-    "includeScheduleHint": "When off, records under the timetable group stay out of totals but still show on the timeline. Import an .ics timetable from the Schedule page."
+    "includeScheduleHint": "When off, records under the timetable group stay out of totals but still show on the timeline. Import an .ics timetable from the Schedule page.",
+    "breakReminder": "Break reminders",
+    "breakReminderHint": "Every 90 minutes of running time, a system notification suggests a break. Exercise and the timetable are left alone. The watch reminds first; the desktop a minute later."
   },
   "today": {
     "total": "Tracked",
@@ -96,6 +98,10 @@
     "noActivities": "No activities yet",
     "open": "Open Hope",
     "quit": "Quit Hope"
+  },
+  "break": {
+    "title": "Take a break",
+    "body": "{{name}} has been running for {{duration}} without a break"
   },
   "overlay": {
     "today": "Today",

@@ -56,6 +56,19 @@ Always — only Always lets the geofence wake the app in the background). The ru
 `HopeCore/AwayReminder.swift` (tested), the plumbing `iOS/AwayMonitor.swift`. Exercise activities
 (`kind = 'exercise'`) and the timetable are never anchored. See rebuild-plan section 14.
 
+## Break reminder (stage 12)
+
+Every 90 minutes of running time (the pause chain, pauses excluded) a local notification says "Take a
+break" with Pause / A Little Longer. The rules are `HopeCore/BreakReminder.swift` (tested); the scheduler
+`Shared/BreakScheduler.swift` runs on both the watch and the iPhone and lines up the next four steps as
+`UNTimeIntervalNotificationTrigger`s whenever the store changes, so the system fires them while the app is
+suspended. The watch reminds first; the phone two minutes later as a fallback, and drops its own steps
+when the watch reports over WatchConnectivity (`WatchLink.sendBreakClaim` → `PhoneLink.onBreakClaim`)
+that it has them. "A Little Longer" writes `session.break_ack_ms`, which syncs and settles that step on
+every device. Switch: bottom of the watch's activity list, and the iPhone's Account page. Exercise and
+timetable activities are never reminded. `Shared/NotificationRouter.swift` is the single notification
+delegate; the away reminder registers its category there too. See rebuild-plan section 15.
+
 ## Supabase config
 
 The apps read `HopeSupabaseURL` / `HopeSupabaseAnonKey` from their Info.plist. The values come from

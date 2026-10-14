@@ -19,6 +19,9 @@ tauri = { version = "2", features = ["macos-private-api", "tray-icon", "unstable
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2"
+# Stage 12 break reminder (rebuild-plan 15.4): system notifications on macOS and Windows. Writing it
+# ourselves would mean UserNotifications on macOS and WinRT toasts on Windows; the official plugin does both.
+tauri-plugin-notification = "2"
 uuid = { version = "1", features = ["v4", "v5"] }
 rusqlite = { version = "0.40", features = ["bundled"] }
 specta = { version = "=2.0.0-rc.25" }

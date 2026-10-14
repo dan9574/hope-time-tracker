@@ -66,6 +66,29 @@ struct TimerTests {
         #expect(s.endMs == 1_000, "never ends before it started")
     }
 
+    @Test func breakAckStampsTheRunningSegmentAndTheChainReadsTheLatest() throws {
+        let db = try device("d")
+        let a = try db.addActivity(0, "A")
+        #expect(try db.at(50) { try db.breakAck() } == nil, "nothing running, nothing stamped")
+
+        let first = try db.at(100) { try db.start(activityId: a) }
+        #expect(db.chainRootId(of: first) == first.id)
+        let acked = try db.at(5_500_000) { try db.breakAck() }
+        #expect(acked?.id == first.id && first.breakAckMs == 5_500_000)
+        #expect(first.updatedMs == 5_500_000 && first.dirty && first.deviceId == "d")
+
+        try db.at(6_000_000) { _ = try db.pause() }
+        let resumed = try db.at(6_100_000) { try db.resume() }
+        #expect(resumed.breakAckMs == nil, "a new segment starts clean")
+        #expect(db.chainRootId(of: resumed) == first.id)
+        #expect(db.chainBreakAckMs(endingWith: resumed) == 5_500_000, "but the chain remembers")
+        try db.at(11_000_000) { _ = try db.breakAck() }
+        #expect(db.chainBreakAckMs(endingWith: resumed) == 11_000_000)
+
+        let fresh = try db.at(20_000_000) { try db.start(activityId: a) }
+        #expect(db.chainRootId(of: fresh) == fresh.id && db.chainBreakAckMs(endingWith: fresh) == nil)
+    }
+
     @Test func activityTreeOrderAndArchive() throws {
         let db = try device("d")
         let study = try db.addActivity(1, "Study", color: .purple)

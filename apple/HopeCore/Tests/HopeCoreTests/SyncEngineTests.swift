@@ -364,6 +364,22 @@ struct SyncEngineTests {
             id: "p", activityId: "a", date: "2026-01-01", startHm: "08:00", endHm: "09:00", updatedMs: 1, deviceId: "y")
         localPlan.assign(from: p)
         #expect(localPlan.skipDates == "2026-11-11,2026-11-27")
+
+        // rebuild-plan 15.1: session.break_ack_ms.
+        let session: Row = [
+            "id": "s", "activity_id": "a", "start_ms": 100, "end_ms": nil, "note": nil, "continues_id": nil, "plan_id": nil,
+            "break_ack_ms": 5_500_000, "updated_ms": 9, "deleted_ms": nil, "device_id": "x",
+        ]
+        let s = try SessionRecord.decode(session)
+        #expect(s.breakAckMs == 5_500_000)
+        #expect(s.row() == session)
+        #expect(Set(s.row().keys) == Set(SyncTable.session.columns))
+        var oldSession = session
+        oldSession["break_ack_ms"] = nil
+        #expect(try SessionRecord.decode(oldSession).breakAckMs == nil)
+        let localSession = SessionRecord(id: "s", activityId: "a", startMs: 1, updatedMs: 1, deviceId: "y")
+        localSession.assign(from: s)
+        #expect(localSession.breakAckMs == 5_500_000)
     }
 
     @Test func localWritesAlwaysMoveTheVersionForward() throws {
