@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ has been running for %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%1$@」已计时 %2$@"
+          }
+        }
+      }
+    },
     "Account": {
       "localizations": {
         "zh-Hans": {
@@ -27,6 +37,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加"
+          }
+        }
+      }
+    },
+    "Always": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始终"
           }
         }
       }
@@ -232,12 +252,32 @@
         }
       }
     },
+    "Keep Going": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续计时"
+          }
+        }
+      }
+    },
     "Last synced %@": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "上次同步 %@"
+          }
+        }
+      }
+    },
+    "Location": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定位"
           }
         }
       }
@@ -283,12 +323,42 @@
         }
       }
     },
+    "Not allowed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未授权"
+          }
+        }
+      }
+    },
+    "Not asked yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未询问"
+          }
+        }
+      }
+    },
     "Not configured": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "未配置"
+          }
+        }
+      }
+    },
+    "Not for 30 Minutes": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 分钟内别提醒"
           }
         }
       }
@@ -319,6 +389,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天还没有记录"
+          }
+        }
+      }
+    },
+    "Notifications are off for Hope. Turn them on in Settings.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hope 的通知已关闭，请在系统设置里打开。"
           }
         }
       }
@@ -410,6 +490,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台设备上的记录会合并进账号。"
+          }
+        }
+      }
+    },
+    "Remind me when I walk away": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "离开时提醒"
           }
         }
       }
@@ -661,6 +751,26 @@
         }
       }
     },
+    "While using the app (can't remind in the background)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅使用期间（无法在后台提醒）"
+          }
+        }
+      }
+    },
+    "With a timer running, Hope asks whether to stop once you are more than 300 m from where you started it. Exercise activities are left alone. Location needs to be set to Always.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "计时进行中，当你离开开始计时的地方超过 300 米，Hope 会问你要不要结束。运动类活动不会被打扰。定位权限需要设为「始终」。"
+          }
+        }
+      }
+    },
     "Wrong email or password.": {
       "localizations": {
         "zh-Hans": {
@@ -677,6 +787,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "黄"
+          }
+        }
+      }
+    },
+    "You've left where you started the timer": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你离开了开始计时的地方"
           }
         }
       }

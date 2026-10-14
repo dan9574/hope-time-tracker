@@ -47,6 +47,15 @@ since 2026-10-12). If Xcode keeps reusing an old 7-day profile after upgrading, 
 `io.github.dan9574.hope*` profiles under `~/Library/Developer/Xcode/UserData/Provisioning Profiles/` and
 rebuild with `-allowProvisioningUpdates`; check `embedded.mobileprovision` for `ExpirationDate`.
 
+## Away reminder (stage 11)
+
+With a timer running on an ordinary activity, the iPhone anchors where it started and watches a 300 m
+circle around it (`CLMonitor`); leaving it posts a notification with Keep Going / Stop / Not for 30 Minutes,
+mirrored to the watch. Switch it on in Account; it asks for notifications and location (When In Use, then
+Always — only Always lets the geofence wake the app in the background). The rules are
+`HopeCore/AwayReminder.swift` (tested), the plumbing `iOS/AwayMonitor.swift`. Exercise activities
+(`kind = 'exercise'`) and the timetable are never anchored. See rebuild-plan section 14.
+
 ## Supabase config
 
 The apps read `HopeSupabaseURL` / `HopeSupabaseAnonKey` from their Info.plist. The values come from

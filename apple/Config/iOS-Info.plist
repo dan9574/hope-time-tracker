@@ -7,5 +7,10 @@
 	<string>$(SUPABASE_URL)</string>
 	<key>HopeSupabaseAnonKey</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
+	<!-- The away reminder (rebuild-plan 14.2): a 300 m circle around where a timer started. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Hope only uses your location to notice when you have walked away from where you started a timer.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Hope needs background location to notice that you have walked away while a timer is running, even when the app is closed. It never records where you are.</string>
 </dict>
 </plist>

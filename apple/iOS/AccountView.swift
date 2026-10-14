@@ -5,6 +5,7 @@ import SwiftUI
 struct AccountView: View {
     @Environment(AppModel.self) private var model
     @Environment(PhoneLink.self) private var watch
+    @Environment(AwayMonitor.self) private var away
     @Environment(\.dismiss) private var dismiss
 
     @State private var email = ""
@@ -41,6 +42,7 @@ struct AccountView: View {
                 default:
                     signedInSection(sync)
                 }
+                awaySection
                 if let error {
                     Section { Text(verbatim: error).foregroundStyle(.red) }
                 }
@@ -70,6 +72,21 @@ struct AccountView: View {
             } message: {
                 Text("Enter your password once more so the watch gets its own sign-in.")
             }
+        }
+    }
+
+    /// The away reminder (rebuild-plan 14.2) lives here because this is the only settings page.
+    private var awaySection: some View {
+        Section {
+            Toggle("Remind me when I walk away", isOn: Binding(get: { away.enabled }, set: { on in Task { await away.setEnabled(on) } }))
+            if away.enabled {
+                LabeledContent("Location") { Text(verbatim: away.locationStatusText) }
+                if away.notificationsDenied {
+                    Text("Notifications are off for Hope. Turn them on in Settings.").foregroundStyle(.secondary)
+                }
+            }
+        } footer: {
+            Text("With a timer running, Hope asks whether to stop once you are more than 300 m from where you started it. Exercise activities are left alone. Location needs to be set to Always.")
         }
     }
 
