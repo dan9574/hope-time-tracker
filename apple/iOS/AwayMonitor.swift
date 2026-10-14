@@ -15,7 +15,9 @@ import UserNotifications
 final class AwayMonitor: NSObject {
     static let enabledKey = "away.enabled"
     static let stateKey = "away.state"
-    static let monitorName = "hope.away"
+    /// Letters and digits only: `CLMonitor` asserts ("Monitor name is not valid") on anything else, which
+    /// took the app down at every launch while the switch was on (2026-10-14, the name was "hope.away").
+    static let monitorName = "HopeAway"
     static let conditionId = "anchor"
     static let categoryId = "hope.away"
 

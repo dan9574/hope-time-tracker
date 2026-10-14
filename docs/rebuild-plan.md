@@ -659,7 +659,7 @@ ALTER TABLE plan     ADD COLUMN skip_dates TEXT;  -- 跳过的日期 'YYYY-MM-DD
 ### 14.5 实现时定下的细节（iPhone）
 
 - 规则在 HopeCore 的 `AwayReminder`（纯函数 + `State`，`swift test` 覆盖）；iPhone 的 `AwayMonitor` 只负责定位、围栏、通知和持久化（`UserDefaults` 的 `away.enabled` / `away.state`）。
-- `AwayMonitor` 在 `HopeApp.init` 里创建并设为通知代理：围栏事件和通知按钮都可能在后台把 app 拉起来，那时必须已经有人在听。围栏用 `CLMonitor("hope.away")` 的一个圆形条件，事件流在 app 启动时就开始监听。
+- `AwayMonitor` 在 `HopeApp.init` 里创建并设为通知代理：围栏事件和通知按钮都可能在后台把 app 拉起来，那时必须已经有人在听。围栏用 `CLMonitor("HopeAway")` 的一个圆形条件，事件流在 app 启动时就开始监听。监视器名字只能是字母和数字——带点的 `"hope.away"` 在真机上让 `CLMonitor.init` 断言崩溃，而且开关一旦存为开，每次启动都崩（2026-10-14）。
 - 锚点时机 = 本地库的 `revision` 变化（本机操作或同步拉取），有非运动、非课表的 running session 且 id 与锚点不同就取一次位置；没有 running 就清锚点并移除围栏。
 - 「继续计时」只换锚点坐标，保留 `lastPromptMs`，所以紧接着再走出去也要等满 5 分钟。「结束」在后台 `stop()` 后 `syncNow()`，等 3 秒再让系统结束这次后台启动。
 - 开关在 iPhone 的账号页；打开时先要通知权限，再要定位「使用期间」→「始终」。只有「使用期间」时围栏不会在后台唤醒 app，页面上写明。
