@@ -132,7 +132,10 @@
     "cannotDelete": "「{{name}}」下有 {{count}} 条记录，不能删除。不再使用的话可以归档。",
     "confirmDelete": "删除「{{name}}」？它的计划也会一起删除，此操作无法撤销。",
     "confirmDeleteWithSubs": "删除「{{name}}」及其 {{count}} 个子活动？它们的计划也会一起删除，此操作无法撤销。",
-    "scheduleBadge": "课表"
+    "scheduleBadge": "课表",
+    "exerciseBadge": "运动",
+    "exercise": "运动类",
+    "exerciseHint": "离开时不提醒"
   },
   "common": {
     "cancel": "取消",

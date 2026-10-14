@@ -132,7 +132,10 @@
     "cannotDelete": "{{name}} has {{count}} records, so it can't be deleted. Archive it if you no longer use it.",
     "confirmDelete": "Delete {{name}}? Its plans are deleted too. This can't be undone.",
     "confirmDeleteWithSubs": "Delete {{name}} and its {{count}} sub-activities? Their plans are deleted too. This can't be undone.",
-    "scheduleBadge": "Timetable"
+    "scheduleBadge": "Timetable",
+    "exerciseBadge": "Exercise",
+    "exercise": "Exercise",
+    "exerciseHint": "No reminders when you walk away"
   },
   "common": {
     "cancel": "Cancel",

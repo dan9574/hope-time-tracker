@@ -28,6 +28,11 @@ export function isScheduleActivity(activity: Activity | undefined, parent?: Acti
   return activity?.kind === "schedule" || parent?.kind === "schedule";
 }
 
+/** Exercise activities, and their sub-activities, get no "you walked away" reminders (rebuild-plan 14.1). */
+export function isExerciseActivity(activity: Activity | undefined, parent?: Activity): boolean {
+  return activity?.kind === "exercise" || parent?.kind === "exercise";
+}
+
 /**
  * The timetable group the importer would use, as Rust's `schedule_group` picks it: a top-level `kind = 'schedule'`
  * activity, unarchived ones first, then the smallest `sort`. The group is normally archived (rebuild-plan 13.7).

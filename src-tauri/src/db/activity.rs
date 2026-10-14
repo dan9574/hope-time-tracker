@@ -88,7 +88,8 @@ pub struct Activity {
     pub archived_at: Option<i64>,
     /// `None` = top level. Sub-activities are one level deep and always take their parent's color.
     pub parent_id: Option<String>,
-    /// `None` = normal; `"schedule"` = the timetable group (rebuild-plan 13.1, top level only).
+    /// `None` = normal; `"schedule"` = the timetable group (rebuild-plan 13.1); `"exercise"` = exercise, which
+    /// gets no "you walked away" reminders (rebuild-plan 14.1). Both are top level only; children follow.
     pub kind: Option<String>,
 }
 
@@ -103,12 +104,14 @@ pub struct ActivityInput {
     #[specta(type = Option<specta_typescript::Number>)]
     pub sort: Option<i64>,
     pub parent_id: Option<String>,
-    /// `None` or `"schedule"` (see `Activity.kind`). Editors must send the current value back.
+    /// `None`, `"schedule"` or `"exercise"` (see `Activity.kind`). Editors must send the current value back.
     pub kind: Option<String>,
 }
 
 /// `activity.kind` of the timetable group (rebuild-plan 13.1).
 pub const KIND_SCHEDULE: &str = "schedule";
+/// `activity.kind` of an exercise activity: no "you walked away" reminders (rebuild-plan 14.1).
+pub const KIND_EXERCISE: &str = "exercise";
 
 // Reads take the color from a live parent, so a child can never drift from it.
 // A child whose parent is missing (sync may deliver it later) reads as a top-level activity.
@@ -171,23 +174,25 @@ fn check_parent(conn: &Connection, id: Option<&str>, parent_id: Option<&str>, co
     Ok(parent.color)
 }
 
-/// `kind` must be `None` or `"schedule"`; shared by `upsert` and the JSON importer.
+/// `kind` must be `None`, `"schedule"` or `"exercise"`; shared by `upsert` and the JSON importer.
 pub fn validate_kind(kind: Option<&str>) -> Result<()> {
     match kind {
-        None | Some(KIND_SCHEDULE) => Ok(()),
+        None | Some(KIND_SCHEDULE) | Some(KIND_EXERCISE) => Ok(()),
         Some(other) => Err(Error::Invalid(format!("unknown activity kind {other:?}"))),
     }
 }
 
-/// Enforces rebuild-plan 13.1: a timetable group is top level, and this device keeps at most one live one.
-/// (Sync may still deliver a second; readers treat every `kind = 'schedule'` activity as a timetable.)
+/// Enforces rebuild-plan 13.1 / 14.1: a kind is only allowed on a top-level activity (children follow their
+/// parent), and this device keeps at most one live timetable group. (Sync may still deliver a second;
+/// readers treat every `kind = 'schedule'` activity as a timetable.)
 fn check_kind(conn: &Connection, id: Option<&str>, parent_id: Option<&str>, kind: Option<&str>) -> Result<()> {
     validate_kind(kind)?;
-    if kind != Some(KIND_SCHEDULE) {
-        return Ok(());
-    }
+    let Some(kind) = kind else { return Ok(()) };
     if parent_id.is_some() {
-        return Err(Error::Invalid("a timetable group must be a top-level activity".into()));
+        return Err(Error::Invalid(format!("a {kind} activity must be a top-level activity")));
+    }
+    if kind != KIND_SCHEDULE {
+        return Ok(());
     }
     let others: i64 = conn.query_row(
         "SELECT COUNT(*) FROM activity WHERE kind = ?1 AND deleted_ms IS NULL AND id IS NOT ?2",
@@ -421,6 +426,19 @@ mod tests {
         // Moving a child to another parent is allowed.
         let moved = upsert(&conn, "d", 3, ActivityInput { id: Some(linalg.id.clone()), ..child("Linear algebra", &read.id) }).unwrap();
         assert_eq!(moved.parent_id.as_deref(), Some(read.id.as_str()));
+    }
+
+    #[test]
+    fn exercise_is_top_level_only_and_unlimited() {
+        let conn = test_conn();
+        let exercise = |name: &str| ActivityInput { kind: Some(KIND_EXERCISE.into()), ..input(name) };
+        let gym = upsert(&conn, "d", 1, exercise("Gym")).unwrap();
+        upsert(&conn, "d", 1, exercise("Run")).unwrap();
+        let err = upsert(&conn, "d", 1, ActivityInput { parent_id: Some(gym.id.clone()), ..exercise("Legs") }).unwrap_err();
+        assert!(matches!(err, Error::Invalid(_)), "an exercise activity cannot be a sub-activity");
+        // A plain sub-activity under an exercise parent is fine; it follows the parent.
+        upsert(&conn, "d", 1, child("Legs", &gym.id)).unwrap();
+        assert!(matches!(validate_kind(Some("walk")), Err(Error::Invalid(_))));
     }
 
     #[test]

@@ -72,6 +72,13 @@ extension LocalStore {
         return a.isScheduleGroup || parent(of: a)?.isScheduleGroup == true
     }
 
+    /// Whether time on `activityId` is exercise: the activity or its parent is marked exercise
+    /// (rebuild-plan 14.1). Unknown activities are not.
+    public func isExercise(activityId: String) -> Bool {
+        guard let a = activity(activityId) else { return false }
+        return a.isExercise || parent(of: a)?.isExercise == true
+    }
+
     /// Children always show their parent's colour; unknown activities are gray.
     public func color(activityId: String) -> ActivityColor {
         guard let a = activity(activityId) else { return .gray }

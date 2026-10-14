@@ -34,7 +34,8 @@ public final class ActivityRecord {
     public var archivedAt: Int64?
     /// `nil` = top level. One level only.
     public var parentId: String?
-    /// `nil` = ordinary, `schedule` = the schedule (classes) group; top level only (rebuild-plan 13.1).
+    /// `nil` = ordinary, `schedule` = the schedule (classes) group (rebuild-plan 13.1), `exercise` = exercise,
+    /// which gets no "you walked away" reminders (rebuild-plan 14.1). Top level only; children follow.
     public var kind: String?
     public var updatedMs: Int64
     public var deletedMs: Int64?
@@ -64,8 +65,11 @@ public final class ActivityRecord {
 
     /// The `kind` of the schedule group.
     public static let scheduleKind = "schedule"
+    /// The `kind` of an exercise activity.
+    public static let exerciseKind = "exercise"
 
     public var isScheduleGroup: Bool { kind == Self.scheduleKind }
+    public var isExercise: Bool { kind == Self.exerciseKind }
 }
 
 @Model

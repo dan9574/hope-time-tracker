@@ -62,6 +62,7 @@ export function Activities() {
                     <ActivityGlyph activity={root} />
                     <span className="activity-name">{root.name}</span>
                     {root.kind === "schedule" && <span className="activity-badge">{t("activities.scheduleBadge")}</span>}
+                    {root.kind === "exercise" && <span className="activity-badge">{t("activities.exerciseBadge")}</span>}
                   </button>
                   <button
                     type="button"
@@ -145,6 +146,7 @@ function ArchivedRow({ activity, name, nested }: ArchivedRowProps) {
       <ActivityGlyph activity={activity} />
       <span className="activity-name">{name}</span>
       {activity.kind === "schedule" && <span className="activity-badge">{t("activities.scheduleBadge")}</span>}
+      {activity.kind === "exercise" && <span className="activity-badge">{t("activities.exerciseBadge")}</span>}
       <span className="activity-row-spacer" />
       {/* Restoring a nested row alone would leave it hidden under its archived parent; restore the parent. */}
       {!nested && (

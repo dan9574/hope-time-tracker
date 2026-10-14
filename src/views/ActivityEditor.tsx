@@ -25,6 +25,7 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
   const [color, setColor] = useState<ActivityColor>(activity?.color ?? "blue");
   const [symbol, setSymbol] = useState<string | null>(activity?.symbol ?? null);
   const [parentId, setParentId] = useState<string | null>(initialParent);
+  const [exercise, setExercise] = useState(activity?.kind === "exercise");
   const [error, setError] = useState<string | null>(null);
 
   const parent = roots.find((r) => r.id === parentId);
@@ -43,8 +44,9 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
       symbol,
       sort: null,
       parent_id: parentId,
-      // Passed through unchanged so renaming or recoloring the timetable group keeps it one.
-      kind: activity?.kind ?? null,
+      // The timetable group keeps its kind (the importer manages it); "exercise" is the editor's own switch and
+      // only applies at the top level (rebuild-plan 14.1).
+      kind: schedule ? "schedule" : exercise && !parentId ? "exercise" : null,
     });
     if (res.status === "error") setError(errorMessage(res.error, t));
     else onClose();
@@ -100,6 +102,13 @@ export function ActivityEditor({ activity, parentId: initialParent, roots, child
               </option>
             ))}
           </select>
+        </label>
+      )}
+      {!schedule && !parentId && (
+        <label className="activity-editor-row">
+          <span className="activity-editor-label">{t("activities.exercise")}</span>
+          <input type="checkbox" checked={exercise} onChange={(e) => setExercise(e.target.checked)} />
+          <span className="activity-editor-note">{t("activities.exerciseHint")}</span>
         </label>
       )}
       <div className="activity-editor-row">

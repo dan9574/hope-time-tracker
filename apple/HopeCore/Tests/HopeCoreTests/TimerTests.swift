@@ -118,6 +118,16 @@ struct TimerTests {
         #expect(db.todaySummary(now: now, calendar: cal).totalMs == s.totalMs)
     }
 
+    @Test func exerciseFollowsTheParent() throws {
+        let db = try device("d")
+        let gym = try db.addActivity(0, "Gym", color: .orange)
+        try db.write { db.activity(gym)!.kind = ActivityRecord.exerciseKind }
+        let legs = try db.at(0) { try db.createActivity(name: "Legs", color: .orange, parentId: gym) }
+        let study = try db.addActivity(0, "Study")
+        #expect(db.isExercise(activityId: gym) && db.isExercise(activityId: legs.id))
+        #expect(!db.isExercise(activityId: study) && !db.isExercise(activityId: "unknown"))
+    }
+
     @Test func scheduleTimeIsLeftOutOfTheTotal() throws {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "Asia/Shanghai")!

@@ -147,7 +147,10 @@ export type Activity = {
 	archived_at: number | null,
 	/**  `None` = top level. Sub-activities are one level deep and always take their parent's color. */
 	parent_id: string | null,
-	/**  `None` = normal; `"schedule"` = the timetable group (rebuild-plan 13.1, top level only). */
+	/**
+	 *  `None` = normal; `"schedule"` = the timetable group (rebuild-plan 13.1); `"exercise"` = exercise, which
+	 *  gets no "you walked away" reminders (rebuild-plan 14.1). Both are top level only; children follow.
+	 */
 	kind: string | null,
 };
 
@@ -165,7 +168,7 @@ export type ActivityInput = {
 	symbol: string | null,
 	sort: number | null,
 	parent_id: string | null,
-	/**  `None` or `"schedule"` (see `Activity.kind`). Editors must send the current value back. */
+	/**  `None`, `"schedule"` or `"exercise"` (see `Activity.kind`). Editors must send the current value back. */
 	kind: string | null,
 };
 
