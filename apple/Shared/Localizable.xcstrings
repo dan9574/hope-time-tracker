@@ -251,12 +251,12 @@
         }
       }
     },
-    "Every 90 minutes of running time.": {
+    "Exercise and the timetable are not reminded.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "计时每满 90 分钟提醒一次。"
+            "value": "运动类和课表不提醒。"
           }
         }
       }
@@ -363,12 +363,32 @@
         }
       }
     },
+    "Next reminder at %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次提醒 %@"
+          }
+        }
+      }
+    },
     "No activities yet": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
             "value": "还没有活动"
+          }
+        }
+      }
+    },
+    "No timer running.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有在计时。"
           }
         }
       }
@@ -429,6 +449,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "未登录。在 iPhone 上登录即可同步。"
+          }
+        }
+      }
+    },
+    "Nothing more to remind for this timer.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这段计时没有要提醒的了。"
           }
         }
       }
@@ -710,6 +740,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "青"
+          }
+        }
+      }
+    },
+    "The watch will remind.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由手表提醒。"
           }
         }
       }

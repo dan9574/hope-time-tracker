@@ -19,6 +19,9 @@ struct HopeApp: App {
         _breaks = State(initialValue: breaks)
         let watch = PhoneLink()
         watch.onBreakClaim = { claim in breaks.watchClaimed(claim) }
+        // A timer started on the watch: pull it now so the away reminder can anchor and the fallback break
+        // reminders get lined up, even though nobody opened this app (rebuild-plan 14.5).
+        watch.onTimerBeacon = { _ in model.sync.syncNow() }
         _watch = State(initialValue: watch)
     }
 

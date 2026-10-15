@@ -96,8 +96,8 @@ struct AccountView: View {
     private var breakSection: some View {
         Section {
             Toggle("Break reminders", isOn: Binding(get: { breaks.enabled }, set: { on in Task { await breaks.setEnabled(on) } }))
-            if breaks.enabled, breaks.notificationsDenied {
-                Text("Notifications are off for Hope. Turn them on in Settings.").foregroundStyle(.secondary)
+            if let status = breaks.statusText {
+                Text(verbatim: status).foregroundStyle(.secondary)
             }
         } footer: {
             Text("Every 90 minutes of running time, Hope suggests a break. Exercise and the timetable are left alone. The watch reminds first; the iPhone only if it did not.")

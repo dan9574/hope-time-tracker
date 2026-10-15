@@ -78,6 +78,8 @@ struct ActivityListView: View {
             BreakToggleRow()
             SyncFooter()
                 .listRowBackground(Color.clear)
+            VersionFooter()
+                .listRowBackground(Color.clear)
         }
         .navigationTitle("Hope")
         .sheet(isPresented: $showNew) {
@@ -95,12 +97,26 @@ private struct BreakToggleRow: View {
 
     var body: some View {
         Toggle("Break reminders", isOn: Binding(get: { breaks.enabled }, set: { on in Task { await breaks.setEnabled(on) } }))
-        if breaks.enabled {
-            Text(breaks.notificationsDenied ? "Notifications are off for Hope. Turn them on in Settings." : "Every 90 minutes of running time.")
+        if let status = breaks.statusText {
+            Text(verbatim: status)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .listRowBackground(Color.clear)
         }
+    }
+}
+
+/// The build that is on the wrist, so "is the watch updated yet?" has an answer. MARKETING_VERSION and
+/// CURRENT_PROJECT_VERSION in Config/Base.xcconfig; bump the patch for every build that goes to a device.
+private struct VersionFooter: View {
+    var body: some View {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        Text(verbatim: "Hope \(version) (\(build))")
+            .font(.footnote)
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 

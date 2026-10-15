@@ -1,5 +1,6 @@
 import CoreLocation
 import HopeCore
+import os
 import SwiftUI
 import UserNotifications
 
@@ -29,6 +30,7 @@ final class AwayMonitor: NSObject {
 
     private let model: AppModel
     private let defaults = UserDefaults.standard
+    private let log = Logger(subsystem: "io.github.dan9574.hope", category: "away")
     @ObservationIgnored private let location = CLLocationManager()
     @ObservationIgnored private var monitorTask: Task<CLMonitor, Never>?
     @ObservationIgnored private var eventsTask: Task<Void, Never>?
@@ -133,16 +135,31 @@ final class AwayMonitor: NSObject {
         }
         guard state.anchor?.sessionId != running.id else { return }
         let sessionId = running.id
+        log.notice("running session \(sessionId, privacy: .public) needs an anchor")
         Task { await anchor(sessionId: sessionId) }
     }
 
     private func anchor(sessionId: String) async {
-        guard let fix = await currentLocation() else { return }
-        // The timer may have changed while the fix was coming in.
-        guard model.store.timerState().running?.id == sessionId else { return }
-        state.start(.init(sessionId: sessionId, latitude: fix.latitude, longitude: fix.longitude, setMs: model.store.now))
-        persist()
-        await addCondition()
+        // Often reached in a background launch (the watch's timer beacon, rebuild-plan 14.5): ask for time.
+        await withBackgroundTime("hope.away.anchor") {
+            guard let fix = await currentLocation() else {
+                log.notice("no fix for session \(sessionId, privacy: .public); status \(self.locationStatus.rawValue)")
+                return
+            }
+            // The timer may have changed while the fix was coming in.
+            guard model.store.timerState().running?.id == sessionId else { return }
+            state.start(.init(sessionId: sessionId, latitude: fix.latitude, longitude: fix.longitude, setMs: model.store.now))
+            persist()
+            await addCondition()
+            log.notice("anchored session \(sessionId, privacy: .public)")
+        }
+    }
+
+    /// Keeps the app alive for a few more seconds when it was started in the background.
+    private func withBackgroundTime(_ name: String, _ body: () async -> Void) async {
+        let id = UIApplication.shared.beginBackgroundTask(withName: name) {}
+        await body()
+        UIApplication.shared.endBackgroundTask(id)
     }
 
     // MARK: Checking
@@ -153,33 +170,52 @@ final class AwayMonitor: NSObject {
         Task { await check() }
     }
 
-    private func check() async {
-        guard enabled, let anchor = state.anchor else { return }
-        let store = model.store
-        guard let running = store.timerState().running, running.id == anchor.sessionId else {
-            state.clear()
-            persist()
-            await removeCondition()
+    /// - fromGeofence: the system just said the circle was left. That is the measurement; waiting for a
+    ///   fresh fix here would often outlast the seconds a background launch gets.
+    private func check(fromGeofence: Bool = false) async {
+        guard enabled, let anchor = state.anchor else {
+            log.notice("check skipped: \(self.enabled ? "no anchor" : "off", privacy: .public)")
             return
         }
-        guard let fix = await currentLocation() else { return }
-        let now = store.now
-        let distance = AwayReminder.distanceMeters(
-            fromLatitude: anchor.latitude, longitude: anchor.longitude,
-            toLatitude: fix.latitude, longitude: fix.longitude)
-        state.checked(atMs: now)
-        switch AwayReminder.evaluate(state, sessionId: running.id, distanceMeters: distance, nowMs: now) {
-        case .prompt:
-            state.prompted(atMs: now)
-            persist()
-            await notify(session: running, now: now)
-        case .skip:
-            persist()
+        await withBackgroundTime("hope.away.check") {
+            let store = model.store
+            guard let running = store.timerState().running, running.id == anchor.sessionId else {
+                log.notice("check: anchored session no longer running; clearing")
+                state.clear()
+                persist()
+                await removeCondition()
+                return
+            }
+            let distance: Double
+            if fromGeofence {
+                distance = AwayReminder.radiusMeters + 1
+            } else {
+                guard let fix = await currentLocation() else {
+                    log.notice("check: no fix")
+                    return
+                }
+                distance = AwayReminder.distanceMeters(
+                    fromLatitude: anchor.latitude, longitude: anchor.longitude,
+                    toLatitude: fix.latitude, longitude: fix.longitude)
+            }
+            let now = store.now
+            state.checked(atMs: now)
+            let outcome = AwayReminder.evaluate(state, sessionId: running.id, distanceMeters: distance, nowMs: now)
+            log.notice("check (\(fromGeofence ? "geofence" : "foreground", privacy: .public)): \(Int(distance)) m → \(String(describing: outcome), privacy: .public)")
+            switch outcome {
+            case .prompt:
+                state.prompted(atMs: now)
+                persist()
+                await notify(session: running, now: now)
+            case .skip:
+                persist()
+            }
         }
     }
 
     /// A notification action, possibly handled in a background launch.
     func handle(action id: String) async {
+        log.notice("action \(id, privacy: .public)")
         let now = model.store.now
         switch Action(rawValue: id) {
         case .keepGoing:
@@ -228,8 +264,9 @@ final class AwayMonitor: NSObject {
             guard let monitor = await self?.monitor() else { return }
             do {
                 for try await event in await monitor.events {
+                    self?.log.notice("geofence event \(event.identifier, privacy: .public) state \(event.state.rawValue)")
                     guard event.identifier == Self.conditionId, event.state == .unsatisfied else { continue }
-                    await self?.check()
+                    await self?.check(fromGeofence: true)
                 }
             } catch {
                 print("Hope: away monitor ended: \(error)")
@@ -289,8 +326,9 @@ final class AwayMonitor: NSObject {
         let request = UNNotificationRequest(identifier: "hope.away.\(session.id)", content: content, trigger: nil)
         do {
             try await UNUserNotificationCenter.current().add(request)
+            log.notice("away reminder shown for \(session.id, privacy: .public)")
         } catch {
-            print("Hope: could not show the away reminder: \(error)")
+            log.error("could not show the away reminder: \(error, privacy: .public)")
         }
     }
 

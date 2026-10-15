@@ -17,8 +17,9 @@ struct HopeWatchApp: App {
         let link = WatchLink()
         link.attach(model.sync)
         _link = State(initialValue: link)
-        let breaks = BreakScheduler(model: model, offsetMs: BreakReminder.watchOffsetMs)
-        breaks.onScheduled = { claim in link.sendBreakClaim(claim) }
+        // On by default here: the watch is where timers start (rebuild-plan 15.3).
+        let breaks = BreakScheduler(model: model, offsetMs: BreakReminder.watchOffsetMs, defaultEnabled: true)
+        breaks.onScheduled = { claim, timer in link.send(claim: claim, timer: timer) }
         _breaks = State(initialValue: breaks)
     }
 

@@ -635,7 +635,7 @@ ALTER TABLE plan     ADD COLUMN skip_dates TEXT;  -- 跳过的日期 'YYYY-MM-DD
 ### 14.2 iPhone：离开开始计时的地方
 
 - 设置（iPhone 账号页）：「离开时提醒」开关，默认关。打开时依次申请通知权限和定位权限，定位要到「始终」——围栏退出事件要在后台唤醒 app，「使用期间」做不到；任一被拒，开关回弹并说明原因。
-- 锚点：每当 iPhone 得知一段计时开始（本机开始，或同步拉到别的设备开始的 session），且活动不是运动类、不是课表：取一次当前位置作为锚点（`requestLocation`，百米级精度即可），记 `(sessionId, 经纬度, 时间)`。暂停、结束、换活动都清掉锚点。别的设备开始的计时只在 iPhone 下一次拉取时才知道，锚点取的是那时的位置，可接受。
+- 锚点：每当 iPhone 得知一段计时开始（本机开始，或同步拉到别的设备开始的 session），且活动不是运动类、不是课表：取一次当前位置作为锚点（`requestLocation`，百米级精度即可），记 `(sessionId, 经纬度, 时间)`。暂停、结束、换活动都清掉锚点。别的设备开始的计时原本只在 iPhone 下一次拉取时才知道；2026-10-15 起手表每次计时状态变化都通过 WatchConnectivity 的 application context 发一条「计时信标」（`TimerBeacon`），iOS 会在后台拉起手机 app 接收，手机随即 `syncNow()` 拉到这段 session 并在当时所在位置取锚点——对只用手表开计时、从不打开手机 app 的用法这是唯一能响的方式。桌面开的计时仍要等手机 app 打开。
 - 检测：以锚点为圆心、300 米为半径建一个 `CLMonitor` 圆形条件，退出事件即"走出 300 米"，系统在后台唤醒 app 处理。iOS 不允许普通 app 在后台每 5 分钟醒一次，所以"每 5 分钟检测一次"用两条规则达到同样效果：(1) 退出事件到达时立即处理；(2) app 因任何原因被唤醒或回到前台时，若距上次检查 ≥ 5 分钟，查一次当前位置到锚点的距离。两条都受下面的节流约束。
 - 节流：同一段计时，两次提示间隔 ≥ 5 分钟。「30 分钟内别提醒」把 `snoozeUntil` 设为 now + 30 min，期间退出事件忽略；到期后下一次检查若仍在圈外，再提示一次。
 - 提示：本地通知。标题「你离开了开始计时的地方」，正文「「工作」已计时 1 h 12 min」。三个操作按钮，都在后台处理、不打开 app：
@@ -661,6 +661,8 @@ ALTER TABLE plan     ADD COLUMN skip_dates TEXT;  -- 跳过的日期 'YYYY-MM-DD
 - 规则在 HopeCore 的 `AwayReminder`（纯函数 + `State`，`swift test` 覆盖）；iPhone 的 `AwayMonitor` 只负责定位、围栏、通知和持久化（`UserDefaults` 的 `away.enabled` / `away.state`）。
 - `AwayMonitor` 在 `HopeApp.init` 里创建并设为通知代理：围栏事件和通知按钮都可能在后台把 app 拉起来，那时必须已经有人在听。围栏用 `CLMonitor("HopeAway")` 的一个圆形条件，事件流在 app 启动时就开始监听。监视器名字只能是字母和数字——带点的 `"hope.away"` 在真机上让 `CLMonitor.init` 断言崩溃，而且开关一旦存为开，每次启动都崩（2026-10-14）。
 - 锚点时机 = 本地库的 `revision` 变化（本机操作或同步拉取），有非运动、非课表的 running session 且 id 与锚点不同就取一次位置；没有 running 就清锚点并移除围栏。
+- 围栏退出事件到达时**不再取定位**：事件本身就是测量结果（按 301 米处理），只走节流判断就发通知。后台拉起只有几秒，等 `requestLocation` 常常等不到。取锚点、检查、发通知都包在 `beginBackgroundTask` 里。
+- 关键节点打 `os.Logger`（subsystem `io.github.dan9574.hope`，category `away` / `break` / `link`），真机上用 Console.app 或 `log collect` 能看到锚点、围栏事件、提示 / 跳过原因。
 - 「继续计时」只换锚点坐标，保留 `lastPromptMs`，所以紧接着再走出去也要等满 5 分钟。「结束」在后台 `stop()` 后 `syncNow()`，等 3 秒再让系统结束这次后台启动。
 - 开关在 iPhone 的账号页；打开时先要通知权限，再要定位「使用期间」→「始终」。只有「使用期间」时围栏不会在后台唤醒 app，页面上写明。
 - 通知文案和按钮走 `Localizable.xcstrings`（中英）；Info.plist 的两条定位用途说明只有英文。
@@ -695,8 +697,8 @@ ALTER TABLE session ADD COLUMN break_ack_ms INTEGER;  -- 最近一次在休息�
 
 - 手表 app 每次本地写入或拉取后（`revision` 变化）重算：有可提醒的 running session 就用 `UNTimeIntervalNotificationTrigger` 预排**接下来最多 4 次**（90 / 180 / 270 / 360 分钟）本地通知，标识 `hope.break.<链首 id>.<N>`；系统到点自己弹，app 挂起也行，不需要后台运行权限。没有 running 就全部撤掉。
 - 通知两个按钮，都在后台处理、不打开 app：「暂停」= `pause()` + `syncNow()`；「再来一会儿」= 在当前 running 段写 `break_ack_ms = now` 并推送。滑掉不处理 = 继续，不写标记（下次到期还会提醒）。
-- 开关在活动列表底部（手表没有设置页），默认关；打开时申请通知权限。
-- 每次排完，通过 WatchConnectivity `updateApplicationContext(["break": …])` 告诉 iPhone"链 X 的这几次我接了"（链首 id + 各次到期时刻），没有 running 时发空。这是手机去重的依据（15.5）。
+- 开关在活动列表底部（手表没有设置页），**手表默认开**（计时都在手表开）：第一次有可提醒的计时时才申请通知权限。开关下面一行状态：「下次提醒 HH:MM」/「没有在计时」/「通知权限已关」/「运动类和课表不提醒」，用户一眼能看出有没有排上。
+- 每次排完，通过 WatchConnectivity `updateApplicationContext(["timer": 信标, "break": 认领])` 告诉 iPhone 当前计时和"链 X 的这几次我接了"（只报系统真正接受的那几次；2026-10-14 曾把 add 失败的也报上去，手机因此把兜底删了）。application context 是整体替换的，所以两个 key 每次一起发。重排必须串行：曾出现前一轮在查待弹时挂起、后一轮已加好、前一轮醒来把它们全删掉的竞态。
 
 ### 15.4 桌面（第二）
 

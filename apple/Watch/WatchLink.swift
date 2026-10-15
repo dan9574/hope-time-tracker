@@ -1,4 +1,5 @@
 import HopeCore
+import os
 import WatchConnectivity
 
 /// The watch end of WatchConnectivity: receives the sign-in the iPhone hands over (rebuild-plan 12.7) and
@@ -8,7 +9,9 @@ import WatchConnectivity
 final class WatchLink: NSObject {
     private weak var sync: SyncService?
     private var activated = false
-    private var pendingClaim: Data??
+    private var pending: (claim: BreakClaim?, timer: TimerBeacon)?
+    private var lastSent: (claim: BreakClaim?, timer: TimerBeacon)?
+    private let log = Logger(subsystem: "io.github.dan9574.hope", category: "link")
 
     func attach(_ sync: SyncService) {
         guard self.sync == nil, WCSession.isSupported() else { return }
@@ -17,27 +20,33 @@ final class WatchLink: NSObject {
         WCSession.default.activate()
     }
 
-    /// Latest-wins delivery to the iPhone; `nil` = nothing scheduled. iOS starts the phone app in the
-    /// background to receive it, so the phone's fallback reminders are dropped without anyone opening it.
-    func sendBreakClaim(_ claim: BreakClaim?) {
+    /// Latest-wins delivery to the iPhone of the timer as the watch sees it and the break reminders it has
+    /// lined up (`nil` = none). iOS starts the phone app in the background to receive it, so the phone
+    /// learns about a timer started here without anyone opening it (rebuild-plan 14.5 / 15.5).
+    func send(claim: BreakClaim?, timer: TimerBeacon) {
         guard WCSession.isSupported() else { return }
-        let data = claim.flatMap { try? JSONEncoder().encode($0) }
         guard activated else {
-            pendingClaim = .some(data)
+            pending = (claim, timer)
             return
         }
+        // The timer's `sentMs` changes every pass; compare the parts that matter.
+        if let last = lastSent, last.claim == claim, last.timer.sessionId == timer.sessionId { return }
+        var context: [String: Any] = ["timer": (try? JSONEncoder().encode(timer)) ?? Data()]
+        context["break"] = claim.flatMap { try? JSONEncoder().encode($0) } ?? Data()
         do {
-            try WCSession.default.updateApplicationContext(["break": data ?? Data()])
+            try WCSession.default.updateApplicationContext(context)
+            lastSent = (claim, timer)
+            log.notice("sent timer \(timer.sessionId ?? "none", privacy: .public), claim \(claim.map { "\($0.dueMs.count) steps" } ?? "none", privacy: .public)")
         } catch {
-            print("Hope: could not tell the iPhone about the break reminders: \(error)")
+            log.error("could not update the iPhone: \(error, privacy: .public)")
         }
     }
 
     private func didActivate(_ ok: Bool) {
         activated = ok
-        if ok, let pending = pendingClaim {
-            pendingClaim = nil
-            sendBreakClaim(pending.flatMap { try? JSONDecoder().decode(BreakClaim.self, from: $0) })
+        if ok, let pending {
+            self.pending = nil
+            send(claim: pending.claim, timer: pending.timer)
         }
     }
 

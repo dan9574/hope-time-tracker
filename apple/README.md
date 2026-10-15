@@ -19,6 +19,12 @@ Bundle IDs: `io.github.dan9574.hope.ios`, `io.github.dan9574.hope.ios.watchkitap
 `io.github.dan9574.hope.ios.watchkitapp.widgets`. App icons (`iOS/Assets.xcassets`, `Watch/Assets.xcassets`)
 are the desktop icon's ring cropped full-bleed from `src-tauri/icons/icon.icns` with `sips`.
 
+## Version
+
+`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` live in `Config/Base.xcconfig` and show at the bottom of the
+watch's activity list ("Hope 0.1.1 (2)"). Bump both for every build installed on a device, so the watch can
+be told apart from the previous one.
+
 ## Tests
 
 ```sh
