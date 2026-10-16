@@ -50,6 +50,13 @@ Hope 记录你**主动选择**投入的时间，一次一个计时器，把一�
   <img src="docs/screenshots/desktop-schedule.png" alt="日程" width="85%" />
 </p>
 
+想把上课时间也看进去，在设置里打开**「总时长计入课表」**：本周、本月就会把它算进来，用课表组自己的颜色显示，每门课列在组下面。
+
+<p align="center">
+  <img src="docs/screenshots/desktop-week-classes.png" alt="计入课表的本周" width="48%" />
+  <img src="docs/screenshots/desktop-month-classes.png" alt="计入课表的本月" width="48%" />
+</p>
+
 ### 活动、日记、桌面卡片
 
 - **活动**：一层子活动，八种颜色，拖动排序，不再做的可以归档。

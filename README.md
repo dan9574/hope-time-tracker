@@ -50,6 +50,13 @@ Hope tracks the time you choose to spend on things, one timer at a time, and sho
   <img src="docs/screenshots/desktop-schedule.png" alt="Schedule" width="85%" />
 </p>
 
+If you would rather see class time too, switch on **Count classes in totals** in Settings: the week and the month then include it, in the timetable group's own colour, with each course listed under the group.
+
+<p align="center">
+  <img src="docs/screenshots/desktop-week-classes.png" alt="This week with classes counted" width="48%" />
+  <img src="docs/screenshots/desktop-month-classes.png" alt="This month with classes counted" width="48%" />
+</p>
+
 ### Activities, journal, cards
 
 - **Activities** with one level of sub-activities, eight colours, drag to reorder, archive what you no longer do.
