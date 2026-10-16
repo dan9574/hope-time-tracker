@@ -7,9 +7,10 @@
 // Without them the apps still build; without Supabase values they run local-only.
 
 // Version shown at the bottom of the watch's activity list (and in the app bundles). Bump the patch for
-// every build that goes to a device, and the build number with it: 0.1.1 (2), 0.1.2 (3), ...
-MARKETING_VERSION = 0.1.1
-CURRENT_PROJECT_VERSION = 2
+// every build that goes to a device (2.0.0 → 2.0.1 → …) and the build number with it; only the version
+// is shown. Keep it equal to the desktop's (package.json, tauri.conf.json, Cargo.toml).
+MARKETING_VERSION = 2.0.0
+CURRENT_PROJECT_VERSION = 3
 
 SUPABASE_URL =
 SUPABASE_ANON_KEY =

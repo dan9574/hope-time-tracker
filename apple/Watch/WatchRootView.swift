@@ -106,14 +106,12 @@ private struct BreakToggleRow: View {
     }
 }
 
-/// The build that is on the wrist, so "is the watch updated yet?" has an answer. MARKETING_VERSION and
-/// CURRENT_PROJECT_VERSION in Config/Base.xcconfig; bump the patch for every build that goes to a device.
+/// The build that is on the wrist, so "is the watch updated yet?" has an answer. MARKETING_VERSION in
+/// Config/Base.xcconfig; bump the patch for every build that goes to a device.
 private struct VersionFooter: View {
     var body: some View {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        Text(verbatim: "Hope \(version) (\(build))")
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        Text(verbatim: "Hope \(version)")
             .font(.footnote)
             .foregroundStyle(.tertiary)
             .frame(maxWidth: .infinity, alignment: .center)

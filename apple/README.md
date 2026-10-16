@@ -21,9 +21,9 @@ are the desktop icon's ring cropped full-bleed from `src-tauri/icons/icon.icns` 
 
 ## Version
 
-`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` live in `Config/Base.xcconfig` and show at the bottom of the
-watch's activity list ("Hope 0.1.1 (2)"). Bump both for every build installed on a device, so the watch can
-be told apart from the previous one.
+`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` live in `Config/Base.xcconfig`; the version shows at the bottom
+of the watch's activity list ("Hope 2.0.0"). Bump the patch (and the build number) for every build installed
+on a device, so the watch can be told apart from the previous one. Keep it equal to the desktop's version.
 
 ## Tests
 

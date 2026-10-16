@@ -15,7 +15,7 @@
 
 ## 工作方式
 
-- Apple 端版本号在 `apple/Config/Base.xcconfig`（`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`），手表活动列表最底下显示。**每次往真机装新包前把补丁号和构建号各加 1**（0.1.1 (2) → 0.1.2 (3) …），用户靠这个判断手表有没有更新到。桌面端版本号仍是 `tauri.conf.json` 的 0.1.0，另算。
+- 版本号三端一致，2026-10-16 起为 2.0.0（内测）：桌面在 `package.json` / `src-tauri/tauri.conf.json` / `src-tauri/Cargo.toml`，Apple 在 `apple/Config/Base.xcconfig`（`MARKETING_VERSION`，`CURRENT_PROJECT_VERSION` 跟着加）。手表活动列表最底下显示「Hope 2.0.0」，只显示版本不显示构建号。**每次往真机装新包前把补丁号加 1**（2.0.0 → 2.0.1 → …），用户靠这个判断手表有没有更新到。
 
 - 严格按 rebuild-plan 第 7 节的阶段顺序推进；一次只做一个阶段，每阶段结束 app 必须能跑并给用户演示。
 - 做 UI 前先想"苹果原生 app 会怎么做"，不确定时选更克制的方案。
@@ -44,7 +44,7 @@
 - 欠账：
   - Windows 版 2026-10-13 已在真机（Windows 11）上用 `npm run tauri dev` 跑通，并对真实 Supabase 登录、同步成功。Windows 开发要 Node ≥ 20.19（Vite 8；旧版 npm 会静默跳过 rolldown 的原生绑定）。Windows 上 `cargo test` 的测试 exe 没有 Tauri 嵌给主程序的 comctl32 v6 清单，会以 STATUS_ENTRYPOINT_NOT_FOUND（TaskDialogIndirect）退出：在 `target/debug/deps/hope_lib-<hash>.exe` 旁放一个声明 Microsoft.Windows.Common-Controls 6.0.0.0 的 `.exe.manifest`、更新 exe 的修改时间后直接运行它即可（CI 只在 macOS 跑 cargo test）。Overlay 在 Windows 上的逐卡模糊已做（每卡一个 Acrylic 小窗口）。**从 Claude 桌面版（MSIX 包）的 shell 里跑安装器或 app 时，对 AppData 的写入会被重定向到 `AppData\Local\Packages\Claude_*\LocalCache`**：安装、开始菜单快捷方式、app 数据库都只存在于那个虚拟视图里，系统看不到；真正安装 / 启动要用 WMI `Win32_Process.Create` 在包外起进程，或让用户自己双击。任务栏图标：Tauri 只设窗口小图标，`src-tauri/src/taskbar_icon.rs` 用 exe 内嵌图标补上大图标。
   - 安装包未签名、未公证（需要 Apple Developer ID）。
-  - 版本号是 0.1.0，但仓库里有旧 Electron 时代的 `v1.0.0` tag；正式发版前要定版本号（建议 2.0.0）。
+  - 版本号已定为 2.0.0（仓库里旧 Electron 时代的 `v1.0.0` tag 保留）；推 `v2.0.0` tag 才会触发出包。
   - 本机 dmg：2026-10-03 复查，`npm run tauri build -- --target aarch64-apple-darwin` 连跑两次 dmg 都成功，问题不在仓库配置。之前那次失败留下的 `bundle/macos/rw.39387.Hope_0.1.0_aarch64.dmg` 显示脚本已走完 Finder AppleScript 和 SetFile，卡在最后的 `hdiutil detach`（卷被占用 EBUSY，重试 3 次后退出 16，镜像一直挂着到 20:06 才被卸下）——是偶发的环境问题（Finder / Spotlight / 安全扫描仍占着刚生成的卷）。再遇到时：关掉 Finder 里打开的 `dmg.*` 窗口，`hdiutil info` 查残留镜像并 `hdiutil detach`，删掉 `bundle/macos/rw.*.dmg` 后重跑。注意别单独用 `--bundles dmg`：它构建完会删掉 `bundle/macos/Hope.app`。
 - 阶段 7（同步层，rebuild-plan 第 12 节）：已对真实 Supabase 项目跑通（`.env` 已配置，桌面与手表都在同步）。注意：**本地加列后必须同步在 Supabase SQL Editor 里执行 `supabase/schema.sql` 里的 `alter table … add column if not exists`**。2026-10-14 实测：云端缺列时 PostgREST 对 upsert 直接返回 HTTP 400 `PGRST204 Could not find the '…' column`，桌面端会每 5 秒重试、同步一直失败，直到列加上（阶段 12 的 `break_ack_ms` 就撞上了）。
 - 阶段 8、9（`apple/`，说明见 `apple/README.md`）：一个 Xcode 工程 `Hope.xcodeproj`（iOS 18+ / watchOS 11+）+ 本地 Swift 包 `HopeCore`（SwiftData 存储、计时规则、同步协议、表盘快照的 Swift 移植，`swift test` 45 个测试）。iOS 与 Watch 有 App 图标（由桌面图标 `sips` 裁切）。
